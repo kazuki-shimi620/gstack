@@ -46,7 +46,115 @@ export function validateSchemaBasics(
     }
   }
 
+  const models = new Map(
+    [...names]
+      .filter(([, declarations]) => declarations.length === 1)
+      .map(([name, declarations]) => [name, declarations[0]!] as const),
+  );
+  for (const schema of schemas) {
+    validateRelations(schema, models, diagnostics);
+  }
+
   return diagnostics.sort(compareDiagnostics);
+}
+
+function validateRelations(
+  schema: SchemaAst,
+  models: ReadonlyMap<string, SchemaAst>,
+  diagnostics: Diagnostic[],
+): void {
+  const root = asMapping(schema.root);
+  const database = root ? mappingValue(root, 'database') : undefined;
+  const columns = database ? mappingValue(database, 'columns') : undefined;
+  const relationsNode = database
+    ? findEntry(database, 'relations')?.value
+    : undefined;
+  if (!database || !columns || relationsNode?.kind !== 'mapping') return;
+  const localColumns = new Set(columns.entries.map((entry) => entry.key));
+
+  for (const relation of relationsNode.entries) {
+    validateSnakeCase(
+      relation.key,
+      'Relation',
+      { range: relation.keyRange },
+      schema,
+      diagnostics,
+    );
+    const definition = asMapping(relation.value);
+    if (!definition) continue;
+    const path = `database.relations.${relation.key}`;
+    const type = requireString(definition, 'type', path, schema, diagnostics);
+    const field = requireString(definition, 'field', path, schema, diagnostics);
+    const targetName = requireString(
+      definition,
+      'model',
+      path,
+      schema,
+      diagnostics,
+    );
+    const references = requireString(
+      definition,
+      'references',
+      path,
+      schema,
+      diagnostics,
+    );
+
+    if (type !== undefined && type !== 'belongs_to') {
+      const entry = findEntry(definition, 'type');
+      diagnostics.push({
+        code: 'SCHEMA_RELATION_TYPE_UNSUPPORTED',
+        phase: 'semantic',
+        severity: 'error',
+        message: `Relation "${relation.key}" uses unsupported type "${type}".`,
+        file: schema.source.id,
+        ...(entry ? { range: entry.value.range } : {}),
+      });
+    }
+    if (field !== undefined && !localColumns.has(field)) {
+      const entry = findEntry(definition, 'field');
+      diagnostics.push({
+        code: 'SCHEMA_RELATION_FIELD_UNKNOWN',
+        phase: 'semantic',
+        severity: 'error',
+        message: `Relation "${relation.key}" references unknown local Column "${field}".`,
+        file: schema.source.id,
+        ...(entry ? { range: entry.value.range } : {}),
+      });
+    }
+    if (targetName === undefined) continue;
+    const target = models.get(targetName);
+    if (!target) {
+      const entry = findEntry(definition, 'model');
+      diagnostics.push({
+        code: 'SCHEMA_RELATION_MODEL_UNKNOWN',
+        phase: 'semantic',
+        severity: 'error',
+        message: `Relation "${relation.key}" references unknown Model "${targetName}".`,
+        file: schema.source.id,
+        ...(entry ? { range: entry.value.range } : {}),
+      });
+      continue;
+    }
+    if (references !== undefined && !schemaColumns(target).has(references)) {
+      const entry = findEntry(definition, 'references');
+      diagnostics.push({
+        code: 'SCHEMA_RELATION_REFERENCE_UNKNOWN',
+        phase: 'semantic',
+        severity: 'error',
+        message: `Relation "${relation.key}" references unknown Column "${targetName}.${references}".`,
+        file: schema.source.id,
+        ...(entry ? { range: entry.value.range } : {}),
+      });
+    }
+  }
+}
+
+function schemaColumns(schema: SchemaAst): ReadonlySet<string> {
+  const root = asMapping(schema.root);
+  const database = root ? mappingValue(root, 'database') : undefined;
+  const columns = database ? mappingValue(database, 'columns') : undefined;
+  return new Set(columns ? columns.entries.map((entry) => entry.key) : []);
 }
 
 function validateOneSchema(schema: SchemaAst): Diagnostic[] {
@@ -71,9 +179,184 @@ function validateOneSchema(schema: SchemaAst): Diagnostic[] {
   }
 
   const database = requireMapping(root, 'database', '$', schema, diagnostics);
-  if (database) validateDatabase(database, schema, diagnostics);
+  if (database) {
+    validateDatabase(database, schema, diagnostics);
+    validateFieldValidations(root, database, schema, diagnostics);
+  }
 
   return diagnostics;
+}
+
+function validateFieldValidations(
+  root: AstMapping,
+  database: AstMapping,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  const validations = mappingValue(root, 'validation');
+  const columns = mappingValue(database, 'columns');
+  if (!validations || !columns) return;
+  const columnTypes = new Map(
+    columns.entries.map((column) => {
+      const definition = asMapping(column.value);
+      return [
+        column.key,
+        definition ? stringValue(definition, 'type') : undefined,
+      ] as const;
+    }),
+  );
+
+  for (const fieldValidation of validations.entries) {
+    const definition = asMapping(fieldValidation.value);
+    if (!definition) continue;
+    const fieldType = columnTypes.get(fieldValidation.key);
+    if (!columnTypes.has(fieldValidation.key)) {
+      diagnostics.push({
+        code: 'SCHEMA_VALIDATION_FIELD_UNKNOWN',
+        phase: 'semantic',
+        severity: 'error',
+        message: `Validation references unknown Column "${fieldValidation.key}".`,
+        file: schema.source.id,
+        range: fieldValidation.keyRange,
+      });
+    }
+
+    const numericValues = new Map<string, number>();
+    for (const rule of definition.entries) {
+      const path = `validation.${fieldValidation.key}`;
+      if (rule.key === 'pattern') {
+        if (
+          rule.value.kind !== 'scalar' ||
+          typeof rule.value.value !== 'string'
+        ) {
+          invalidValueType(
+            rule.key,
+            path,
+            'string',
+            rule.value,
+            schema,
+            diagnostics,
+          );
+        } else {
+          validatePattern(rule.value.value, rule.value, schema, diagnostics);
+        }
+      } else if (
+        rule.value.kind !== 'scalar' ||
+        typeof rule.value.value !== 'number' ||
+        !Number.isFinite(rule.value.value)
+      ) {
+        invalidValueType(
+          rule.key,
+          path,
+          'finite number',
+          rule.value,
+          schema,
+          diagnostics,
+        );
+      } else {
+        numericValues.set(rule.key, rule.value.value);
+        if (
+          (rule.key === 'minLength' || rule.key === 'maxLength') &&
+          (!Number.isInteger(rule.value.value) || rule.value.value < 0)
+        ) {
+          diagnostics.push({
+            code: 'SCHEMA_VALIDATION_LENGTH_INVALID',
+            phase: 'semantic',
+            severity: 'error',
+            message: `${path}.${rule.key} must be a non-negative integer.`,
+            file: schema.source.id,
+            range: rule.value.range,
+          });
+        }
+      }
+      validateRuleCompatibility(
+        fieldValidation.key,
+        fieldType,
+        rule.key,
+        rule.value,
+        schema,
+        diagnostics,
+      );
+    }
+    validateRuleBounds(
+      fieldValidation.key,
+      numericValues,
+      definition,
+      schema,
+      diagnostics,
+    );
+  }
+}
+
+function validateRuleCompatibility(
+  field: string,
+  fieldType: string | undefined,
+  rule: string,
+  node: AstNode,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  if (fieldType === undefined) return;
+  const compatible =
+    fieldType === 'string' || fieldType === 'text'
+      ? rule === 'minLength' || rule === 'maxLength' || rule === 'pattern'
+      : fieldType === 'integer' || fieldType === 'number'
+        ? rule === 'min' || rule === 'max'
+        : false;
+  if (compatible) return;
+  diagnostics.push({
+    code: 'SCHEMA_VALIDATION_RULE_INCOMPATIBLE',
+    phase: 'semantic',
+    severity: 'error',
+    message: `Validation rule "${rule}" is not compatible with ${fieldType} Column "${field}".`,
+    file: schema.source.id,
+    range: node.range,
+  });
+}
+
+function validatePattern(
+  pattern: string,
+  node: AstNode,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  try {
+    new RegExp(pattern);
+  } catch {
+    diagnostics.push({
+      code: 'SCHEMA_VALIDATION_PATTERN_INVALID',
+      phase: 'semantic',
+      severity: 'error',
+      message: `Validation pattern "${pattern}" is not a valid regular expression.`,
+      file: schema.source.id,
+      range: node.range,
+    });
+  }
+}
+
+function validateRuleBounds(
+  field: string,
+  values: ReadonlyMap<string, number>,
+  definition: AstMapping,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  for (const [minimum, maximum] of [
+    ['minLength', 'maxLength'],
+    ['min', 'max'],
+  ] as const) {
+    const min = values.get(minimum);
+    const max = values.get(maximum);
+    if (min === undefined || max === undefined || min <= max) continue;
+    diagnostics.push({
+      code: 'SCHEMA_VALIDATION_RANGE_INVALID',
+      phase: 'semantic',
+      severity: 'error',
+      message: `Validation for Column "${field}" requires ${minimum} to be less than or equal to ${maximum}.`,
+      file: schema.source.id,
+      range: definition.range,
+    });
+  }
 }
 
 function validateDatabase(
@@ -530,6 +813,14 @@ function invalidValueType(
 
 function asMapping(node: AstNode): AstMapping | undefined {
   return node.kind === 'mapping' ? node : undefined;
+}
+
+function mappingValue(
+  mapping: AstMapping,
+  key: string,
+): AstMapping | undefined {
+  const node = findEntry(mapping, key)?.value;
+  return node?.kind === 'mapping' ? node : undefined;
 }
 
 function findEntry(mapping: AstMapping, key: string) {

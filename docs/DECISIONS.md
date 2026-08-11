@@ -1,12 +1,12 @@
-# gstack Accepted MVP Decisions
+# gstack MVP確定事項
 
-> Documentation index: [`../README.md`](../README.md)
+> ドキュメント一覧: [`../README.md`](../README.md)
 
-> Status: Accepted. These decisions were approved together and are normative for MVP implementation. Detailed subsystem documents remain authoritative; update both when a decision changes.
+> Status: 確定済み。以下はMVP実装の規範として一括承認された判断である。各subsystemの詳細ドキュメントは引き続き正式な仕様であり、判断を変更する場合は両方を更新すること。
 
 ## D-001 Project Config
 
-`gstack.yaml` is required and is the project-root marker. MVP shape:
+`gstack.yaml`は必須であり、Project Rootを示すmarkerとする。MVPの形式は次のとおり。
 
 ```yaml
 version: 1
@@ -16,93 +16,93 @@ schema:
   directory: schema
 ```
 
-All four fields are required. Unknown keys are errors. Paths are relative to the project root. Provider and Generator sections may be added later as optional, typed sections; secrets are never valid Config values. Environment variables may supply secrets and operational overrides but may not redefine application semantics. Exact override names will be added with those features.
+4項目はすべて必須とし、未知のkeyはerrorとする。pathはProject Rootからの相対pathとする。ProviderとGeneratorのsectionは、将来optionalかつ型付けされたsectionとして追加できるが、secretをConfigの有効値にしてはいけない。環境変数はsecretや運用上のoverrideを提供できるが、application semanticsを再定義してはいけない。具体的なoverride名は各機能の追加時に定義する。
 
 ## D-002 Schema Version
 
-Schema version is declared once as `schemaVersion` in `gstack.yaml`, not in each model file. It is required. Unsupported versions are Configuration Errors. MVP supports only integer version `1`.
+Schema versionは各Model fileではなく、`gstack.yaml`の`schemaVersion`で一度だけ宣言する。必須項目とし、未対応versionはConfiguration Errorとする。MVPは整数version `1`だけをsupportする。
 
 ## D-003 MVP Schema Grammar
 
-- One YAML file contains exactly one YAML document and one Model.
-- Required root keys are `name`, `model`, and `database`.
-- Optional root keys are `description`, `api`, `ui`, `validation`, `permissions`, `workflow`, `events`, and `metadata`.
-- `description` is root-level. `model.displayName` is required.
-- `database.primaryKey` and a non-empty `database.columns` mapping are required. Primary keys are never generated implicitly.
-- Every Column requires `type`. Only types listed as initial types in `SCHEMA.md` are accepted. Enum Columns require a non-empty, unique `values` sequence.
-- Index entries require a stable `name` and a non-empty `columns` sequence; `unique` defaults to `false`.
-- MVP Relation entries are named mappings under `database.relations`. Each requires `type: belongs_to`, local `field`, target `model`, and target `references`. Additional relation kinds remain future work.
-- Validation keys must name an existing Column. String/text rules are `minLength`, `maxLength`, and `pattern`; numeric rules are `min` and `max`. `required` remains a Column property.
-- MVP `api` keys are `resource`, `create`, `update`, and `delete`.
-- MVP `ui` contains optional `list.columns` and `form.fields` sequences.
-- MVP `permissions` keys are `read`, `create`, `update`, and `delete`, each containing a role-name sequence.
-- MVP `workflow` and `events` contain only the `enabled` flag. Further workflow and event definitions remain future work.
-- Unknown keys at every framework-owned level are errors. `metadata` is the only open mapping.
-- Boolean feature flags default to `false`; optional collections default to empty. Defaults are applied by Semantic Analyzer, never Parser.
+- 1つのYAML fileには、正確に1つのYAML documentと1つのModelを記述する。
+- rootの必須keyは`name`、`model`、`database`とする。
+- rootのoptional keyは`description`、`api`、`ui`、`validation`、`permissions`、`workflow`、`events`、`metadata`とする。
+- `description`はroot levelに置き、`model.displayName`を必須とする。
+- `database.primaryKey`と、空でない`database.columns` mappingを必須とする。Primary Keyを暗黙生成してはいけない。
+- すべてのColumnで`type`を必須とする。`SCHEMA.md`の初期対応typeだけを許可する。Enum Columnは空でなく重複のない`values` sequenceを必須とする。
+- Indexは安定した`name`と空でない`columns` sequenceを必須とし、`unique`のdefaultを`false`とする。
+- MVP Relationは`database.relations`配下の名前付きmappingとする。それぞれ`type: belongs_to`、local `field`、target `model`、target `references`を必須とする。その他のRelation kindは将来対応とする。
+- Validation keyは既存Column名でなければならない。string／text ruleは`minLength`、`maxLength`、`pattern`、numeric ruleは`min`、`max`とする。`required`はColumn propertyのままとする。
+- MVPの`api` keyは`resource`、`create`、`update`、`delete`とする。
+- MVPの`ui`はoptionalな`list.columns`と`form.fields` sequenceを持つ。
+- MVPの`permissions` keyは`read`、`create`、`update`、`delete`とし、それぞれrole名のsequenceを持つ。
+- MVPの`workflow`と`events`は`enabled` flagだけを持つ。具体的なWorkflow／Event定義は将来対応とする。
+- framework管理下のすべてのlevelで未知のkeyをerrorとする。`metadata`だけをopen mappingとする。
+- boolean feature flagのdefaultは`false`、optional collectionのdefaultは空とする。defaultはParserではなくSemantic Analyzerが適用する。
 
-## D-004 AST and IR
+## D-004 ASTとIR
 
-MVP has one gstack-owned syntax representation called AST; “Raw IR” in older documents refers to this AST. It preserves file identity, source ranges, YAML structure, and explicitly written values. It does not contain defaults, resolved relations, semantic normalization, Provider data, or YAML-library node types. No second IR is introduced until a demonstrated need exists.
+MVPでは、gstackが所有する構文表現を1つだけ持ち、ASTと呼ぶ。旧ドキュメントの「Raw IR」はこのASTを指す。ASTはfile identity、source range、YAML構造、明示的に記述された値を保持する。default、解決済みRelation、semantic normalization、Provider data、YAML library固有nodeを含めてはいけない。必要性が実証されるまで第2のIRを導入しない。
 
-## D-005 Validation Ownership
+## D-005 Validationの責務
 
 ```text
-YAML Parser       -> YAML 1.2 syntax and duplicate keys
-AST Builder       -> node shapes and allowed syntax
-Semantic Analyzer -> types, names, defaults, duplicates, indexes, enums, relations
-Core              -> composed validateSchema use case
+YAML Parser       -> YAML 1.2構文とduplicate key
+AST Builder       -> node形状と許可された構文
+Semantic Analyzer -> type、name、default、duplicate、index、enum、relation
+Core              -> validateSchema use caseの統合
 ```
 
-There is no separate Validation Engine in MVP. Validation levels are `syntax`, `semantic`, and later `provider`.
+MVPでは独立したValidation Engineを設けない。Validation levelは`syntax`、`semantic`、将来の`provider`とする。
 
 ## D-006 Application Model
 
-The normalized, immutable, Provider-independent model contains Models, Fields, Indexes, Relations, API, UI, Permissions, Workflows, Events, Metadata, and optional diagnostic source references. Missing optional sections normalize to empty values. It contains no YAML-library, filesystem handle, CLI, MCP, concrete Provider, Generator-template, runtime-state, or secret types.
+正規化され、immutableかつProvider非依存のModelは、Models、Fields、Indexes、Relations、API、UI、Permissions、Workflows、Events、Metadata、optionalな診断用source referenceを持つ。欠落したoptional sectionは空の値へ正規化する。YAML library、filesystem handle、CLI、MCP、具体的Provider、Generator template、runtime state、secretの型を含めてはいけない。
 
-For MVP, the Application root contains Schema version, application name, Models, and application-level Metadata. Each Model owns its normalized Fields, primary key, Indexes, Relations, API, UI, Permissions, Workflow, Events, and Metadata. Missing collections become empty readonly collections, feature flags become `false`, absent descriptions/resources become `null`, and absent validation rules become `null`. Metadata is limited to recursively immutable YAML-compatible scalar, sequence, and mapping values. Diagnostic source references contain only source identity and positions.
+MVPのApplication rootはSchema version、application name、Models、application level Metadataを持つ。各Modelは正規化済みのFields、Primary Key、Indexes、Relations、API、UI、Permissions、Workflow、Events、Metadataを所有する。欠落collectionは空のreadonly collection、feature flagは`false`、未指定description／resourceは`null`、未指定validation ruleは`null`とする。Metadataは再帰的にimmutableなYAML互換scalar／sequence／mapping値だけに制限する。診断用source referenceはsource identityとpositionだけを持つ。
 
 ## D-007 Migration Baseline
 
-The authoritative comparison baseline is the last successfully applied Application Model snapshot. Provider introspection is used for drift detection and capability checks, not as an implicit desired-state or migration baseline. Migration history records which snapshot was applied.
+正式な比較baselineは、最後に正常適用されたApplication Model snapshotとする。Provider introspectionはdrift検出とcapability checkに使用するが、暗黙のdesired stateやmigration baselineとして扱ってはいけない。Migration historyには適用されたsnapshotを記録する。
 
 ## D-008 Migration Plan
 
-A plan is structured data with ordered operations, aggregate `safe | caution | destructive` risk, a destructive flag, warnings, reversibility, and capability results. Operations have stable IDs. Rename is never inferred or applied automatically; it requires explicit migration intent.
+Planは、順序付きOperation、集約された`safe | caution | destructive` risk、destructive flag、warning、reversibility、capability resultを持つ構造化データとする。Operationは安定したIDを持つ。Renameを暗黙に推測・適用してはいけず、明示的なmigration intentを必須とする。
 
 ## D-009 Generator Input
 
-Generator input is Application Model plus Generator Config and Template. Generator never consumes raw YAML/AST or live Provider/Database state.
+Generator inputはApplication Model、Generator Config、Templateとする。Generatorはraw YAML／ASTやlive Provider／Database stateを入力にしてはいけない。
 
-## D-010 Generated Ownership
+## D-010 Generated Codeの所有権
 
-Generator owns only `generated/`. It never writes to `app/` or `custom/`. A Generated Artifact Manifest records owned outputs; stale deletion is limited to paths previously recorded in that manifest.
+Generatorが所有するのは`generated/`だけとする。`app/`や`custom/`へ書き込んではいけない。Generated Artifact Manifestへ所有する出力を記録し、古いfileの削除は過去にmanifestへ記録されたpathだけに限定する。
 
-## D-011 Core and Provider
+## D-011 CoreとProvider
 
-“Core does not know Provider” means Core may depend on Provider interfaces and registry abstractions but must never depend on, import, configure, or name a concrete Provider implementation.
+「CoreはProviderを知らない」とは、CoreがProvider interfaceやregistry abstractionへ依存できる一方、具体的なProvider実装へ依存し、importし、設定し、名前を参照してはならないことを意味する。
 
-## D-012 Provider Capabilities
+## D-012 Provider Capability
 
-Top-level capabilities are Database, API, Authentication, Storage, and Deploy. Migration support is also declared per abstract Operation as `native`, `emulated`, or `unsupported`.
+top-level capabilityはDatabase、API、Authentication、Storage、Deployとする。Migration supportは抽象Operationごとに`native`、`emulated`、`unsupported`のいずれかを宣言する。
 
 ## D-013 Machine-readable Envelope
 
-CLI JSON and MCP Tool structured content use the same inner envelope.
+CLI JSONとMCP Toolのstructured contentは同じinner envelopeを使用する。
 
-Success:
+成功:
 
 ```json
 { "ok": true, "data": {}, "warnings": [] }
 ```
 
-Failure:
+失敗:
 
 ```json
 { "ok": false, "error": { "code": "...", "category": "...", "message": "..." } }
 ```
 
-CLI controls stdout/stderr and exit codes; MCP controls protocol content and `isError`. Human formatters remain Adapter-owned.
+CLIはstdout／stderrとexit codeを管理し、MCPはprotocol contentと`isError`を管理する。human formatterはAdapterが所有する。
 
-## D-014 Package Publication
+## D-014 Package公開方針
 
-Public-package candidates are `@gstack/core`, `@gstack/cli`, `@gstack/mcp`, `@gstack/provider`, and concrete Provider packages. Parser, Analyzer, Schema, Config, and Application packages remain internal implementation packages. All MVP packages use one synchronized version. Public stability begins at 1.0 unless explicitly documented earlier.
+公開package候補は`@gstack/core`、`@gstack/cli`、`@gstack/mcp`、`@gstack/provider`、具体的なProvider packageとする。Parser、Analyzer、Schema、Config、Application packageは内部実装packageのままとする。MVPの全packageは1つの同期versionを使用する。明示的な例外がない限り、public stabilityは1.0から開始する。

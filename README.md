@@ -1,47 +1,47 @@
 # gstack
 
-gstack is a CLI-first, AI-first, Schema-first application framework. It compiles a declarative application Schema into a normalized Application Model that later drives validation, migrations, generation, documentation, and Provider execution.
+gstackは、CLI First・AI First・Schema Firstなアプリケーションフレームワークです。宣言的なSchemaをProvider非依存の正規化されたApplication Modelへコンパイルし、将来的なValidation、Migration、コード生成、ドキュメント生成、Provider実行の共通入力として利用します。
 
-## Start here
+## はじめに読むもの
 
-Read these documents in order before implementing framework behavior:
+フレームワークの挙動を実装する前に、次の順序でドキュメントを読んでください。
 
-1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system structure and invariants
-2. [`docs/DECISIONS.md`](docs/DECISIONS.md) — accepted MVP contracts
-3. [`docs/PLAN.md`](docs/PLAN.md) — current implementation order
-4. The subsystem specification relevant to the change
+1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — システム構造と不変条件
+2. [`docs/DECISIONS.md`](docs/DECISIONS.md) — MVPで確定済みの契約
+3. [`docs/PLAN.md`](docs/PLAN.md) — 現在の実装順序
+4. 変更対象に対応するサブシステム仕様
 
-Repository-development agents must also obey [`AGENTS.md`](AGENTS.md). That file stays at the repository root for automatic agent discovery.
+このリポジトリで開発するAI Agentは、[`AGENTS.md`](AGENTS.md)にも必ず従ってください。このファイルはAgentが自動検出できるようリポジトリ直下に置いています。
 
-## Documentation
+## ドキュメント
 
-| Document | Purpose |
+| ドキュメント | 目的 |
 | --- | --- |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Architecture, dependency rules, invariants |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Accepted cross-cutting MVP decisions |
-| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Functional and non-functional requirements |
-| [`docs/CLI.md`](docs/CLI.md) | Public CLI contract |
-| [`docs/SCHEMA.md`](docs/SCHEMA.md) | Schema DSL specification |
-| [`docs/MIGRATION.md`](docs/MIGRATION.md) | Migration planning and safety |
-| [`docs/GENERATOR.md`](docs/GENERATOR.md) | Artifact generation and ownership |
-| [`docs/PROVIDER.md`](docs/PROVIDER.md) | Provider interfaces and isolation |
-| [`docs/DEVELOPER.md`](docs/DEVELOPER.md) | Internal modules and development rules |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones and development order |
-| [`docs/PLAN.md`](docs/PLAN.md) | Current implementation phases |
-| [`docs/MCP.md`](docs/MCP.md) | MCP tools, resources, transport, safety |
-| [`docs/TODO.md`](docs/TODO.md) | Remaining implementation and future work |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | アーキテクチャ、依存ルール、不変条件 |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | MVPで確定済みの横断的な設計判断 |
+| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | 機能要件・非機能要件 |
+| [`docs/CLI.md`](docs/CLI.md) | 公開CLI契約 |
+| [`docs/SCHEMA.md`](docs/SCHEMA.md) | Schema DSL仕様 |
+| [`docs/MIGRATION.md`](docs/MIGRATION.md) | Migration計画と安全性 |
+| [`docs/GENERATOR.md`](docs/GENERATOR.md) | 生成物と所有権 |
+| [`docs/PROVIDER.md`](docs/PROVIDER.md) | Provider Interfaceと分離規則 |
+| [`docs/DEVELOPER.md`](docs/DEVELOPER.md) | 内部モジュールと開発ルール |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestoneと開発順序 |
+| [`docs/PLAN.md`](docs/PLAN.md) | 現在の実装Phase |
+| [`docs/MCP.md`](docs/MCP.md) | MCP Tool、Resource、Transport、安全方針 |
+| [`docs/TODO.md`](docs/TODO.md) | 残作業と将来対応 |
 
-## Current implementation status
+## 現在の実装状況
 
-Implemented foundation:
+実装済みの基盤:
 
-- npm/TypeScript monorepo and strict project boundaries
-- Project-root discovery
-- strict `gstack.yaml` loading and version validation
-- Schema source loading, YAML 1.2 syntax diagnostics, and a syntax-only owned AST
-- provider-independent normalized Application Model contracts
-- structured Core Read API and machine-result envelope
+- npm／TypeScript monorepoと厳格なpackage境界
+- Project Root検出
+- 厳格な`gstack.yaml`読込とversion検証
+- Schema source読込、YAML 1.2構文診断、構文専用の独自AST
+- Provider非依存で正規化されたApplication Model契約
+- 構造化されたCore Read APIとmachine-readable envelope
 - `schema validate --json`
-- read-only local stdio MCP tools and resources
+- 読取専用のlocal stdio MCP Tool／Resource
 
-Semantic Analyzer and Application Model construction, Migration, Generator, Provider implementations, and Deploy remain later phases.
+Semantic AnalyzerとApplication Model生成、Migration、Generator、Provider実装、Deployは今後のPhaseです。

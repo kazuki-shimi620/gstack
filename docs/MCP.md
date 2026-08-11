@@ -1,41 +1,41 @@
 # gstack MCP Integration
 
-> Documentation index: [`../README.md`](../README.md)
+> ドキュメント一覧: [`../README.md`](../README.md)
 
-> Version: 0.1.0 (Initial read-only integration)
+> Version: 0.1.0（初期Read専用integration）
 
-## 1. Purpose
+## 1. 目的
 
-gstack MCP lets local AI agents inspect and validate a gstack project through the same programmatic Core API used by CLI and future tools.
+gstack MCPは、local AI AgentがCLIや将来のToolと同じprogrammatic Core APIを通してgstack projectを参照・検証できるようにする。
 
 ```text
                  @gstack/core
                 /      |      \
-             CLI      MCP    Future adapters
+             CLI      MCP    将来のadapter
 ```
 
-MCP is an adapter, not a business-logic layer. It must not parse Schema, analyze semantics, plan migrations, generate artifacts, operate providers, or format CLI output independently.
+MCPはbusiness logic layerではなくadapterである。Schema parsing、semantic analysis、migration planning、artifact生成、Provider操作、CLI output formattingを独自に実装してはいけない。
 
-## 2. Package and transport
+## 2. PackageとTransport
 
-The package is `packages/mcp` and is prepared for the future package name `@gstack/mcp`. Its executable is `gstack-mcp`.
+packageは`packages/mcp`に置き、将来のpackage名`@gstack/mcp`を想定する。実行fileは`gstack-mcp`とする。
 
-The MVP transport is stdio only. Unless `GSTACK_PROJECT_ROOT` is explicitly set, Core walks upward from the current working directory and selects the nearest directory containing a `gstack.yaml` file. stdout is reserved for MCP protocol messages; failures and diagnostics are written to stderr.
+MVPのtransportはstdioだけとする。`GSTACK_PROJECT_ROOT`が明示されていない場合、Coreはcurrent working directoryから親方向へ探索し、最も近い`gstack.yaml`を含むdirectoryを選択する。stdoutはMCP protocol message専用とし、失敗と診断はstderrへ出力する。
 
-Remote/HTTP MCP, authentication, multi-project hosting, and persistent server state are out of scope.
+Remote／HTTP MCP、authentication、複数project hosting、永続server stateはscope外とする。
 
-Build and run locally from the project to inspect:
+localでbuild・実行して確認する場合:
 
 ```bash
 npm run build
 GSTACK_PROJECT_ROOT=/absolute/path/to/project npm run mcp
 ```
 
-An MCP host should spawn `node /absolute/path/to/gstack/packages/mcp/dist/main.js` and set its working directory to the target gstack project (or provide `GSTACK_PROJECT_ROOT`). Do not print wrapper output to the server's stdout.
+MCP hostは`node /absolute/path/to/gstack/packages/mcp/dist/main.js`を起動し、対象gstack projectをworking directoryに設定するか、`GSTACK_PROJECT_ROOT`を渡す。wrapperのoutputをserver stdoutへ出力してはいけない。
 
-## 3. Core API boundary
+## 3. Core API境界
 
-`@gstack/core` exports `loadProject()` and the `GstackProject` interface. The initial read surface is:
+`@gstack/core`は`loadProject()`と`GstackProject` interfaceをexportする。初期Read surfaceは次のとおり。
 
 ```ts
 const project = await loadProject({ root });
@@ -47,22 +47,22 @@ await project.getSchema(name);
 await project.validateSchema();
 ```
 
-All methods return structured data. They contain no terminal colors, prose success messages, MCP content blocks, or provider-specific types.
+すべてのmethodは構造化データを返す。terminal color、説明的な成功message、MCP content block、Provider固有型を含めない。
 
-Current validation is intentionally marked `level: "syntax"`. Semantic validation and Application Model construction remain implementation work; their contracts are fixed by `DECISIONS.md` D-003 through D-006.
+現在のValidationは意図的に`level: "syntax"`とする。Semantic ValidationとApplication Model生成は実装中であり、その契約は`DECISIONS.md` D-003からD-006で確定している。
 
-`getProjectContext()` aggregates the currently available status, Schema summaries, and validation result. Its capability map explicitly marks Semantic Analyzer, Application Model, Provider Status, Migration Plan, and generated artifact inventory as `not_implemented`; unavailable state is never fabricated.
+`getProjectContext()`は、現在利用可能なstatus、Schema summary、validation resultを集約する。capability mapではSemantic Analyzer、Application Model、Provider Status、Migration Plan、generated artifact inventoryを明示的に`not_implemented`とし、利用できないstateを捏造してはいけない。
 
-## 4. Tools
+## 4. Tool
 
-| Tool | Core call | Classification |
+| Tool | Core呼出 | 分類 |
 | --- | --- | --- |
-| `get_project_status` | `project.getStatus()` | Read-only, idempotent |
-| `list_schemas` | `project.listSchemas()` | Read-only, idempotent |
-| `get_schema` | `project.getSchema(name)` | Read-only, idempotent |
-| `validate_schema` | `project.validateSchema()` | Read-only computation, idempotent |
+| `get_project_status` | `project.getStatus()` | Read専用、idempotent |
+| `list_schemas` | `project.listSchemas()` | Read専用、idempotent |
+| `get_schema` | `project.getSchema(name)` | Read専用、idempotent |
+| `validate_schema` | `project.validateSchema()` | 副作用のないRead計算、idempotent |
 
-Tool responses include JSON text for compatibility and `structuredContent` for machine consumers. All Tools use the accepted D-013 envelope. Successful data remains namespaced inside `data` (`status`, `schemas`, `schema`, or `validation`).
+Tool responseは互換性のためのJSON textと、machine consumer向け`structuredContent`を含む。すべてのToolはD-013で確定したenvelopeを使う。成功データは`data`内のnamespace（`status`、`schemas`、`schema`、`validation`）に格納する。
 
 ```json
 {
@@ -72,7 +72,7 @@ Tool responses include JSON text for compatibility and `structuredContent` for m
 }
 ```
 
-Expected failures use the same safe Core error details as CLI. MCP Tool errors set `isError: true` and return an envelope such as:
+想定内の失敗はCLIと同じ安全なCore error detailを使用する。MCP Tool errorは`isError: true`を設定し、次のようなenvelopeを返す。
 
 ```json
 {
@@ -85,39 +85,39 @@ Expected failures use the same safe Core error details as CLI. MCP Tool errors s
 }
 ```
 
-Unexpected exceptions are converted to `INTERNAL_ERROR`; stack traces and library/filesystem error messages are not exposed as machine output.
+想定外のexceptionは`INTERNAL_ERROR`へ変換し、stack traceやlibrary／filesystemのerror messageをmachine outputへ露出しない。
 
-Tools for Application Model, provider capabilities, migrations, and generated artifacts will be added only after corresponding Core Read APIs exist. MCP-specific substitute implementations are prohibited.
+Application Model、Provider capability、Migration、generated artifact用Toolは、対応するCore Read APIが存在してから追加する。MCP固有の代替実装は禁止する。
 
-## 5. Resources
+## 5. Resource
 
-| URI | Purpose |
+| URI | 目的 |
 | --- | --- |
-| `gstack://project` | Current structured Project Status |
-| `gstack://project-context` | Aggregated status, Schema, validation, and capability availability for first project entry |
-| `gstack://config` | Validated non-secret `gstack.yaml` configuration |
+| `gstack://project` | 現在の構造化Project Status |
+| `gstack://project-context` | 最初のproject entry向けに集約したstatus、Schema、Validation、capability availability |
+| `gstack://config` | Validation済みでsecretを含まない`gstack.yaml`設定 |
 | `gstack://schema` | Schema index |
-| `gstack://schema/{name}` | One raw YAML Schema source; discoverable through the resource template |
-| `gstack://architecture` | Entry-point guidance for architecture invariants and repository agent rules |
+| `gstack://schema/{name}` | 1つのraw YAML Schema source。resource templateからdiscover可能 |
+| `gstack://architecture` | Architecture Invariantsとrepository Agent ruleへの入口 |
 
-Resources expose read-only context. Validation remains a Tool because it performs computation, even though it has no external side effects.
+ResourceはRead専用contextを公開する。Validationは外部副作用を持たないが計算を実行するため、ResourceではなくToolとする。
 
-## 6. Safety policy
+## 6. 安全方針
 
-The initial server registers an explicit allowlist of four read/validate tools. It does not register:
+初期serverは4つのRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
 
-- migration apply or rollback
-- deploy or publish
-- provider install/remove/use
-- Schema create/update/delete
-- generated-file writes
-- credential or secret access
+- Migration Apply／Rollback
+- Deploy／Publish
+- Providerのinstall／remove／use
+- Schemaのcreate／update／delete
+- generated fileへの書込
+- Credential／Secretへのaccess
 
-All registered tools declare read-only, non-destructive, and idempotent annotations. Adding a dangerous tool requires a separate accepted design covering explicit confirmation, plan-before-apply, risk output, destructive authorization, auditability, and behavior for AI agents. A tool must never infer authorization from MCP access alone.
+登録する全ToolにRead専用、非破壊、idempotentのannotationを付ける。危険なToolを追加するには、明示的な確認、plan-before-apply、risk output、破壊操作承認、auditability、AI Agent向け挙動を定めた別の確定済み設計が必要である。MCP accessだけから操作権限を推測してはいけない。
 
-## 7. CLI relationship
+## 7. CLIとの関係
 
-`gstack schema validate` and `validate_schema` call the same Core method. CLI presentation is isolated in formatter functions:
+`gstack schema validate`と`validate_schema`は同じCore methodを呼ぶ。CLI presentationはformatter functionへ分離する。
 
 ```text
 Core ValidationResult
@@ -126,13 +126,13 @@ Core ValidationResult
         └── MCP structured response
 ```
 
-CLI JSON and MCP Tool structured content share the stable MVP envelope defined in `DECISIONS.md` D-013. CLI still owns stdout/stderr and exit codes; MCP owns `isError` and protocol content.
+CLI JSONとMCP Tool structured contentは`DECISIONS.md` D-013の安定したMVP envelopeを共有する。CLIはstdout／stderrとexit codeを所有し、MCPは`isError`とprotocol contentを所有する。
 
-## 8. Testing
+## 8. Test
 
-- Core API tests verify structured status, Schema lookup safety, and syntax diagnostics.
-- Formatter tests verify presentation remains outside Core.
-- MCP handler tests verify direct delegation to a fake `GstackProject`.
-- MCP protocol tests use an in-memory client/server transport to list and call tools, list resources, verify missing-Schema errors, and assert that dangerous tools are absent.
+- Core API testは構造化status、Schema lookupの安全性、syntax diagnosticを検証する。
+- Formatter testはpresentationがCore外に保たれていることを検証する。
+- MCP handler testはfake `GstackProject`への直接委譲を検証する。
+- MCP protocol testはmemory上のclient／server transportを使い、Toolのlist／call、Resource list、Schema未検出error、危険なToolが存在しないことを検証する。
 
-No test requires a Google API, Provider, credential, network service, or remote MCP transport.
+Google API、Provider、Credential、network service、remote MCP transportを必要とするtestを作ってはいけない。

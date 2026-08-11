@@ -202,4 +202,168 @@ database:
     ).toHaveLength(2);
     expect(diagnostics).toHaveLength(9);
   });
+
+  it('resolves valid belongs_to Relations across Schema files', () => {
+    const users = ast(
+      'users.yaml',
+      `name: users
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+    account_id: { type: uuid }
+  relations:
+    account:
+      type: belongs_to
+      field: account_id
+      model: accounts
+      references: id
+`,
+    );
+    const accounts = ast(
+      'accounts.yaml',
+      `name: accounts
+model: { displayName: Account }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+`,
+    );
+
+    expect(validateSchemaBasics([users, accounts])).toEqual([]);
+  });
+
+  it('validates Relation names, required values, kinds, and references', () => {
+    const users = ast(
+      'users.yaml',
+      `name: users
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+  relations:
+    BadRelation:
+      type: has_many
+      field: account_id
+      model: missing_accounts
+      references: missing_id
+    account:
+      type: belongs_to
+      field: id
+      model: accounts
+      references: missing_id
+    incomplete: {}
+`,
+    );
+    const accounts = ast(
+      'accounts.yaml',
+      `name: accounts
+model: { displayName: Account }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+`,
+    );
+
+    const diagnostics = validateSchemaBasics([users, accounts]);
+
+    expect(diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
+      expect.arrayContaining([
+        'SCHEMA_NAME_INVALID',
+        'SCHEMA_RELATION_TYPE_UNSUPPORTED',
+        'SCHEMA_RELATION_FIELD_UNKNOWN',
+        'SCHEMA_RELATION_MODEL_UNKNOWN',
+        'SCHEMA_RELATION_REFERENCE_UNKNOWN',
+        'SCHEMA_PROPERTY_REQUIRED',
+      ]),
+    );
+    expect(
+      diagnostics.filter(
+        (diagnostic) => diagnostic.code === 'SCHEMA_PROPERTY_REQUIRED',
+      ),
+    ).toHaveLength(4);
+    expect(diagnostics).toHaveLength(9);
+  });
+
+  it('accepts compatible string and numeric Validation rules', () => {
+    const schema = ast(
+      'users.yaml',
+      `name: users
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+    name: { type: string }
+    age: { type: integer }
+validation:
+  name:
+    minLength: 1
+    maxLength: 100
+    pattern: "^[a-z]+$"
+  age:
+    min: 0
+    max: 150
+`,
+    );
+
+    expect(validateSchemaBasics([schema])).toEqual([]);
+  });
+
+  it('validates Validation targets, values, compatibility, and ranges', () => {
+    const schema = ast(
+      'users.yaml',
+      `name: users
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+    name: { type: string }
+    age: { type: integer }
+validation:
+  missing:
+    minLength: 1
+  name:
+    minLength: -1
+    maxLength: 2.5
+    pattern: "["
+    min: 0
+  age:
+    min: 10
+    max: 1
+    pattern: valid
+  id:
+    min: 0
+`,
+    );
+
+    const diagnostics = validateSchemaBasics([schema]);
+
+    expect(diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
+      expect.arrayContaining([
+        'SCHEMA_VALIDATION_FIELD_UNKNOWN',
+        'SCHEMA_VALIDATION_LENGTH_INVALID',
+        'SCHEMA_VALIDATION_PATTERN_INVALID',
+        'SCHEMA_VALIDATION_RULE_INCOMPATIBLE',
+        'SCHEMA_VALIDATION_RANGE_INVALID',
+      ]),
+    );
+    expect(
+      diagnostics.filter(
+        (diagnostic) => diagnostic.code === 'SCHEMA_VALIDATION_LENGTH_INVALID',
+      ),
+    ).toHaveLength(2);
+    expect(
+      diagnostics.filter(
+        (diagnostic) =>
+          diagnostic.code === 'SCHEMA_VALIDATION_RULE_INCOMPATIBLE',
+      ),
+    ).toHaveLength(3);
+    expect(diagnostics).toHaveLength(8);
+  });
 });

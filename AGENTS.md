@@ -1,56 +1,56 @@
-# gstack Agent Rules
+# gstack Agent開発ルール
 
-This repository implements gstack, a CLI-first, AI-first, schema-first application framework. These rules apply to every change in this repository.
+このリポジトリは、CLI First・AI First・Schema Firstなアプリケーションフレームワークgstackを実装します。以下のルールは、このリポジトリに対するすべての変更へ適用されます。
 
-## Read before changing code
+## 変更前に読むもの
 
-- Read `README.md` first, then the documents relevant to the change before designing or implementing it. Start with `docs/ARCHITECTURE.md`; then consult the applicable specifications under `docs/`.
-- Treat the **Architecture Invariants** in `docs/ARCHITECTURE.md` and `docs/DEVELOPER.md` as mandatory constraints. If a requested change conflicts with an invariant, stop and report the conflict instead of silently changing the architecture.
-- Treat accepted decisions in `docs/DECISIONS.md` as normative. Do not reopen or bypass them implicitly; propose and document an explicit replacement decision when change is necessary.
-- Treat Schema as the Single Source of Truth for the desired application state. Config, migrations, generated artifacts, and provider state must not become competing application definitions.
+- 設計・実装を始める前に、まず`README.md`を読み、次に変更に関連するドキュメントを読んでください。必ず`docs/ARCHITECTURE.md`から始め、その後`docs/`配下の該当仕様を確認します。
+- `docs/ARCHITECTURE.md`と`docs/DEVELOPER.md`のArchitecture Invariantsは必須制約です。依頼内容が不変条件と矛盾する場合は、暗黙にアーキテクチャを変更せず、作業を止めて矛盾を報告してください。
+- `docs/DECISIONS.md`の確定済み判断は規範です。暗黙に再検討・迂回せず、変更が必要な場合は置き換える判断を明示的に提案し、記録してください。
+- Schemaをアプリケーションのdesired stateに関するSingle Source of Truthとして扱います。Config、Migration、生成物、Provider stateを競合するアプリケーション定義にしてはいけません。
 
-## Preserve responsibility boundaries
+## 責務境界を守る
 
-- Keep the compiler pipeline explicit: source loading -> YAML parsing -> AST/IR -> semantic analysis -> normalized Application Model. Do not mix Parser, AST/IR, Semantic Analyzer, or Application Model responsibilities.
-- The Parser handles syntax and source representation only. It must not resolve relations, apply semantic defaults, enforce domain meaning, or access providers.
-- Semantic analysis is the only stage that validates cross-node meaning and produces the normalized Application Model. Downstream engines consume the Application Model, not raw YAML or provider-specific data, unless an accepted design decision explicitly says otherwise.
-- Core may depend on provider contracts and registry abstractions, but never directly on a provider implementation. Do not put Google-specific code, types, configuration, terminology, or API assumptions in Core.
-- Migration Engine produces and processes provider-independent operations. Never add SQL, Google Sheets operations, or other provider-specific behavior to it. Never apply a destructive migration implicitly; require a reviewed plan and explicit authorization.
-- Generator must not depend on Provider, a live database, or runtime state. Generated code and manual code must remain separate; generators own only designated generated paths and must not overwrite manual paths.
-- Providers implement provider contracts and external-service behavior. They must not parse Schema, own CLI argument parsing, or redefine the Application Model.
-- CLI is an adapter over application/Core services. It must not call Google APIs, provider implementations, or other external services directly.
-- Core APIs return structured data without human-facing presentation. CLI, MCP, and future adapters must reuse those APIs and must not reimplement parsing, validation, migration, generation, or provider logic.
-- MCP is a thin adapter package. Keep its default surface read/validate-only; do not expose apply, rollback, deploy, remove, or delete operations without an accepted safety design.
-- Convert expected failures to stable structured Core errors at package boundaries. CLI and MCP must not expose secrets, raw library errors, internal causes, or stack traces in normal machine-readable output.
+- compiler pipelineを`source loading -> YAML parsing -> AST/IR -> semantic analysis -> normalized Application Model`として明示的に保ちます。Parser、AST/IR、Semantic Analyzer、Application Modelの責務を混在させてはいけません。
+- Parserは構文とsource表現だけを扱います。Relation解決、semantic default、ドメイン上の意味検証、Provider accessを行ってはいけません。
+- Semantic Analyzerだけがnode間の意味を検証し、正規化されたApplication Modelを生成します。確定済み判断に例外がない限り、下流Engineはraw YAMLやProvider固有データではなくApplication Modelを利用します。
+- CoreはProvider contractやregistry abstractionへ依存できますが、具体的なProvider実装へ直接依存してはいけません。Google固有のコード、型、設定、用語、API前提をCoreへ入れてはいけません。
+- Migration EngineはProvider非依存のOperationを生成・処理します。SQL、Google Sheets操作などのProvider固有処理を書いてはいけません。破壊的Migrationは暗黙実行せず、review済みplanと明示的な承認を必須とします。
+- GeneratorはProvider、live database、runtime stateへ依存してはいけません。Generated CodeとManual Codeを分離し、Generatorが所有する生成先以外を上書きしてはいけません。
+- ProviderはProvider contractと外部serviceの処理を実装します。Schema解析、CLI引数解析、Application Model再定義を行ってはいけません。
+- CLIはApplication／Core serviceのadapterです。Google API、Provider実装、外部serviceを直接呼び出してはいけません。
+- Core APIはhuman-readableな表示ではなく構造化データを返します。CLI、MCP、将来のadapterは同じAPIを再利用し、解析、Validation、Migration、生成、Provider logicを再実装してはいけません。
+- MCPは薄いadapter packageです。既定のsurfaceはRead／Validate専用とし、安全設計が確定するまでApply、Rollback、Deploy、Remove、Deleteを公開してはいけません。
+- 想定内の失敗はpackage境界で安定したCore errorへ変換します。CLIとMCPの通常のmachine-readable outputへsecret、library生error、内部cause、stack traceを露出してはいけません。
 
-## Security and safety
+## Securityと安全性
 
-- Never store secrets or credentials in source code, Schema, migration files, generated code, fixtures, snapshots, or logs. Use environment variables or provider-managed secret storage; tests must use obvious non-secret fakes.
-- Never infer a rename or approve a destructive operation solely from a Schema diff. Preserve plan-before-apply, dry-run, risk classification, and explicit destructive-operation authorization.
-- Do not edit an already-applied migration. Preserve checksums and migration history.
+- SecretやCredentialをsource code、Schema、Migration、generated code、fixture、snapshot、logへ保存してはいけません。環境変数またはProvider管理のsecret storageを使い、テストには明らかなfake値を使用します。
+- Schema diffだけからrenameを推測したり、破壊的操作を承認したりしてはいけません。plan-before-apply、dry-run、risk classification、明示的な破壊操作承認を維持します。
+- 適用済みMigrationを編集してはいけません。checksumとmigration historyを維持します。
 
-## Change design and quality
+## 変更設計と品質
 
-- For a new feature, consider responsibilities in this order: Schema -> Application Model -> Core / Generator / Provider -> CLI. Add a CLI command only when an explicit operation is required.
-- Update the corresponding design document whenever behavior, contracts, dependencies, or public CLI/Schema semantics change. Record unresolved architectural choices instead of guessing.
-- Keep packages cohesive, dependency directions visible, and components replaceable through small interfaces. Prefer pure functions and injected I/O so parsing, analysis, orchestration, and provider adapters remain independently testable.
-- Use TypeScript Strict Mode. Do not weaken strictness globally to work around an implementation issue; justify any narrow exception next to the code.
-- Every behavior change requires proportionate unit tests, boundary/integration tests where packages interact, and CLI contract tests for user-visible behavior. Tests must be deterministic and must not require live provider credentials unless explicitly marked as provider integration tests.
-- Keep generated and build outputs out of source control unless a design document explicitly requires a checked-in artifact.
+- 新機能では、`Schema -> Application Model -> Core / Generator / Provider -> CLI`の順で責務を検討します。明示的な操作が必要な場合にだけCLI commandを追加します。
+- 挙動、契約、依存関係、公開CLI／Schema semanticsを変更した場合は、対応する設計ドキュメントも更新します。未解決の設計判断は推測せず記録してください。
+- packageを凝集させ、依存方向を可視化し、小さなinterfaceを通してcomponentを交換可能に保ちます。Parsing、Analysis、Orchestration、Provider adapterを個別にテストできるよう、pure functionと注入可能なI/Oを優先します。
+- TypeScript Strict Modeを使用します。実装上の問題を回避するためにstrictnessを全体で弱めてはいけません。限定的な例外が必要なら、コードの近くに理由を書きます。
+- 挙動変更には相応のunit testを追加し、package間連携にはboundary／integration test、利用者向け挙動にはCLI contract testを追加します。テストは決定的にし、明示的なProvider integration test以外ではlive credentialを要求してはいけません。
+- 設計ドキュメントが明示的に要求しない限り、generated outputやbuild outputをsource controlへ含めてはいけません。
 
-## Source of detailed specifications
+## 詳細仕様への案内
 
-- `README.md`: documentation entry point and current implementation status
-- `docs/ARCHITECTURE.md`: system structure, dependency rules, and invariants
-- `docs/REQUIREMENTS.md`: functional and non-functional requirements
-- `docs/CLI.md`: public CLI contract and exit codes
-- `docs/SCHEMA.md`: DSL structure and validation intent
-- `docs/MIGRATION.md`: planning, safety, history, and abstract operations
-- `docs/GENERATOR.md`: artifact ownership and generation rules
-- `docs/PROVIDER.md`: provider contracts, capabilities, and isolation
-- `docs/DEVELOPER.md`: internal modules, data flow, testing, and coding rules
-- `docs/ROADMAP.md`: implementation order and milestone scope
-- `docs/PLAN.md`: current implementation phases and implementation order
-- `docs/MCP.md`: Core API boundary, MCP tools/resources, transport, and safety policy
-- `docs/TODO.md`: remaining implementation and future work
-- `docs/DECISIONS.md`: accepted MVP contracts and cross-document architecture decisions
+- `README.md`: ドキュメント入口と現在の実装状況
+- `docs/ARCHITECTURE.md`: システム構造、依存ルール、不変条件
+- `docs/REQUIREMENTS.md`: 機能要件・非機能要件
+- `docs/CLI.md`: 公開CLI契約とexit code
+- `docs/SCHEMA.md`: DSL構造とValidation方針
+- `docs/MIGRATION.md`: 計画、安全性、履歴、抽象Operation
+- `docs/GENERATOR.md`: 生成物の所有権と生成ルール
+- `docs/PROVIDER.md`: Provider contract、capability、分離規則
+- `docs/DEVELOPER.md`: 内部module、data flow、test、coding rule
+- `docs/ROADMAP.md`: 実装順序とmilestone scope
+- `docs/PLAN.md`: 現在の実装Phaseと順序
+- `docs/MCP.md`: Core API境界、MCP Tool／Resource、Transport、安全方針
+- `docs/TODO.md`: 残作業と将来対応
+- `docs/DECISIONS.md`: MVPで確定済みの契約と横断的な設計判断
