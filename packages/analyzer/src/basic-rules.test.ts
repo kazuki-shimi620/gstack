@@ -289,6 +289,43 @@ database:
     expect(diagnostics).toHaveLength(9);
   });
 
+  it('rejects Relations between incompatible Column types', () => {
+    const users = ast(
+      'users.yaml',
+      `name: users
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+    account_id: { type: uuid }
+  relations:
+    account:
+      type: belongs_to
+      field: account_id
+      model: accounts
+      references: id
+`,
+    );
+    const accounts = ast(
+      'accounts.yaml',
+      `name: accounts
+model: { displayName: Account }
+database:
+  primaryKey: id
+  columns:
+    id: { type: integer }
+`,
+    );
+
+    expect(validateSchemaBasics([users, accounts])).toEqual([
+      expect.objectContaining({
+        code: 'SCHEMA_RELATION_TYPE_MISMATCH',
+        file: 'users.yaml',
+      }),
+    ]);
+  });
+
   it('accepts compatible string and numeric Validation rules', () => {
     const schema = ast(
       'users.yaml',
@@ -365,5 +402,82 @@ validation:
       ),
     ).toHaveLength(3);
     expect(diagnostics).toHaveLength(8);
+  });
+
+  it('accepts valid optional sections and UI Column references', () => {
+    const schema = ast(
+      'users.yaml',
+      `name: users
+description: User management
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+    name: { type: string }
+api:
+  resource: users
+  create: true
+  update: false
+  delete: false
+ui:
+  list: { columns: [id, name] }
+  form: { fields: [name] }
+permissions:
+  read: [admin, user]
+  create: [admin]
+workflow: { enabled: false }
+events: { enabled: false }
+`,
+    );
+
+    expect(validateSchemaBasics([schema])).toEqual([]);
+  });
+
+  it('validates optional section value types, duplicates, and references', () => {
+    const schema = ast(
+      'users.yaml',
+      `name: users
+description: 1
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+    name: { type: string }
+api:
+  resource: ""
+  create: yes
+ui:
+  list: { columns: [name, missing, name, 1] }
+  form: { fields: [missing] }
+permissions:
+  read: [admin, admin, 1, ""]
+workflow: { enabled: "false" }
+events: { enabled: 1 }
+`,
+    );
+
+    const diagnostics = validateSchemaBasics([schema]);
+
+    expect(diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
+      expect.arrayContaining([
+        'SCHEMA_VALUE_TYPE_INVALID',
+        'SCHEMA_VALUE_EMPTY',
+        'SCHEMA_SEQUENCE_VALUE_DUPLICATE',
+        'SCHEMA_UI_COLUMN_UNKNOWN',
+      ]),
+    );
+    expect(
+      diagnostics.filter(
+        (diagnostic) => diagnostic.code === 'SCHEMA_UI_COLUMN_UNKNOWN',
+      ),
+    ).toHaveLength(2);
+    expect(
+      diagnostics.filter(
+        (diagnostic) => diagnostic.code === 'SCHEMA_SEQUENCE_VALUE_DUPLICATE',
+      ),
+    ).toHaveLength(2);
+    expect(diagnostics).toHaveLength(12);
   });
 });

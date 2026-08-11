@@ -138,7 +138,7 @@ Status: 完了。`@gstack/application`はreadonlyの正規化契約とYAML互換
 
 文書化されたMVP Schema subsetの全ruleにpositive／negative fixtureがあり、Analyzer testがfilesystem／Providerを必要とせず、同じAST setから常に同じ結果が得られれば完了とする。
 
-Status: 実装中。必須property、命名、Field type、Column option、Primary Key、Index、Enum、Model重複、cross-file Relation、Validation target／type互換性／rangeをpure ruleで検証済み。optional section値、UIなどのcross-layer reference、Relation間の型互換性、Application Model生成が残っている。
+Status: 実装中。必須property、命名、Field type、Column option、Primary Key、Index、Enum、Model重複、cross-file Relationと型互換性、Validation、optional section値、UIからColumnへの参照をpure ruleで検証済み。default適用、Metadata変換、Application Model生成、公開Analyzer APIの統合が残っている。
 
 ### Phase 6: Core Use Caseと最小CLI
 

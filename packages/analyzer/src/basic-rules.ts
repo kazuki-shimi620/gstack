@@ -71,6 +71,7 @@ function validateRelations(
     : undefined;
   if (!database || !columns || relationsNode?.kind !== 'mapping') return;
   const localColumns = new Set(columns.entries.map((entry) => entry.key));
+  const localColumnTypes = schemaColumnTypes(schema);
 
   for (const relation of relationsNode.entries) {
     validateSnakeCase(
@@ -136,7 +137,8 @@ function validateRelations(
       });
       continue;
     }
-    if (references !== undefined && !schemaColumns(target).has(references)) {
+    const targetColumns = schemaColumnTypes(target);
+    if (references !== undefined && !targetColumns.has(references)) {
       const entry = findEntry(definition, 'references');
       diagnostics.push({
         code: 'SCHEMA_RELATION_REFERENCE_UNKNOWN',
@@ -146,15 +148,41 @@ function validateRelations(
         file: schema.source.id,
         ...(entry ? { range: entry.value.range } : {}),
       });
+    } else if (field !== undefined && references !== undefined) {
+      const localType = localColumnTypes.get(field);
+      const targetType = targetColumns.get(references);
+      if (
+        localType !== undefined &&
+        targetType !== undefined &&
+        localType !== targetType
+      ) {
+        const entry = findEntry(definition, 'references');
+        diagnostics.push({
+          code: 'SCHEMA_RELATION_TYPE_MISMATCH',
+          phase: 'semantic',
+          severity: 'error',
+          message: `Relation "${relation.key}" connects incompatible Column types ${localType} and ${targetType}.`,
+          file: schema.source.id,
+          ...(entry ? { range: entry.value.range } : {}),
+        });
+      }
     }
   }
 }
 
-function schemaColumns(schema: SchemaAst): ReadonlySet<string> {
+function schemaColumnTypes(schema: SchemaAst): ReadonlyMap<string, string> {
   const root = asMapping(schema.root);
   const database = root ? mappingValue(root, 'database') : undefined;
   const columns = database ? mappingValue(database, 'columns') : undefined;
-  return new Set(columns ? columns.entries.map((entry) => entry.key) : []);
+  return new Map(
+    columns
+      ? columns.entries.flatMap((entry) => {
+          const definition = asMapping(entry.value);
+          const type = definition ? stringValue(definition, 'type') : undefined;
+          return type === undefined ? [] : [[entry.key, type] as const];
+        })
+      : [],
+  );
 }
 
 function validateOneSchema(schema: SchemaAst): Diagnostic[] {
@@ -183,8 +211,120 @@ function validateOneSchema(schema: SchemaAst): Diagnostic[] {
     validateDatabase(database, schema, diagnostics);
     validateFieldValidations(root, database, schema, diagnostics);
   }
+  validateOptionalSections(root, database, schema, diagnostics);
 
   return diagnostics;
+}
+
+function validateOptionalSections(
+  root: AstMapping,
+  database: AstMapping | undefined,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  validateOptionalStringAtPath(root, 'description', '$', schema, diagnostics);
+
+  const api = mappingValue(root, 'api');
+  if (api) {
+    validateOptionalStringAtPath(api, 'resource', 'api', schema, diagnostics);
+    for (const key of ['create', 'update', 'delete']) {
+      validateOptionalBooleanAtPath(api, key, 'api', schema, diagnostics);
+    }
+  }
+
+  const columnNames = database
+    ? schemaColumnNames(database)
+    : new Set<string>();
+  const ui = mappingValue(root, 'ui');
+  if (ui) {
+    const list = mappingValue(ui, 'list');
+    if (list) {
+      const columns = validateOptionalStringSequenceAtPath(
+        list,
+        'columns',
+        'ui.list',
+        schema,
+        diagnostics,
+      );
+      validateUiReferences(
+        columns,
+        columnNames,
+        'ui.list.columns',
+        schema,
+        diagnostics,
+      );
+    }
+    const form = mappingValue(ui, 'form');
+    if (form) {
+      const fields = validateOptionalStringSequenceAtPath(
+        form,
+        'fields',
+        'ui.form',
+        schema,
+        diagnostics,
+      );
+      validateUiReferences(
+        fields,
+        columnNames,
+        'ui.form.fields',
+        schema,
+        diagnostics,
+      );
+    }
+  }
+
+  const permissions = mappingValue(root, 'permissions');
+  if (permissions) {
+    for (const key of ['read', 'create', 'update', 'delete']) {
+      validateOptionalStringSequenceAtPath(
+        permissions,
+        key,
+        'permissions',
+        schema,
+        diagnostics,
+      );
+    }
+  }
+
+  for (const sectionName of ['workflow', 'events']) {
+    const section = mappingValue(root, sectionName);
+    if (section) {
+      validateOptionalBooleanAtPath(
+        section,
+        'enabled',
+        sectionName,
+        schema,
+        diagnostics,
+      );
+    }
+  }
+}
+
+function validateUiReferences(
+  values:
+    readonly { readonly value: string; readonly node: AstNode }[] | undefined,
+  columnNames: ReadonlySet<string>,
+  path: string,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  if (!values) return;
+  for (const item of values) {
+    if (columnNames.has(item.value)) continue;
+    diagnostics.push({
+      code: 'SCHEMA_UI_COLUMN_UNKNOWN',
+      phase: 'semantic',
+      severity: 'error',
+      message: `${path} references unknown Column "${item.value}".`,
+      file: schema.source.id,
+      range: item.node.range,
+    });
+  }
+}
+
+function schemaColumnNames(database: AstMapping): ReadonlySet<string> {
+  const columns = mappingValue(database, 'columns');
+  return new Set(columns?.entries.map((entry) => entry.key) ?? []);
 }
 
 function validateFieldValidations(
@@ -697,6 +837,77 @@ function validateOptionalBooleanAtPath(
   if (entry.value.kind !== 'scalar' || typeof entry.value.value !== 'boolean') {
     invalidValueType(key, path, 'boolean', entry.value, schema, diagnostics);
   }
+}
+
+function validateOptionalStringAtPath(
+  mapping: AstMapping,
+  key: string,
+  path: string,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): string | undefined {
+  const entry = findEntry(mapping, key);
+  if (!entry) return undefined;
+  if (entry.value.kind !== 'scalar' || typeof entry.value.value !== 'string') {
+    invalidValueType(key, path, 'string', entry.value, schema, diagnostics);
+    return undefined;
+  }
+  if (entry.value.value.length === 0) {
+    diagnostics.push({
+      code: 'SCHEMA_VALUE_EMPTY',
+      phase: 'semantic',
+      severity: 'error',
+      message: `Schema value at ${joinPath(path, key)} must not be empty.`,
+      file: schema.source.id,
+      range: entry.value.range,
+    });
+    return undefined;
+  }
+  return entry.value.value;
+}
+
+function validateOptionalStringSequenceAtPath(
+  mapping: AstMapping,
+  key: string,
+  path: string,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): readonly { readonly value: string; readonly node: AstNode }[] | undefined {
+  const entry = findEntry(mapping, key);
+  if (!entry) return undefined;
+  if (entry.value.kind !== 'sequence') return undefined;
+  const values: { value: string; node: AstNode }[] = [];
+  const seen = new Set<string>();
+  entry.value.items.forEach((item, index) => {
+    if (
+      item.kind !== 'scalar' ||
+      typeof item.value !== 'string' ||
+      item.value.length === 0
+    ) {
+      invalidValueType(
+        `${key}[${index}]`,
+        path,
+        'non-empty string',
+        item,
+        schema,
+        diagnostics,
+      );
+      return;
+    }
+    if (seen.has(item.value)) {
+      diagnostics.push({
+        code: 'SCHEMA_SEQUENCE_VALUE_DUPLICATE',
+        phase: 'semantic',
+        severity: 'error',
+        message: `${joinPath(path, key)} contains duplicate value "${item.value}".`,
+        file: schema.source.id,
+        range: item.range,
+      });
+    }
+    seen.add(item.value);
+    values.push({ value: item.value, node: item });
+  });
+  return values;
 }
 
 function validateOptionalStringSequence(
