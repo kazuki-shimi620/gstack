@@ -1,0 +1,35 @@
+{
+  "name": "gstack",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Schema-first application framework",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "cli",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "format": "prettier --write \"**/*.{ts,js,mjs,json,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,mjs,json,yaml,yml}\"",
+    "lint": "eslint .",
+    "mcp": "node packages/mcp/dist/main.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --pretty false && tsc -p tsconfig.test.json --noEmit --pretty false"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.8.1",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10"
+  }
+}

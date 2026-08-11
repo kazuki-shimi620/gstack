@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "paths": {
+      "@gstack/core": ["./packages/core/src/index.ts"],
+      "@gstack/parser": ["./packages/parser/src/index.ts"],
+      "@gstack/schema": ["./packages/schema/src/index.ts"]
+    }
+  },
+  "include": ["cli/src/**/*.test.ts", "packages/*/src/**/*.test.ts"],
+  "exclude": ["**/dist/**", "node_modules"]
+}

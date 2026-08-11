@@ -1,0 +1,12 @@
+{
+  "name": "@gstack/parser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@gstack/schema": "0.0.0",
+    "yaml": "^2.9.0"
+  }
+}

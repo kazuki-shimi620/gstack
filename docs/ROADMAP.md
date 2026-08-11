@@ -1,0 +1,491 @@
+# Roadmap
+
+> Documentation index: [`../README.md`](../README.md)
+
+> Version: 0.1.0 (Draft)
+
+---
+
+# 1. Purpose
+
+本ドキュメントはgstackの開発ロードマップを定義する。
+
+目的は以下のとおり。
+
+* 開発の優先順位を明確にする
+* MVPの範囲を定義する
+* 将来の拡張計画を整理する
+* 機能追加時の判断基準を示す
+
+---
+
+# 2. Development Philosophy
+
+gstackは以下の順序で実装する。
+
+1. Core
+2. Schema
+3. Migration
+4. Generator
+5. Provider
+6. CLI
+7. AI Support
+8. Plugin Ecosystem
+
+機能を増やす前に、Coreの完成度を優先する。
+
+---
+
+# 3. Milestones
+
+| Version | Goal             |
+| ------- | ---------------- |
+| 0.1     | Core Foundation  |
+| 0.2     | Migration Engine |
+| 0.3     | Generator Engine |
+| 0.4     | Google Provider  |
+| 0.5     | First Deploy     |
+| 0.6     | Plugin System    |
+| 0.7     | AI Support       |
+| 1.0     | Stable Release   |
+
+---
+
+# 4. Version 0.1 - Core Foundation
+
+目的
+
+Application Modelまで完成させる。
+
+## Tasks
+
+* CLI
+* Config Loader
+* Schema Loader
+* YAML Parser
+* AST
+* Semantic Analyzer
+* Application Model
+* Error System
+* Logging
+* Programmatic Core Read API
+* Structured Result
+* Read-only local MCP Adapter
+
+## Deliverables
+
+* Schemaを読み込める
+* Application Modelを生成できる
+* Validationが動作する
+* CLI以外からCore Read APIを呼び出せる
+* AI Agentがstdio MCP経由でProject・Schema・Validationを読み取れる
+
+---
+
+# 5. Version 0.2 - Migration Engine
+
+目的
+
+Schema変更をProvider非依存Operationへ変換する。
+
+## Tasks
+
+* Diff Engine
+* Migration Planner
+* Migration File
+* Migration History
+* Checksum
+* Rollback
+* Risk Detection
+
+## Deliverables
+
+```text
+Schema
+
+↓
+
+Migration Plan
+
+↓
+
+Migration File
+```
+
+---
+
+# 6. Version 0.3 - Generator Engine
+
+目的
+
+Application Modelからコード生成を行う。
+
+## Tasks
+
+* Type Generator
+* Validation Generator
+* API Generator
+* UI Generator
+* OpenAPI Generator
+* Documentation Generator
+* AI Documentation Generator
+
+## Deliverables
+
+```text
+generated/
+
+api/
+
+frontend/
+
+types/
+
+validation/
+
+docs/
+
+openapi/
+
+ai/
+```
+
+---
+
+# 7. Version 0.4 - Google Provider
+
+目的
+
+Google Workspaceを実行基盤として利用可能にする。
+
+## Tasks
+
+Database
+
+* Google Sheets
+
+API
+
+* Apps Script
+
+Storage
+
+* Google Drive
+
+Authentication
+
+* Google OAuth
+
+Deploy
+
+* Apps Script
+
+---
+
+# 8. Version 0.5 - First Deploy
+
+目的
+
+CLIだけでアプリケーションを公開できるようにする。
+
+## Tasks
+
+* Build
+* Deploy
+* Publish
+* Project Initialization
+* Local Development
+
+---
+
+# 9. Version 0.6 - Plugin System
+
+目的
+
+Coreを変更せずに拡張できる構造を完成させる。
+
+## Tasks
+
+* Provider Plugin
+* Generator Plugin
+* Plugin Registry
+* Plugin Loader
+* Plugin Manifest
+
+---
+
+# 10. Version 0.7 - AI Support
+
+目的
+
+AI Agentが安全にgstackを操作できる環境を整備する。
+
+## Tasks
+
+* AGENTS.md Generator
+* Project Context Generator
+* AI Friendly Logs
+* JSON Output
+* MCP Support拡張（Application Model、Migration、Provider Context）
+* AI Safety Rules
+
+---
+
+# 11. Version 1.0 - Stable Release
+
+目標
+
+Google Workspace上で実用的なアプリケーションを開発できる状態。
+
+提供機能
+
+* Schema DSL
+* Migration
+* CRUD
+* React UI
+* OpenAPI
+* Google Provider
+* Deploy
+* Documentation
+
+---
+
+# 12. Future Providers
+
+Database
+
+* SQLite
+* PostgreSQL
+* MySQL
+* Supabase
+
+API
+
+* Cloud Run
+* AWS Lambda
+* Azure Functions
+
+Authentication
+
+* Auth0
+* Microsoft Entra ID
+
+Storage
+
+* Amazon S3
+* Azure Blob Storage
+
+---
+
+# 13. Future Generators
+
+* Vue
+* Angular
+* Flutter
+* GraphQL
+* SDK
+* Terraform
+* Storybook
+* Test Generator
+* ER Diagram Generator
+
+---
+
+# 14. Long-term Vision
+
+将来的には以下を実現する。
+
+* 複数Providerの組み合わせ
+* サードパーティPlugin
+* Provider Marketplace
+* Generator Marketplace
+* MCP Server
+* Language Server
+* VS Code Extension
+* Visual Designer
+* CI/CD Integration
+
+---
+
+# 15. Development Priority
+
+実装優先順位は以下とする。
+
+| Priority | Component       |
+| -------- | --------------- |
+| P0       | Core            |
+| P1       | Schema          |
+| P2       | Migration       |
+| P3       | Generator       |
+| P4       | Google Provider |
+| P5       | Deploy          |
+| P6       | Plugin          |
+| P7       | AI              |
+
+Coreより上位の優先順位は存在しない。
+
+---
+
+# 16. Success Criteria
+
+MVP完成条件
+
+* CLIだけでプロジェクト作成できる
+* Schemaを記述できる
+* Validationできる
+* Migrationできる
+* CRUD生成できる
+* React画面生成できる
+* Google Workspaceへデプロイできる
+
+---
+
+# 17. Architecture Rules
+
+新機能追加時は以下を確認する。
+
+* Schemaで表現できるか
+* Application Modelへ追加すべきか
+* Coreへ追加すべきか
+* Generatorで対応すべきか
+* Providerで対応すべきか
+* Pluginとして実装すべきか
+
+Coreを肥大化させないことを最優先とする。
+
+---
+
+# 18. Development Order
+
+実装順序
+
+```text
+CLI
+
+↓
+
+Config Loader
+
+↓
+
+Schema Loader
+
+↓
+
+Parser
+
+↓
+
+AST
+
+↓
+
+Semantic Analyzer
+
+↓
+
+Application Model
+
+↓
+
+Migration Engine
+
+↓
+
+Generator Engine
+
+↓
+
+Provider Registry
+
+↓
+
+Google Provider
+
+↓
+
+Deploy
+
+↓
+
+Plugin System
+
+↓
+
+AI Support
+```
+
+各フェーズは前フェーズの完成を前提とする。
+
+---
+
+# 19. Release Policy
+
+* Major Version：破壊的変更
+* Minor Version：新機能追加
+* Patch Version：バグ修正
+
+MVP期間中は互換性よりも設計品質を優先する。
+
+Version 1.0以降は公開APIおよびCLIの後方互換性を維持する。
+
+---
+
+# 20. Future Considerations
+
+現在は対象外だが、将来的に検討する。
+
+* リアルタイム同期
+* オフライン開発
+* GUI Builder
+* AIによるSchema生成
+* AIによるMigration提案
+* Visual Workflow Editor
+* Marketplace
+* Remote Plugin Registry
+
+---
+
+# 21. Relationship with Other Documents
+
+| Document        | Purpose     |
+| --------------- | ----------- |
+| ARCHITECTURE.md | 全体設計        |
+| REQUIREMENTS.md | 要件定義        |
+| CLI.md          | CLI仕様       |
+| SCHEMA.md       | DSL仕様       |
+| MIGRATION.md    | Migration仕様 |
+| GENERATOR.md    | Generator仕様 |
+| PROVIDER.md     | Provider仕様  |
+| DEVELOPER.md    | 内部設計        |
+
+---
+
+# 22. Definition of Done
+
+各機能は以下を満たした時点で完了とする。
+
+* 実装済み
+* Unit Test作成済み
+* Integration Test作成済み
+* ドキュメント更新済み
+* CLI動作確認済み
+* AI Agentから利用可能
+* サンプルプロジェクトで動作確認済み
+
+---
+
+# 23. Project Vision
+
+gstackはGoogle Workspace専用フレームワークではない。
+
+Schemaを中心としたDSLをコンパイルし、
+
+* アプリケーション
+* API
+* UI
+* インフラ
+
+を統一的に構築するプラットフォームを目指す。
+
+ProviderとGeneratorを交換可能なアーキテクチャにより、長期的には様々な実行環境・技術スタックへ対応できるフレームワークへ発展させる。

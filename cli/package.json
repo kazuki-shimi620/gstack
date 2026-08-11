@@ -1,0 +1,13 @@
+{
+  "name": "@gstack/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "gstack": "./dist/main.js"
+  },
+  "dependencies": {
+    "@gstack/core": "0.0.0",
+    "commander": "^15.0.0"
+  }
+}
