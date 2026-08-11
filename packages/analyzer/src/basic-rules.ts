@@ -117,6 +117,19 @@ function validateDatabase(
     });
   }
 
+  const columnNames = new Set(columns.entries.map((column) => column.key));
+  if (primaryKey !== undefined && !columnNames.has(primaryKey)) {
+    const entry = findEntry(database, 'primaryKey');
+    diagnostics.push({
+      code: 'SCHEMA_PRIMARY_KEY_UNKNOWN',
+      phase: 'semantic',
+      severity: 'error',
+      message: `Primary key "${primaryKey}" does not name an existing Column.`,
+      file: schema.source.id,
+      ...(entry ? { range: entry.value.range } : {}),
+    });
+  }
+
   for (const column of columns.entries) {
     validateSnakeCase(
       column.key,
@@ -159,14 +172,168 @@ function validateDatabase(
       schema,
       diagnostics,
     );
-    validateOptionalStringSequence(
+    const values = validateOptionalStringSequence(
       definition,
       'values',
       column.key,
       schema,
       diagnostics,
     );
+    validateEnum(column.key, type, values, definition, schema, diagnostics);
   }
+
+  validateIndexes(database, columnNames, schema, diagnostics);
+}
+
+function validateEnum(
+  column: string,
+  type: string | undefined,
+  values: readonly string[] | undefined,
+  definition: AstMapping,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  const valuesEntry = findEntry(definition, 'values');
+  if (type === 'enum') {
+    if (!valuesEntry) {
+      missing(
+        'values',
+        `database.columns.${column}`,
+        definition,
+        schema,
+        diagnostics,
+      );
+      return;
+    }
+    if (values?.length === 0) {
+      diagnostics.push({
+        code: 'SCHEMA_ENUM_VALUES_EMPTY',
+        phase: 'semantic',
+        severity: 'error',
+        message: `Enum Column "${column}" must declare at least one value.`,
+        file: schema.source.id,
+        range: valuesEntry.value.range,
+      });
+    }
+    if (values) {
+      const seen = new Set<string>();
+      for (const value of values) {
+        if (seen.has(value)) {
+          diagnostics.push({
+            code: 'SCHEMA_ENUM_VALUE_DUPLICATE',
+            phase: 'semantic',
+            severity: 'error',
+            message: `Enum Column "${column}" declares duplicate value "${value}".`,
+            file: schema.source.id,
+            range: valuesEntry.value.range,
+          });
+        }
+        seen.add(value);
+      }
+    }
+  } else if (valuesEntry) {
+    diagnostics.push({
+      code: 'SCHEMA_ENUM_VALUES_FORBIDDEN',
+      phase: 'semantic',
+      severity: 'error',
+      message: `Non-enum Column "${column}" must not declare values.`,
+      file: schema.source.id,
+      range: valuesEntry.keyRange,
+    });
+  }
+}
+
+function validateIndexes(
+  database: AstMapping,
+  columnNames: ReadonlySet<string>,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  const indexesEntry = findEntry(database, 'indexes');
+  if (!indexesEntry || indexesEntry.value.kind !== 'sequence') return;
+  const indexNames = new Set<string>();
+
+  indexesEntry.value.items.forEach((item, index) => {
+    const definition = asMapping(item);
+    if (!definition) return;
+    const path = `database.indexes[${index}]`;
+    const name = requireString(definition, 'name', path, schema, diagnostics);
+    if (name !== undefined) {
+      validateSnakeCase(
+        name,
+        'Index',
+        findEntry(definition, 'name')?.value,
+        schema,
+        diagnostics,
+      );
+      if (indexNames.has(name)) {
+        const entry = findEntry(definition, 'name');
+        diagnostics.push({
+          code: 'SCHEMA_INDEX_DUPLICATE',
+          phase: 'semantic',
+          severity: 'error',
+          message: `Index name "${name}" is declared more than once.`,
+          file: schema.source.id,
+          ...(entry ? { range: entry.value.range } : {}),
+        });
+      }
+      indexNames.add(name);
+    }
+
+    const columns = requireStringSequence(
+      definition,
+      'columns',
+      path,
+      schema,
+      diagnostics,
+    );
+    if (columns) {
+      if (columns.length === 0) {
+        const entry = findEntry(definition, 'columns');
+        diagnostics.push({
+          code: 'SCHEMA_INDEX_COLUMNS_EMPTY',
+          phase: 'semantic',
+          severity: 'error',
+          message: `Index at ${path} must reference at least one Column.`,
+          file: schema.source.id,
+          ...(entry ? { range: entry.value.range } : {}),
+        });
+      }
+      const seen = new Set<string>();
+      for (const column of columns) {
+        if (!columnNames.has(column)) {
+          const entry = findEntry(definition, 'columns');
+          diagnostics.push({
+            code: 'SCHEMA_INDEX_COLUMN_UNKNOWN',
+            phase: 'semantic',
+            severity: 'error',
+            message: `Index "${name ?? index}" references unknown Column "${column}".`,
+            file: schema.source.id,
+            ...(entry ? { range: entry.value.range } : {}),
+          });
+        }
+        if (seen.has(column)) {
+          const entry = findEntry(definition, 'columns');
+          diagnostics.push({
+            code: 'SCHEMA_INDEX_COLUMN_DUPLICATE',
+            phase: 'semantic',
+            severity: 'error',
+            message: `Index "${name ?? index}" references Column "${column}" more than once.`,
+            file: schema.source.id,
+            ...(entry ? { range: entry.value.range } : {}),
+          });
+        }
+        seen.add(column);
+      }
+    }
+    validateOptionalBooleanAtPath(
+      definition,
+      'unique',
+      path,
+      schema,
+      diagnostics,
+    );
+  });
 }
 
 function requireString(
@@ -235,16 +402,31 @@ function validateOptionalBoolean(
   }
 }
 
+function validateOptionalBooleanAtPath(
+  mapping: AstMapping,
+  key: string,
+  path: string,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): void {
+  const entry = findEntry(mapping, key);
+  if (!entry) return;
+  if (entry.value.kind !== 'scalar' || typeof entry.value.value !== 'boolean') {
+    invalidValueType(key, path, 'boolean', entry.value, schema, diagnostics);
+  }
+}
+
 function validateOptionalStringSequence(
   mapping: AstMapping,
   key: string,
   column: string,
   schema: SchemaAst,
   diagnostics: Diagnostic[],
-): void {
+): readonly string[] | undefined {
   const entry = findEntry(mapping, key);
-  if (!entry) return;
-  if (entry.value.kind !== 'sequence') return;
+  if (!entry) return undefined;
+  if (entry.value.kind !== 'sequence') return undefined;
+  const values: string[] = [];
   entry.value.items.forEach((item, index) => {
     if (item.kind !== 'scalar' || typeof item.value !== 'string') {
       invalidValueType(
@@ -255,8 +437,42 @@ function validateOptionalStringSequence(
         schema,
         diagnostics,
       );
+    } else {
+      values.push(item.value);
     }
   });
+  return values;
+}
+
+function requireStringSequence(
+  mapping: AstMapping,
+  key: string,
+  path: string,
+  schema: SchemaAst,
+  diagnostics: Diagnostic[],
+): readonly string[] | undefined {
+  const entry = findEntry(mapping, key);
+  if (!entry) {
+    missing(key, path, mapping, schema, diagnostics);
+    return undefined;
+  }
+  if (entry.value.kind !== 'sequence') return undefined;
+  const values: string[] = [];
+  entry.value.items.forEach((item, index) => {
+    if (item.kind !== 'scalar' || typeof item.value !== 'string') {
+      invalidValueType(
+        `${key}[${index}]`,
+        path,
+        'string',
+        item,
+        schema,
+        diagnostics,
+      );
+    } else {
+      values.push(item.value);
+    }
+  });
+  return values;
 }
 
 function validateSnakeCase(

@@ -125,4 +125,81 @@ database:
       ),
     ).toBe(true);
   });
+
+  it('validates Primary Key and Enum semantics', () => {
+    const schema = ast(
+      'users.yaml',
+      `name: users
+model: { displayName: User }
+database:
+  primaryKey: missing_id
+  columns:
+    id:
+      type: uuid
+      values: [unexpected]
+    role:
+      type: enum
+    empty_role:
+      type: enum
+      values: []
+    duplicate_role:
+      type: enum
+      values: [admin, user, admin]
+`,
+    );
+
+    const diagnostics = validateSchemaBasics([schema]);
+
+    expect(diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
+      expect.arrayContaining([
+        'SCHEMA_PRIMARY_KEY_UNKNOWN',
+        'SCHEMA_ENUM_VALUES_FORBIDDEN',
+        'SCHEMA_PROPERTY_REQUIRED',
+        'SCHEMA_ENUM_VALUES_EMPTY',
+        'SCHEMA_ENUM_VALUE_DUPLICATE',
+      ]),
+    );
+    expect(diagnostics).toHaveLength(5);
+  });
+
+  it('validates Index identity, Columns, uniqueness, and references', () => {
+    const schema = ast(
+      'users.yaml',
+      `name: users
+model: { displayName: User }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+    email: { type: string }
+  indexes:
+    - {}
+    - name: BadIndex
+      columns: [missing, id, id]
+      unique: yes
+    - name: BadIndex
+      columns: []
+`,
+    );
+
+    const diagnostics = validateSchemaBasics([schema]);
+
+    expect(diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
+      expect.arrayContaining([
+        'SCHEMA_PROPERTY_REQUIRED',
+        'SCHEMA_NAME_INVALID',
+        'SCHEMA_INDEX_COLUMN_UNKNOWN',
+        'SCHEMA_INDEX_COLUMN_DUPLICATE',
+        'SCHEMA_VALUE_TYPE_INVALID',
+        'SCHEMA_INDEX_DUPLICATE',
+        'SCHEMA_INDEX_COLUMNS_EMPTY',
+      ]),
+    );
+    expect(
+      diagnostics.filter(
+        (diagnostic) => diagnostic.code === 'SCHEMA_PROPERTY_REQUIRED',
+      ),
+    ).toHaveLength(2);
+    expect(diagnostics).toHaveLength(9);
+  });
 });

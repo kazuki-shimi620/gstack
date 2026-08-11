@@ -138,7 +138,7 @@ Status: complete. `@gstack/application` exposes readonly normalized contracts an
 
 Complete when the documented MVP Schema subset has positive and negative fixtures for every rule, analyzer tests require no filesystem/provider, and the same AST set always produces the same result.
 
-Status: in progress. Pure basic rules now validate required root/model/database properties, Model and Column naming, supported Field types, Column flag/value scalar types, non-empty Columns, and duplicate Model names with deterministic diagnostics. Index, enum, relation, validation-rule, cross-layer reference checks, and Application Model construction remain.
+Status: in progress. Pure rules now validate required root/model/database properties, Model/Column/Index naming, supported Field types, Column flag/value scalar types, non-empty Columns, Primary Key references, Index identity/Columns/duplicates, Enum values, and duplicate Model names with deterministic diagnostics. Relation, validation-rule, cross-layer reference checks, optional-section values, and Application Model construction remain.
 
 ### Phase 6: Core use case and minimum CLI
 
