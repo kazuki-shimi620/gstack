@@ -6,7 +6,11 @@
     "declarationMap": false,
     "noEmit": true,
     "paths": {
+      "@gstack/analyzer": ["./packages/analyzer/src/index.ts"],
+      "@gstack/application": ["./packages/application/src/index.ts"],
+      "@gstack/config": ["./packages/config/src/index.ts"],
       "@gstack/core": ["./packages/core/src/index.ts"],
+      "@gstack/mcp": ["./packages/mcp/src/index.ts"],
       "@gstack/parser": ["./packages/parser/src/index.ts"],
       "@gstack/schema": ["./packages/schema/src/index.ts"]
     }

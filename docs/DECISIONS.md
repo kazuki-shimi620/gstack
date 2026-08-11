@@ -33,6 +33,10 @@ Schema version is declared once as `schemaVersion` in `gstack.yaml`, not in each
 - Index entries require a stable `name` and a non-empty `columns` sequence; `unique` defaults to `false`.
 - MVP Relation entries are named mappings under `database.relations`. Each requires `type: belongs_to`, local `field`, target `model`, and target `references`. Additional relation kinds remain future work.
 - Validation keys must name an existing Column. String/text rules are `minLength`, `maxLength`, and `pattern`; numeric rules are `min` and `max`. `required` remains a Column property.
+- MVP `api` keys are `resource`, `create`, `update`, and `delete`.
+- MVP `ui` contains optional `list.columns` and `form.fields` sequences.
+- MVP `permissions` keys are `read`, `create`, `update`, and `delete`, each containing a role-name sequence.
+- MVP `workflow` and `events` contain only the `enabled` flag. Further workflow and event definitions remain future work.
 - Unknown keys at every framework-owned level are errors. `metadata` is the only open mapping.
 - Boolean feature flags default to `false`; optional collections default to empty. Defaults are applied by Semantic Analyzer, never Parser.
 
@@ -54,6 +58,8 @@ There is no separate Validation Engine in MVP. Validation levels are `syntax`, `
 ## D-006 Application Model
 
 The normalized, immutable, Provider-independent model contains Models, Fields, Indexes, Relations, API, UI, Permissions, Workflows, Events, Metadata, and optional diagnostic source references. Missing optional sections normalize to empty values. It contains no YAML-library, filesystem handle, CLI, MCP, concrete Provider, Generator-template, runtime-state, or secret types.
+
+For MVP, the Application root contains Schema version, application name, Models, and application-level Metadata. Each Model owns its normalized Fields, primary key, Indexes, Relations, API, UI, Permissions, Workflow, Events, and Metadata. Missing collections become empty readonly collections, feature flags become `false`, absent descriptions/resources become `null`, and absent validation rules become `null`. Metadata is limited to recursively immutable YAML-compatible scalar, sequence, and mapping values. Diagnostic source references contain only source identity and positions.
 
 ## D-007 Migration Baseline
 

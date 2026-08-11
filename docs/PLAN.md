@@ -71,7 +71,7 @@ tests/
 
 Each package initially receives only package metadata, a strict TypeScript project, and an empty `src/` placeholder. During implementation, introduce public `src/index.ts` exports only with the first real contract; do not create speculative interfaces.
 
-Planned first implementation files (not created in this setup change):
+Initial implementation files (implemented files are retained here as a package-boundary map):
 
 ```text
 packages/schema/src/{source.ts,diagnostic.ts,loader.ts,index.ts}
@@ -118,12 +118,16 @@ Complete when loaders are independently unit-tested with temporary files, determ
 
 Complete when valid fixtures produce deterministic ASTs, malformed YAML and duplicate keys produce located diagnostics, and semantic errors (unknown relation target, invalid domain type) are not decided by the Parser.
 
+Status: complete. Parser builds the generic owned AST and checks framework-owned keys and structural node kinds while intentionally preserving scalar values such as `null` without deciding domain validity.
+
 ### Phase 4: Application Model contracts
 
 1. Define normalized, immutable, provider-independent types for Application, Model, Field, Index, Relation, API, UI, Validation, Permissions, Workflow, Events, and Metadata only to the extent accepted by `SCHEMA.md`.
 2. Define canonical naming and default representation after the relevant open questions are resolved.
 
 Complete when the model contains no YAML nodes, file I/O handles, provider types, CLI types, secrets, or generator/runtime state and can be constructed directly in tests.
+
+Status: complete. `@gstack/application` exposes readonly normalized contracts and YAML-compatible Metadata/source-reference value types without runtime or infrastructure dependencies.
 
 ### Phase 5: Semantic Analyzer and Schema Validation
 

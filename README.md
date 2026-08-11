@@ -38,9 +38,10 @@ Implemented foundation:
 - npm/TypeScript monorepo and strict project boundaries
 - Project-root discovery
 - strict `gstack.yaml` loading and version validation
-- Schema source loading and YAML 1.2 syntax diagnostics
+- Schema source loading, YAML 1.2 syntax diagnostics, and a syntax-only owned AST
+- provider-independent normalized Application Model contracts
 - structured Core Read API and machine-result envelope
 - `schema validate --json`
 - read-only local stdio MCP tools and resources
 
-Semantic Analyzer, Application Model construction, Migration, Generator, Provider implementations, and Deploy remain later phases.
+Semantic Analyzer and Application Model construction, Migration, Generator, Provider implementations, and Deploy remain later phases.
