@@ -44,7 +44,7 @@ const allowedInternalDependencies = {
   '@gstack/migration': ['@gstack/application'],
   '@gstack/generator': ['@gstack/application'],
   '@gstack/provider': ['@gstack/migration'],
-  '@gstack/provider-google': ['@gstack/provider'],
+  '@gstack/provider-google': ['@gstack/migration', '@gstack/provider'],
   '@gstack/runtime': [
     '@gstack/config',
     '@gstack/core',

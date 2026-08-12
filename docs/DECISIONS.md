@@ -305,3 +305,9 @@ Provider package名、Factory、credential値、access／refresh tokenはProject
 `@gstack/runtime`は公式配布物のcomposition rootとしてConfig、Core、Provider Registry、公式具体Providerを接続する唯一のpackageとする。Core、Config、Schema、Migration、Generatorはruntimeや具体Providerへ依存しない。CLIとMCPの実entry pointはRuntime経由でProjectをloadするが、presentation／protocolとbusiness logicの境界は維持する。
 
 MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知enabled Providerを安全に拒否する。disabled Providerは登録／初期化しない。Package install、dynamic import、Marketplace、capability routingは行わない。Google InspectionにはProject Root、Googleのopaque configuration、Environment Secret Resolverを注入する。Environment Resolverはuppercase snake-case名だけを解決し、値を列挙、log、返却modelへ公開しない。将来のlocal／CI Secret Resolverは同じportの別adapterとする。
+
+## D-050 Google Migration Capability Mapping
+
+Google ProviderのMigration capability結果はManifestのoperation type別supportを唯一のsourceとして、入力Planの全Operation IDへ順序を保持して射影する。結果をMigration packageの共通`applyCapabilityResults`へ渡し、欠落／重複／未知IDの検証とPlan集約を再利用する。Google Provider側で独自Planや独自applicability規則を実装しない。
+
+現時点では全Operationが`unsupported`であり、評価済みPlanも必ず適用不可となる。Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。

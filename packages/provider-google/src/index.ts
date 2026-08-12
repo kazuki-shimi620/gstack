@@ -31,6 +31,7 @@ export {
   GoogleHttpExecutor,
 } from './http.js';
 export { GoogleOAuthHttpGateway } from './oauth-http.js';
+export { evaluateGoogleMigrationCapabilities } from './migration.js';
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
 export { GoogleScriptHttpGateway } from './script-http.js';
 export { GoogleScriptError, GoogleScriptReadService } from './script.js';

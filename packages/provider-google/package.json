@@ -6,6 +6,7 @@
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
+    "@gstack/migration": "0.0.0",
     "@gstack/provider": "0.0.0"
   }
 }
