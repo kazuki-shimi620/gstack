@@ -361,6 +361,26 @@ gstack provider install postgres
 gstack provider info google
 ```
 
+### validate
+
+Provider固有configurationを外部変更なしで検証する。
+
+```bash
+gstack provider validate google
+gstack provider validate google --json
+```
+
+### health
+
+明示的に指定したProviderのread-only health checkを実行する。
+
+```bash
+gstack provider health google
+gstack provider health google --json
+```
+
+`list`、`info`、`validate`、`health`だけが現在実装済みである。`install`、`remove`、`use`はpackage管理と状態変更の安全契約が確定するまで未実装とする。
+
 ---
 
 ## auth

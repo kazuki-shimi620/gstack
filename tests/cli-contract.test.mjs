@@ -27,12 +27,12 @@ function run(args, cwd = repositoryRoot) {
   });
 }
 
-function project(schema) {
+function project(schema, extraConfig = '') {
   const root = mkdtempSync(path.join(tmpdir(), 'gstack-cli-contract-'));
   mkdirSync(path.join(root, 'schema'));
   writeFileSync(
     path.join(root, 'gstack.yaml'),
-    'version: 1\nname: sample-app\nschemaVersion: 1\nschema:\n  directory: schema\ngenerator:\n  formatVersion: 1\n  types: true\n  validation: false\n  api: true\n  frontend: true\n  openapi: false\n  documentation: false\n  aiDocumentation: false\n',
+    `version: 1\nname: sample-app\nschemaVersion: 1\nschema:\n  directory: schema\ngenerator:\n  formatVersion: 1\n  types: true\n  validation: false\n  api: true\n  frontend: true\n  openapi: false\n  documentation: false\n  aiDocumentation: false\n${extraConfig}`,
   );
   writeFileSync(path.join(root, 'schema/users.yaml'), schema);
   return root;
@@ -162,4 +162,39 @@ test('generate dry-runと明示的writeを分離する', (t) => {
     readFileSync(path.join(root, 'generated', 'types', 'users.ts'), 'utf8'),
     /export interface Users/u,
   );
+});
+
+test('Provider list／info／validateを標準Runtime経由で実行する', (t) => {
+  const root = project(
+    'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+    'providers:\n  google:\n    enabled: true\n    configuration:\n      spreadsheetId: spreadsheet-id\n      appsScriptProjectId: script-id\n      driveFolderId: folder-id\n      authentication:\n        mode: user_oauth\n        credentialSecret: GOOGLE_CREDENTIALS\n',
+  );
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const list = run(['provider', 'list', '--json'], root);
+  assert.equal(list.status, 0);
+  assert.equal(list.stderr, '');
+  assert.deepEqual(
+    JSON.parse(list.stdout).data.providers.map(({ name }) => name),
+    ['google'],
+  );
+
+  const info = run(['provider', 'info', 'google'], root);
+  assert.equal(info.status, 0);
+  assert.match(info.stdout, /Provider: google/u);
+  assert.match(
+    info.stdout,
+    /Capabilities: api,authentication,database,deploy,storage/u,
+  );
+
+  const validation = run(['provider', 'validate', 'google', '--json'], root);
+  assert.equal(validation.status, 0);
+  assert.deepEqual(JSON.parse(validation.stdout).data, {
+    name: 'google',
+    issues: [],
+  });
+
+  const missing = run(['provider', 'info', 'missing', '--json'], root);
+  assert.equal(missing.status, 1);
+  assert.equal(JSON.parse(missing.stderr).error.code, 'PROVIDER_NOT_FOUND');
 });

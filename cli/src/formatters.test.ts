@@ -4,6 +4,10 @@ import {
   formatErrorHuman,
   formatGenerationHuman,
   formatJson,
+  formatProviderHealthHuman,
+  formatProviderInfoHuman,
+  formatProviderListHuman,
+  formatProviderValidationHuman,
   formatValidationHuman,
 } from './formatters.js';
 
@@ -57,5 +61,48 @@ describe('CLI formatters', () => {
     ).toBe(
       'Generation Plan:\nWRITE generated/types/users.ts\nDELETE generated/types/old.ts\nSummary: 1 write(s), 1 delete(s).',
     );
+  });
+
+  it('Providerの安全なRead modelだけをhuman表示する', () => {
+    const provider = {
+      name: 'google',
+      packageName: '@gstack/provider-google',
+      version: '0.0.0',
+      minimumGstackVersion: '0.0.0',
+      capabilities: {
+        database: true,
+        api: true,
+        authentication: true,
+        storage: true,
+        deploy: true,
+      },
+      migrationSupport: {
+        create_model: 'unsupported' as const,
+        drop_model: 'unsupported' as const,
+        add_column: 'unsupported' as const,
+        drop_column: 'unsupported' as const,
+        rename_column: 'unsupported' as const,
+        alter_column: 'unsupported' as const,
+        add_index: 'unsupported' as const,
+        drop_index: 'unsupported' as const,
+        add_relation: 'unsupported' as const,
+        drop_relation: 'unsupported' as const,
+      },
+    };
+    expect(formatProviderListHuman([provider])).toContain(
+      'google 0.0.0 api,authentication,database,deploy,storage',
+    );
+    expect(formatProviderInfoHuman(provider)).toContain(
+      'Package: @gstack/provider-google',
+    );
+    expect(formatProviderValidationHuman('google', [])).toBe(
+      'Provider google configuration is valid.',
+    );
+    expect(
+      formatProviderHealthHuman('google', {
+        status: 'healthy',
+        code: 'GOOGLE_WORKSPACE_READY',
+      }),
+    ).toBe('Provider google: healthy (GOOGLE_WORKSPACE_READY)');
   });
 });
