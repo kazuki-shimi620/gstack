@@ -1102,6 +1102,8 @@ Commands
 
 Operation scope、stable ID、alter risk、初回baseline、rename intent、capability評価時点の詳細は`DECISIONS.md` D-015からD-020を規範とする。
 
+Primary Key変更とMigration File／checksumのcanonical contractは`DECISIONS.md` D-021、D-022を規範とする。
+
 | Document        | Purpose                   |
 | --------------- | ------------------------- |
 | ARCHITECTURE.md | 全体アーキテクチャ                 |

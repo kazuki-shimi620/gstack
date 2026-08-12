@@ -17,5 +17,11 @@ export type {
   RenameColumnIntent,
   RenameColumnOperation,
 } from './types.js';
-export { diffApplicationModels } from './diff.js';
+export { diffApplicationModels, MigrationDiffError } from './diff.js';
 export type { DiffApplicationModelsOptions } from './diff.js';
+export {
+  createMigrationFile,
+  migrationChecksum,
+  verifyMigrationChecksum,
+} from './file.js';
+export type { MigrationFile, MigrationFilePayload } from './file.js';

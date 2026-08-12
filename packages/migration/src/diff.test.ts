@@ -117,6 +117,23 @@ describe('diffApplicationModels', () => {
     ]);
   });
 
+  it('既存ModelのPrimary Key変更を専用errorで拒否する', () => {
+    const previous = application([
+      model('users', [field('id', 'uuid'), field('code')]),
+    ]);
+    const target = application([
+      model('users', [field('id', 'uuid'), field('code')], {
+        primaryKey: 'code',
+      }),
+    ]);
+
+    expect(() => diffApplicationModels(previous, target)).toThrow(
+      expect.objectContaining({
+        code: 'MIGRATION_PRIMARY_KEY_CHANGE_UNSUPPORTED',
+      }),
+    );
+  });
+
   it('IndexとRelationの定義変更をdropとaddで表現する', () => {
     const base = model('users', [
       field('id', 'uuid'),
@@ -163,8 +180,12 @@ describe('diffApplicationModels', () => {
   });
 
   it('明示renameだけをrename_columnへ変換し、追加変更も保持する', () => {
-    const previous = application([model('users', [field('old_name')])]);
-    const target = application([model('users', [field('name', 'text')])]);
+    const previous = application([
+      model('users', [field('id', 'uuid'), field('old_name')]),
+    ]);
+    const target = application([
+      model('users', [field('id', 'uuid'), field('name', 'text')]),
+    ]);
     const plan = diffApplicationModels(previous, target, {
       renameColumns: [{ model: 'users', from: 'old_name', to: 'name' }],
     });
@@ -176,10 +197,10 @@ describe('diffApplicationModels', () => {
 
   it('不正・重複rename intentを拒否してdrop/addへfallbackしない', () => {
     const previous = application([
-      model('users', [field('old_name'), field('other')]),
+      model('users', [field('id', 'uuid'), field('old_name'), field('other')]),
     ]);
     const target = application([
-      model('users', [field('name'), field('second')]),
+      model('users', [field('id', 'uuid'), field('name'), field('second')]),
     ]);
     expect(() =>
       diffApplicationModels(previous, target, {

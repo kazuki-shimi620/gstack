@@ -39,7 +39,7 @@
 - [x] 初回Migrationのbaseline表現を確定する（`DECISIONS.md` D-018）。
 - [x] explicit rename intentの形式と検証規則を確定する（`DECISIONS.md` D-019）。
 - [x] capability resultの付与段階を確定する（`DECISIONS.md` D-020）。
-- [ ] Primary Key変更を禁止するか、専用Operationまたは`alter_model`として扱うか確定する。現在のMVP OperationにはPrimary Key変更を表現する型がないため、Diff Engine完成前に決める。
+- [x] Primary Key変更の扱いを確定する。MVPでは禁止し、専用errorを返す（`DECISIONS.md` D-021）。
 
 ## Core Foundationの残判断
 

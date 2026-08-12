@@ -18,6 +18,18 @@ export interface DiffApplicationModelsOptions {
   readonly renameColumns?: readonly RenameColumnIntent[];
 }
 
+export class MigrationDiffError extends Error {
+  public constructor(
+    public readonly code:
+      | 'MIGRATION_PRIMARY_KEY_CHANGE_UNSUPPORTED'
+      | 'MIGRATION_RENAME_INTENT_INVALID',
+    message: string,
+  ) {
+    super(message);
+    this.name = 'MigrationDiffError';
+  }
+}
+
 export function diffApplicationModels(
   previous: ApplicationModel | null,
   target: ApplicationModel,
@@ -64,6 +76,12 @@ function diffModel(
   target: Model,
   renameIntents: readonly RenameColumnIntent[],
 ): readonly MigrationOperation[] {
+  if (previous.primaryKey !== target.primaryKey) {
+    throw new MigrationDiffError(
+      'MIGRATION_PRIMARY_KEY_CHANGE_UNSUPPORTED',
+      `Primary Key change is not supported for Model "${target.name}": ${previous.primaryKey} -> ${target.primaryKey}`,
+    );
+  }
   const operations: MigrationOperation[] = [];
   const previousFields = byName(previous.fields);
   const targetFields = byName(target.fields);
@@ -217,14 +235,18 @@ function validateRenameIntents(
   const used = new Set<string>();
   for (const intent of intents) {
     if (used.has(intent.from) || used.has(intent.to))
-      throw new Error('Rename intent must not reuse a Column.');
+      throw new MigrationDiffError(
+        'MIGRATION_RENAME_INTENT_INVALID',
+        'Rename intent must not reuse a Column.',
+      );
     if (
       !previous.has(intent.from) ||
       target.has(intent.from) ||
       previous.has(intent.to) ||
       !target.has(intent.to)
     ) {
-      throw new Error(
+      throw new MigrationDiffError(
+        'MIGRATION_RENAME_INTENT_INVALID',
         `Invalid rename intent: ${intent.model}.${intent.from}->${intent.to}`,
       );
     }
@@ -240,7 +262,8 @@ function validateRenameModels(
 ): void {
   for (const intent of intents) {
     if (!previous.has(intent.model) || !target.has(intent.model)) {
-      throw new Error(
+      throw new MigrationDiffError(
+        'MIGRATION_RENAME_INTENT_INVALID',
         `Rename intent references unavailable Model: ${intent.model}`,
       );
     }
