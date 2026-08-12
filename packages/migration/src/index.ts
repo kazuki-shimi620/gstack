@@ -17,3 +17,5 @@ export type {
   RenameColumnIntent,
   RenameColumnOperation,
 } from './types.js';
+export { diffApplicationModels } from './diff.js';
+export type { DiffApplicationModelsOptions } from './diff.js';
