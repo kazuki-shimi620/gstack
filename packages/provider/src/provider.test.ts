@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ProviderCatalog } from './catalog.js';
 import { validateProviderManifest } from './manifest.js';
 import { ProviderRegistry } from './registry.js';
-import { ProviderRuntime } from './runtime.js';
+import { ProviderInspectionService, ProviderRuntime } from './runtime.js';
 import type { ProviderFactory, ProviderManifest } from './types.js';
 
 const manifest = (name: string): ProviderManifest => ({
@@ -213,6 +213,25 @@ describe('Provider Foundation', () => {
       }),
     ).rejects.toMatchObject({ code: 'PROVIDER_RESULT_INVALID' });
     expect(dispose).toHaveBeenCalledOnce();
+  });
+
+  it('Core注入用Serviceが固定contextでRuntimeへ委譲する', async () => {
+    const registry = new ProviderRegistry();
+    registry.register(factory('example'));
+    const service = new ProviderInspectionService(
+      new ProviderRuntime(registry),
+      {
+        projectRoot: '/project',
+        configuration: {},
+        secrets: { get: vi.fn().mockResolvedValue(null) },
+      },
+    );
+
+    await expect(service.validateProvider('example')).resolves.toEqual([]);
+    await expect(service.getProviderHealth('example')).resolves.toEqual({
+      status: 'healthy',
+      code: 'OK',
+    });
   });
 });
 

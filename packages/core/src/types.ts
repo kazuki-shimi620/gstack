@@ -8,7 +8,11 @@ import type {
   MigrationStatusSummary,
   RenameColumnIntent,
 } from '@gstack/migration';
-import type { ProviderSummary } from '@gstack/provider';
+import type {
+  ProviderHealth,
+  ProviderIssue,
+  ProviderSummary,
+} from '@gstack/provider';
 
 export interface FeatureConfigurationStatus {
   readonly configured: boolean;
@@ -65,6 +69,7 @@ export interface ProjectContext {
     readonly semanticValidation: 'available';
     readonly applicationModel: 'available';
     readonly providerStatus: 'available' | 'not_configured';
+    readonly providerInspection: 'available' | 'not_configured';
     readonly migrationPlan: 'available' | 'not_configured';
     readonly generatedArtifacts: 'available' | 'not_configured';
   };
@@ -81,6 +86,8 @@ export interface GstackProject {
   getApplicationModel(): Promise<ApplicationModel | null>;
   listProviders(): Promise<readonly ProviderSummary[]>;
   getProvider(name: string): Promise<ProviderSummary | null>;
+  validateProvider(name: string): Promise<readonly ProviderIssue[]>;
+  getProviderHealth(name: string): Promise<ProviderHealth>;
   getMigrationStatus(): Promise<MigrationStatusSummary>;
   listMigrationHistory(): Promise<readonly MigrationHistoryEntry[]>;
   previewMigrationPlan(
@@ -93,6 +100,11 @@ export interface GstackProject {
 export interface ProviderReader {
   listProviders(): Promise<readonly ProviderSummary[]>;
   getProvider(name: string): Promise<ProviderSummary | null>;
+}
+
+export interface ProviderInspector {
+  validateProvider(name: string): Promise<readonly ProviderIssue[]>;
+  getProviderHealth(name: string): Promise<ProviderHealth>;
 }
 
 export interface MigrationReader {

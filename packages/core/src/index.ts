@@ -1,7 +1,11 @@
 export { loadProject } from './project.js';
 export type { ApplicationModel } from '@gstack/application';
 export type { GenerationPlan } from '@gstack/generator';
-export type { ProviderSummary } from '@gstack/provider';
+export type {
+  ProviderHealth,
+  ProviderIssue,
+  ProviderSummary,
+} from '@gstack/provider';
 export type {
   MigrationHistoryEntry,
   MigrationPlanPreview,
@@ -23,6 +27,7 @@ export type {
   GstackProject,
   MigrationReader,
   ProviderReader,
+  ProviderInspector,
   ProjectContext,
   ProjectConfigLoader,
   ProjectStatus,

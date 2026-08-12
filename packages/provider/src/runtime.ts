@@ -101,6 +101,21 @@ export class ProviderRuntime {
   }
 }
 
+export class ProviderInspectionService {
+  public constructor(
+    private readonly runtime: ProviderRuntime,
+    private readonly context: ProviderInitializeContext,
+  ) {}
+
+  validateProvider(name: string): Promise<readonly ProviderIssue[]> {
+    return this.runtime.validate(name, this.context);
+  }
+
+  getProviderHealth(name: string): Promise<ProviderHealth> {
+    return this.runtime.health(name, this.context);
+  }
+}
+
 function normalizeContext(
   context: ProviderInitializeContext,
 ): ProviderInitializeContext {

@@ -21,6 +21,7 @@ import type {
   GstackProject,
   MigrationReader,
   ProviderReader,
+  ProviderInspector,
   ProjectConfigLoader,
   ProjectContext,
   ProjectStatus,
@@ -29,7 +30,7 @@ import type {
   SchemaSummary,
   ValidationResult,
 } from './types.js';
-import { GstackError } from './error.js';
+import { GstackError, type GstackErrorCode } from './error.js';
 
 const GSTACK_VERSION = '0.0.0';
 
@@ -40,6 +41,7 @@ export interface LoadProjectOptions {
   readonly loadSources?: SchemaSourceLoader;
   readonly migrationReader?: MigrationReader;
   readonly providerReader?: ProviderReader;
+  readonly providerInspector?: ProviderInspector;
 }
 
 export async function loadProject(
@@ -67,6 +69,7 @@ export async function loadProject(
     options.loadSources ?? loadSchemaSources,
     options.migrationReader ?? null,
     options.providerReader ?? null,
+    options.providerInspector ?? null,
   );
 }
 
@@ -77,6 +80,7 @@ class Project implements GstackProject {
     private readonly loadSources: SchemaSourceLoader,
     private readonly migrationReader: MigrationReader | null,
     private readonly providerReader: ProviderReader | null,
+    private readonly providerInspector: ProviderInspector | null,
   ) {}
 
   public async getConfig(): Promise<GstackConfig> {
@@ -136,6 +140,9 @@ class Project implements GstackProject {
         semanticValidation: 'available',
         applicationModel: 'available',
         providerStatus: this.providerReader ? 'available' : 'not_configured',
+        providerInspection: this.providerInspector
+          ? 'available'
+          : 'not_configured',
         migrationPlan: this.migrationReader ? 'available' : 'not_configured',
         generatedArtifacts: this.config.generator
           ? 'available'
@@ -184,6 +191,22 @@ class Project implements GstackProject {
 
   public async getProvider(name: string) {
     return this.requireProviderReader().getProvider(name);
+  }
+
+  public async validateProvider(name: string) {
+    try {
+      return await this.requireProviderInspector().validateProvider(name);
+    } catch (error: unknown) {
+      throw providerError(error);
+    }
+  }
+
+  public async getProviderHealth(name: string) {
+    try {
+      return await this.requireProviderInspector().getProviderHealth(name);
+    } catch (error: unknown) {
+      throw providerError(error);
+    }
   }
 
   public async getMigrationStatus() {
@@ -272,6 +295,17 @@ class Project implements GstackProject {
     return this.providerReader;
   }
 
+  private requireProviderInspector(): ProviderInspector {
+    if (!this.providerInspector) {
+      throw new GstackError({
+        code: 'PROVIDER_INSPECTION_NOT_AVAILABLE',
+        category: 'provider',
+        message: 'Provider inspection is not configured.',
+      });
+    }
+    return this.providerInspector;
+  }
+
   private async compileSchemas(): Promise<{
     readonly application: ApplicationModel | null;
     readonly validation: ValidationResult;
@@ -336,6 +370,53 @@ function generationError(error: unknown): GstackError {
     },
     { cause: error },
   );
+}
+
+function providerError(error: unknown): GstackError {
+  if (error instanceof GstackError) return error;
+  const code = providerErrorCode(
+    error && typeof error === 'object' && 'code' in error
+      ? error.code
+      : undefined,
+  );
+  if (
+    code &&
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return new GstackError(
+      {
+        code,
+        category: 'provider',
+        message: error.message,
+      },
+      { cause: error },
+    );
+  }
+  return new GstackError(
+    {
+      code: 'PROVIDER_OPERATION_FAILED',
+      category: 'provider',
+      message: 'Provider inspection failed.',
+    },
+    { cause: error },
+  );
+}
+
+function providerErrorCode(value: unknown): GstackErrorCode | null {
+  switch (value) {
+    case 'PROVIDER_NOT_REGISTERED':
+      return 'PROVIDER_NOT_FOUND';
+    case 'PROVIDER_INITIALIZATION_FAILED':
+    case 'PROVIDER_OPERATION_FAILED':
+    case 'PROVIDER_RESULT_INVALID':
+    case 'PROVIDER_DISPOSAL_FAILED':
+      return value;
+    default:
+      return null;
+  }
 }
 
 async function loadConfigSafely(

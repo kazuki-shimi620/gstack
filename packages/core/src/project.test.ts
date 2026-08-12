@@ -7,8 +7,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ConfigLoadError, type GstackConfig } from '@gstack/config';
 import type { SchemaSource } from '@gstack/schema';
-import type { MigrationReader } from './types.js';
-import type { ProviderReader } from './types.js';
+import type {
+  MigrationReader,
+  ProviderInspector,
+  ProviderReader,
+} from './types.js';
 
 import { loadProject } from './project.js';
 
@@ -167,6 +170,72 @@ describe('gstack project read API', () => {
     });
     await expect(project.getProjectContext()).resolves.toMatchObject({
       capabilities: { providerStatus: 'not_configured' },
+    });
+  });
+
+  it('注入されたProvider Inspectorへ明示的な検査を委譲する', async () => {
+    const inspector: ProviderInspector = {
+      validateProvider: vi
+        .fn()
+        .mockResolvedValue([
+          { code: 'CONFIG_OK', severity: 'warning', message: 'Safe message.' },
+        ]),
+      getProviderHealth: vi
+        .fn()
+        .mockResolvedValue({ status: 'healthy', code: 'READY' }),
+    };
+    const project = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [],
+      providerInspector: inspector,
+    });
+
+    await expect(project.validateProvider('example')).resolves.toEqual([
+      { code: 'CONFIG_OK', severity: 'warning', message: 'Safe message.' },
+    ]);
+    await expect(project.getProviderHealth('example')).resolves.toEqual({
+      status: 'healthy',
+      code: 'READY',
+    });
+    await expect(project.getProjectContext()).resolves.toMatchObject({
+      capabilities: { providerInspection: 'available' },
+    });
+  });
+
+  it('Provider検査の未設定とRuntime errorを安全なCore errorにする', async () => {
+    const unavailable = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [],
+    });
+    await expect(
+      unavailable.getProviderHealth('example'),
+    ).rejects.toMatchObject({
+      details: {
+        code: 'PROVIDER_INSPECTION_NOT_AVAILABLE',
+        category: 'provider',
+      },
+    });
+
+    const failed = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [],
+      providerInspector: {
+        validateProvider: vi.fn(),
+        getProviderHealth: vi.fn().mockRejectedValue({
+          code: 'PROVIDER_NOT_REGISTERED',
+          message: 'Provider is not registered: missing',
+        }),
+      },
+    });
+    await expect(failed.getProviderHealth('missing')).rejects.toMatchObject({
+      details: {
+        code: 'PROVIDER_NOT_FOUND',
+        category: 'provider',
+        message: 'Provider is not registered: missing',
+      },
     });
   });
 

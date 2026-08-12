@@ -75,6 +75,10 @@ describe('gstack MCP server', () => {
         .mockImplementation(async (name: string) =>
           name === 'example' ? providerSummary() : null,
         ),
+      validateProvider: vi.fn().mockResolvedValue([]),
+      getProviderHealth: vi
+        .fn()
+        .mockResolvedValue({ status: 'healthy', code: 'READY' }),
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
@@ -248,6 +252,10 @@ describe('gstack MCP server', () => {
         .mockImplementation(async (name: string) =>
           name === 'example' ? providerSummary() : null,
         ),
+      validateProvider: vi.fn().mockResolvedValue([]),
+      getProviderHealth: vi
+        .fn()
+        .mockResolvedValue({ status: 'healthy', code: 'READY' }),
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
