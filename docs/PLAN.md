@@ -213,4 +213,4 @@ Type、Validation、framework非依存API contract、React UI、OpenAPI、Docume
 
 Roadmap 0.4へ進む前に、具体ProviderをCoreから分離する`@gstack/provider` contract、Manifest、capability declaration、lifecycle、Registry／Loader境界を実装する。その後に`@gstack/provider-google`を追加する。Google API、credential、live external serviceへ接続する前にfake ProviderだけでCore／Migration／History境界を検証する。
 
-Status: `@gstack/provider`のManifest、5つのtop-level capability、全Migration Operation support、factory／session lifecycle、Secret Resolver境界、memory Registry、Factoryを公開しないimmutableなCatalog Read Serviceを実装済み。Coreには具体Registryではなく注入可能な`ProviderReader`を追加し、一覧／単一参照、availability、Provider件数を安全なRead APIとして公開した。次はMCPのProvider Read Tool／Resourceとfake Providerによるlifecycle orchestrationへ進む。
+Status: `@gstack/provider`のManifest、5つのtop-level capability、全Migration Operation support、factory／session lifecycle、Secret Resolver境界、memory Registry、Factoryを公開しないimmutableなCatalog Read Serviceを実装済み。Coreには具体Registryではなく注入可能な`ProviderReader`を追加し、一覧／単一参照、availability、Provider件数を安全なRead APIとして公開した。MCPにはCoreへ委譲するProvider一覧／単一参照ToolとResource Templateを追加し、初期化、health、credential accessを行わないRead専用境界を維持した。次はfake Providerによるlifecycle orchestrationへ進む。

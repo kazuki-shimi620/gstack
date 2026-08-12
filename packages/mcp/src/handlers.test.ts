@@ -63,7 +63,7 @@ describe('MCP read handlers', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
-      listProviders: vi.fn().mockResolvedValue([]),
+      listProviders: vi.fn().mockResolvedValue([{ name: 'example' }]),
       getProvider: vi.fn().mockResolvedValue(null),
       getMigrationStatus: vi.fn().mockResolvedValue(migrationStatus),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
@@ -94,6 +94,12 @@ describe('MCP read handlers', () => {
       createReadHandlers(project).listMigrationHistory(),
     ).resolves.toEqual([]);
     expect(project.getMigrationStatus).toHaveBeenCalledOnce();
+    await expect(createReadHandlers(project).listProviders()).resolves.toEqual([
+      { name: 'example' },
+    ]);
+    await expect(
+      createReadHandlers(project).getProvider('missing'),
+    ).resolves.toBeNull();
     await expect(
       createReadHandlers(project).previewGeneration(),
     ).resolves.toMatchObject({ writes: [], deletes: [] });

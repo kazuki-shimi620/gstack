@@ -69,8 +69,12 @@ describe('gstack MCP server', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
-      listProviders: vi.fn().mockResolvedValue([]),
-      getProvider: vi.fn().mockResolvedValue(null),
+      listProviders: vi.fn().mockResolvedValue([providerSummary()]),
+      getProvider: vi
+        .fn()
+        .mockImplementation(async (name: string) =>
+          name === 'example' ? providerSummary() : null,
+        ),
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
@@ -96,6 +100,8 @@ describe('gstack MCP server', () => {
       'list_schemas',
       'get_schema',
       'validate_schema',
+      'list_providers',
+      'get_provider',
       'get_migration_status',
       'list_migration_history',
       'preview_migration_plan',
@@ -138,6 +144,24 @@ describe('gstack MCP server', () => {
       data: { generationPlan: { writes: [], deletes: [] } },
     });
     expect(project.previewGeneration).toHaveBeenCalledOnce();
+
+    const provider = await client.callTool({
+      name: 'get_provider',
+      arguments: { name: 'example' },
+    });
+    expect(provider.structuredContent).toMatchObject({
+      ok: true,
+      data: { provider: { name: 'example' } },
+    });
+
+    const missingProvider = await client.callTool({
+      name: 'get_provider',
+      arguments: { name: 'missing' },
+    });
+    expect(missingProvider.structuredContent).toMatchObject({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_FOUND', category: 'provider' },
+    });
 
     const missing = await client.callTool({
       name: 'get_schema',
@@ -218,8 +242,12 @@ describe('gstack MCP server', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
-      listProviders: vi.fn().mockResolvedValue([]),
-      getProvider: vi.fn().mockResolvedValue(null),
+      listProviders: vi.fn().mockResolvedValue([providerSummary()]),
+      getProvider: vi
+        .fn()
+        .mockImplementation(async (name: string) =>
+          name === 'example' ? providerSummary() : null,
+        ),
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
@@ -248,6 +276,8 @@ describe('gstack MCP server', () => {
         'gstack://schema',
         'gstack://schema/users',
         'gstack://application-model',
+        'gstack://provider',
+        'gstack://provider/example',
         'gstack://migration/status',
         'gstack://migration/history',
         'gstack://architecture',
@@ -293,6 +323,15 @@ describe('gstack MCP server', () => {
     }
     expect(JSON.parse(applicationContent.text)).toBeNull();
 
+    const providerResource = await client.readResource({
+      uri: 'gstack://provider/example',
+    });
+    const providerContent = providerResource.contents[0];
+    if (!providerContent || !('text' in providerContent)) {
+      throw new Error('Expected text Provider resource');
+    }
+    expect(JSON.parse(providerContent.text)).toMatchObject({ name: 'example' });
+
     const migrationStatus = await client.readResource({
       uri: 'gstack://migration/status',
     });
@@ -314,6 +353,34 @@ function emptyMigrationStatus() {
     rolledBackCount: 0,
     latestAttempt: null,
     latestApplied: null,
+  };
+}
+
+function providerSummary() {
+  return {
+    name: 'example',
+    packageName: '@example/provider-example',
+    version: '0.1.0',
+    minimumGstackVersion: '0.0.0',
+    capabilities: {
+      database: true,
+      api: false,
+      authentication: false,
+      storage: false,
+      deploy: false,
+    },
+    migrationSupport: {
+      create_model: 'native' as const,
+      drop_model: 'unsupported' as const,
+      add_column: 'native' as const,
+      drop_column: 'unsupported' as const,
+      rename_column: 'unsupported' as const,
+      alter_column: 'emulated' as const,
+      add_index: 'unsupported' as const,
+      drop_index: 'unsupported' as const,
+      add_relation: 'unsupported' as const,
+      drop_relation: 'unsupported' as const,
+    },
   };
 }
 

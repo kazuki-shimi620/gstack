@@ -103,6 +103,51 @@ export function createMcpServer(project: GstackProject): McpServer {
   );
 
   server.registerTool(
+    'list_providers',
+    {
+      title: 'List gstack Providers',
+      description:
+        'Lists registered Provider manifests and declared capabilities without initializing them.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () =>
+      safeStructured(async () => ({
+        providers: await handlers.listProviders(),
+      })),
+  );
+
+  server.registerTool(
+    'get_provider',
+    {
+      title: 'Get a gstack Provider',
+      description:
+        'Returns one registered Provider manifest and its declared capabilities without initializing it.',
+      inputSchema: { name: z.string().min(1) },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async ({ name }) =>
+      safeStructured(async () => {
+        const provider = await handlers.getProvider(name);
+        if (!provider) {
+          throw new GstackError({
+            code: 'PROVIDER_NOT_FOUND',
+            category: 'provider',
+            message: `Provider not found: ${name}`,
+          });
+        }
+        return { provider };
+      }),
+  );
+
+  server.registerTool(
     'get_migration_status',
     {
       title: 'Get gstack Migration status',
@@ -288,6 +333,72 @@ export function createMcpServer(project: GstackProject): McpServer {
             uri: uri.href,
             mimeType: 'application/yaml',
             text: schema.content,
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerResource(
+    'provider-index',
+    'gstack://provider',
+    {
+      title: 'gstack Provider index',
+      description:
+        'Registered Provider manifests and declared capabilities without live state.',
+      mimeType: 'application/json',
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(await handlers.listProviders(), null, 2),
+        },
+      ],
+    }),
+  );
+
+  server.registerResource(
+    'provider-manifest',
+    new ResourceTemplate('gstack://provider/{name}', {
+      list: async () => ({
+        resources: (await handlers.listProviders()).map((provider) => ({
+          name: provider.name,
+          title: `gstack Provider: ${provider.name}`,
+          uri: `gstack://provider/${encodeURIComponent(provider.name)}`,
+          mimeType: 'application/json',
+        })),
+      }),
+      complete: {
+        name: async (value) =>
+          (await handlers.listProviders())
+            .map((provider) => provider.name)
+            .filter((name) => name.startsWith(value)),
+      },
+    }),
+    {
+      title: 'gstack Provider manifest',
+      description:
+        'Returns one registered Provider manifest and declared capabilities.',
+      mimeType: 'application/json',
+    },
+    async (uri, variables) => {
+      const name = String(variables.name);
+      const provider = await handlers.getProvider(name);
+      if (!provider) {
+        throw new GstackError({
+          code: 'PROVIDER_NOT_FOUND',
+          category: 'provider',
+          message: `Provider not found: ${name}`,
+        });
+      }
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: 'application/json',
+            text: JSON.stringify(provider, null, 2),
           },
         ],
       };
