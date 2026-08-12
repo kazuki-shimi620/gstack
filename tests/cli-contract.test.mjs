@@ -32,7 +32,7 @@ function project(schema) {
   mkdirSync(path.join(root, 'schema'));
   writeFileSync(
     path.join(root, 'gstack.yaml'),
-    'version: 1\nname: sample-app\nschemaVersion: 1\nschema:\n  directory: schema\ngenerator:\n  formatVersion: 1\n  types: true\n  validation: false\n  openapi: false\n  documentation: false\n  aiDocumentation: false\n',
+    'version: 1\nname: sample-app\nschemaVersion: 1\nschema:\n  directory: schema\ngenerator:\n  formatVersion: 1\n  types: true\n  validation: false\n  api: true\n  openapi: false\n  documentation: false\n  aiDocumentation: false\n',
   );
   writeFileSync(path.join(root, 'schema/users.yaml'), schema);
   return root;
@@ -144,7 +144,11 @@ test('generate dry-runと明示的writeを分離する', (t) => {
   assert.equal(previewJson.data.dryRun, true);
   assert.deepEqual(
     previewJson.data.plan.writes.map(({ path: artifactPath }) => artifactPath),
-    ['generated/types/index.ts', 'generated/types/users.ts'],
+    [
+      'generated/api/contracts.ts',
+      'generated/types/index.ts',
+      'generated/types/users.ts',
+    ],
   );
   assert.equal(existsSync(path.join(root, 'generated')), false);
 

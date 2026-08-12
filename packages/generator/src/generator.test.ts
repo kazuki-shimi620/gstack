@@ -17,6 +17,7 @@ describe('Generator orchestration', () => {
     expect(plan.writes.map(({ path }) => path)).toEqual([
       'generated/ai/AGENTS.md',
       'generated/ai/PROJECT_CONTEXT.md',
+      'generated/api/contracts.ts',
       'generated/docs/models.md',
       'generated/openapi/openapi.json',
       'generated/types/index.ts',
@@ -32,6 +33,7 @@ describe('Generator orchestration', () => {
     const plan = generateApplication(application, {
       ...allEnabled,
       validation: false,
+      api: false,
       documentation: false,
       aiDocumentation: false,
     });
@@ -65,6 +67,7 @@ const allEnabled: GeneratorConfig = {
   formatVersion: 1,
   types: true,
   validation: true,
+  api: true,
   openapi: true,
   documentation: true,
   aiDocumentation: true,

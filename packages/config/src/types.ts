@@ -12,6 +12,7 @@ export interface GeneratorProjectConfig {
   readonly formatVersion: 1;
   readonly types: boolean;
   readonly validation: boolean;
+  readonly api: boolean;
   readonly openapi: boolean;
   readonly documentation: boolean;
   readonly aiDocumentation: boolean;

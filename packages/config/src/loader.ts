@@ -22,6 +22,7 @@ const GENERATOR_KEYS = new Set([
   'formatVersion',
   'types',
   'validation',
+  'api',
   'openapi',
   'documentation',
   'aiDocumentation',
@@ -120,6 +121,7 @@ function readGenerator(
     'generator.validation',
     issues,
   );
+  const api = readBoolean(value.api, 'generator.api', issues);
   const openapi = readBoolean(value.openapi, 'generator.openapi', issues);
   const documentation = readBoolean(
     value.documentation,
@@ -133,7 +135,7 @@ function readGenerator(
   );
   if (
     !formatVersion ||
-    [types, validation, openapi, documentation, aiDocumentation].some(
+    [types, validation, api, openapi, documentation, aiDocumentation].some(
       (item) => item === null,
     )
   )
@@ -142,6 +144,7 @@ function readGenerator(
     formatVersion,
     types: types!,
     validation: validation!,
+    api: api!,
     openapi: openapi!,
     documentation: documentation!,
     aiDocumentation: aiDocumentation!,

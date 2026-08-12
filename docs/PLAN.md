@@ -207,4 +207,4 @@ Status: Artifact／Manifest／Generation Plan基盤、Type Generator、外部lib
 
 ### 0.3完了監査
 
-完了済みはType、Validation、OpenAPI、Documentation、AI Documentation、Artifact ownership／Manifest、Config、Writer、Core／CLI／MCP統合である。RoadmapのTaskとDeliverableに含まれるAPI Generator、UI Generator、`generated/api/`、`generated/frontend/`は未達であるため、0.3は完了扱いにしない。APIはruntime／routing／business logic境界、UIはframework／Template／styling境界を確定してから実装する。これらを省略して0.4へ進んではいけない。
+完了済みはType、Validation、framework非依存API contract、OpenAPI、Documentation、AI Documentation、Artifact ownership／Manifest、Config、Writer、Core／CLI／MCP統合である。RoadmapのTaskとDeliverableに含まれるUI Generatorと`generated/frontend/`は未達であるため、0.3は完了扱いにしない。API runtime adapterはrouting／Template契約を確定するまで保留し、UIはframework／Template／styling境界を確定してから実装する。UIを省略して0.4へ進んではいけない。

@@ -45,6 +45,7 @@ generator:
   formatVersion: 1
   types: true
   validation: true
+  api: true
   openapi: false
   documentation: true
   aiDocumentation: false
@@ -54,6 +55,7 @@ generator:
         formatVersion: 1,
         types: true,
         validation: true,
+        api: true,
         openapi: false,
         documentation: true,
         aiDocumentation: false,
@@ -71,6 +73,7 @@ generator:
   formatVersion: 1
   types: true
   validation: true
+  api: true
   openapi: true
   documentation: true
   extra: true
