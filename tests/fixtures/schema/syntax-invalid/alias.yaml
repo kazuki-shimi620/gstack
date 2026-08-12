@@ -1,0 +1,2 @@
+name: &model_name users
+description: *model_name

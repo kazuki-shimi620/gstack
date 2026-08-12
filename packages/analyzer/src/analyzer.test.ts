@@ -105,4 +105,26 @@ database:
     expect(result.application).toBeUndefined();
     expect(result.errors.length).toBeGreaterThan(0);
   });
+
+  it('YAML nullの必須値をsemantic errorとして診断する', () => {
+    const url = new URL(
+      '../../../tests/fixtures/schema/semantic-invalid/null-required-value.yaml',
+      import.meta.url,
+    );
+    const invalid = ast('null-required-value.yaml', readFileSync(url, 'utf8'));
+
+    const result = analyzeSchemas([invalid], {
+      applicationName: 'sample-app',
+      schemaVersion: 1,
+    });
+
+    expect(result.application).toBeUndefined();
+    expect(result.errors.map((error) => error.code)).toEqual([
+      'SCHEMA_VALUE_TYPE_INVALID',
+      'SCHEMA_VALUE_TYPE_INVALID',
+      'SCHEMA_VALUE_TYPE_INVALID',
+      'SCHEMA_VALUE_TYPE_INVALID',
+    ]);
+  });
 });
+import { readFileSync } from 'node:fs';

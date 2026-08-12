@@ -1,0 +1,8 @@
+name: null
+model:
+  displayName: null
+database:
+  primaryKey: null
+  columns:
+    id:
+      type: null

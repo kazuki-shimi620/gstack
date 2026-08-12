@@ -1,0 +1,4 @@
+name: users
+model:
+ displayName: User
+  invalid: true

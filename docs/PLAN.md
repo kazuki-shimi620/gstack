@@ -168,7 +168,7 @@ CoreをCLIなしで呼び出せ、MCP ToolがCoreへ委譲し、構造化error�
 - Boundary test: Schema sourceからAST、AST setからApplication Model、filesystem fixtureからCore validation result。
 - CLI test: build済みCLIをfixtureに対して起動し、network／credentialなしでoutputとexit codeを検証する。
 - Architecture test: workspace package manifestとTypeScript project referenceが明示的な依存allowlistに一致することを検証し、Core／基盤package／CLIからProvider固有importとGoogle固有識別子を禁止する。`npm run test:architecture`で実行し、`npm run check`にも含める。
-- Property／fuzz testは後回しとし、まずduplicate key、alias、tag、multiple document、null、numeric coercion、Unicode、不正indentationのYAML corpusを保持する。
+- Property／fuzz testは後回しとする。duplicate key、alias、standard tag、multiple document、null、numeric coercion、Unicode、不正indentationのYAML corpusは`tests/fixtures/schema/`へ追加済み。
 
 ## 7. 確定済み実装判断
 
