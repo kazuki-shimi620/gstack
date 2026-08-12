@@ -393,6 +393,8 @@ GeneratorはGenerated Artifact Manifestを保持し、Manifestに記録された
 
 MVPのArtifact／Manifest／再生成Planの厳密な契約は`DECISIONS.md` D-026を規範とする。Generator EngineはpureなPlanまでを所有し、filesystem変更はWriter adapterへ分離する。
 
+WriterのProject Root、symlink、atomic write、delete、Manifest更新順序は`DECISIONS.md` D-033を規範とする。
+
 ---
 
 # 21. Regeneration
