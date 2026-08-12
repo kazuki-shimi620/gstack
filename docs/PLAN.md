@@ -177,3 +177,17 @@ CoreをCLIなしで呼び出せ、MCP ToolがCoreへ委譲し、構造化error�
 ## 8. 明示的な対象外Scope
 
 Core Foundation中は、Migration diff／plan／apply／history／rollback、Provider Registry実装、Google code／credential、Generator／Template／React、runtime CRUD／API code、Authentication、Deploy、Plugin loading、watch mode、remote／write可能MCP、AI documentation生成を実装しない。
+
+## 9. 次Phase: Migration Engine準備
+
+Core Foundation完了後はRoadmap 0.2へ進む。実装順序は次のとおりとする。
+
+1. `docs/TODO.md`のMigration設計blockerを解消し、`docs/MIGRATION.md`と`docs/DECISIONS.md`へ確定事項を反映する。
+2. Provider非依存のOperation、Diff、Plan、Risk、Reversibility契約を定義する。
+3. Application Model snapshot同士を比較するpure Diff Engineを実装する。Provider stateをbaselineに使用しない。
+4. ordered Operationとaggregate riskを生成するpure Plannerを実装する。Renameを推測しない。
+5. Migration File、checksum、history contractを実装する。
+6. Provider capability contractが利用可能になってからcapability checkを統合する。
+7. Apply／Rollbackは明示的な安全設計とProvider境界が完成するまで実装しない。
+
+現時点ではOperation scopeなどに重大な未決事項があるため、Migration packageの型やDiff logicを推測で実装しない。

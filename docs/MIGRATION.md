@@ -1094,7 +1094,7 @@ Commands
 
 ## Accepted MVP Contract
 
-`DECISIONS.md` D-007 and D-008 define the applied Application Model snapshot as the authoritative Diff baseline and Provider state as drift/capability input only. Migration Plan is structured data with stable Operation IDs, aggregate risk, destructive and reversible information, warnings, and capability results. Rename always requires explicit intent.
+`DECISIONS.md` D-007とD-008により、適用済みApplication Model snapshotを正式なDiff baselineとし、Provider stateはdrift／capability入力だけに使用する。Migration Planはstable Operation ID、aggregate risk、destructive／reversible情報、warning、capability resultを持つ構造化データとする。Renameには常に明示的なintentが必要である。
 
 | Document        | Purpose                   |
 | --------------- | ------------------------- |
