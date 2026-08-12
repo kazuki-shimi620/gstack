@@ -26,14 +26,14 @@ Providerが抽象Operationを各実環境へ変換して実行する。
 
 Migrationは以下の原則に従う。
 
-* SchemaをSingle Source of Truthとする
-* Migration EngineはProvider非依存とする
-* 差分を適用前に確認できる
-* 破壊的変更を明示する
-* Migration履歴を保持する
-* 途中失敗時に復旧可能である
-* 同一Migrationの重複適用を防止する
-* 人間とAIの双方が理解しやすい形式とする
+- SchemaをSingle Source of Truthとする
+- Migration EngineはProvider非依存とする
+- 差分を適用前に確認できる
+- 破壊的変更を明示する
+- Migration履歴を保持する
+- 途中失敗時に復旧可能である
+- 同一Migrationの重複適用を防止する
+- 人間とAIの双方が理解しやすい形式とする
 
 ---
 
@@ -115,21 +115,16 @@ Schemaを編集する。
 name: users
 
 model:
-
   displayName: User
 
 database:
-
   primaryKey: id
 
   columns:
-
     id:
-
       type: uuid
 
     name:
-
       type: string
 
       required: true
@@ -237,13 +232,11 @@ version: 20260811_000002
 name: add_email_to_users
 
 operations:
-
   - type: add_column
 
     model: users
 
     column:
-
       name: email
 
       type: string
@@ -304,17 +297,13 @@ drop_trigger
   model: users
 
   definition:
-
     primaryKey: id
 
     columns:
-
       id:
-
         type: uuid
 
       name:
-
         type: string
 ```
 
@@ -346,7 +335,6 @@ CREATE TABLE
   model: users
 
   column:
-
     name: age
 
     type: integer
@@ -364,7 +352,6 @@ CREATE TABLE
   model: users
 
   column:
-
     name: temporary_value
 ```
 
@@ -419,9 +406,7 @@ Renameが必要な場合はMigration Plan確認時に明示的に指定できる
   column: age
 
   changes:
-
     type:
-
       from: string
 
       to: integer
@@ -472,9 +457,9 @@ Migration OperationにはRisk Levelを設定する。
 
 例
 
-* Model作成
-* Nullable Column追加
-* Index追加
+- Model作成
+- Nullable Column追加
+- Index追加
 
 ---
 
@@ -484,9 +469,9 @@ Migration OperationにはRisk Levelを設定する。
 
 例
 
-* 型変更
-* required変更
-* unique追加
+- 型変更
+- required変更
+- unique追加
 
 ---
 
@@ -496,8 +481,8 @@ Migration OperationにはRisk Levelを設定する。
 
 例
 
-* Model削除
-* Column削除
+- Model削除
+- Column削除
 
 ---
 
@@ -541,10 +526,10 @@ Dry RunではProviderへ変更を加えない。
 
 以下のみ実施する。
 
-* Validation
-* Migration解析
-* Provider Capability確認
-* Operation表示
+- Validation
+- Migration解析
+- Provider Capability確認
+- Operation表示
 
 ---
 
@@ -572,13 +557,13 @@ rolled_back
 
 必要情報
 
-* Version
-* Migration Name
-* Checksum
-* Applied At
-* Provider
-* Status
-* Execution Result
+- Version
+- Migration Name
+- Checksum
+- Applied At
+- Provider
+- Status
+- Execution Result
 
 概念例
 
@@ -729,25 +714,21 @@ Migrationは可能な範囲でRollback情報を保持する。
 
 ```yaml
 operations:
-
   - type: add_column
 
     model: users
 
     column:
-
       name: age
 
       type: integer
 
 rollback:
-
   - type: drop_column
 
     model: users
 
     column:
-
       name: age
 ```
 
@@ -761,9 +742,9 @@ rollback:
 
 例
 
-* データを含むColumn削除
-* Model削除
-* Lossyな型変換
+- データを含むColumn削除
+- Model削除
+- Lossyな型変換
 
 Rollback要求時はエラーまたは警告を返す。
 
@@ -801,9 +782,9 @@ create_index
 
 必要に応じてProviderは、
 
-* Native
-* Emulated
-* Unsupported
+- Native
+- Emulated
+- Unsupported
 
 の状態を返す。
 
@@ -823,7 +804,6 @@ unsupported
 
 ```yaml
 operations:
-
   create_model: native
 
   add_column: native
@@ -850,9 +830,9 @@ schema-history/
 
 これにより
 
-* 過去Schemaとの差分確認
-* Rollback支援
-* Debug
+- 過去Schemaとの差分確認
+- Rollback支援
+- Debug
 
 が可能になる。
 
@@ -874,13 +854,13 @@ Current Target Application Model
 
 主な差分
 
-* Model追加
-* Model削除
-* Column追加
-* Column削除
-* Property変更
-* Index変更
-* Relation変更
+- Model追加
+- Model削除
+- Column追加
+- Column削除
+- Property変更
+- Index変更
+- Relation変更
 
 ---
 
@@ -890,9 +870,9 @@ Renameの自動推測は初期バージョンでは行わない。
 
 理由
 
-* 誤判定によるデータ損失を防止する
-* AIによる過剰な推測を防止する
-* Migrationの意図を明確にする
+- 誤判定によるデータ損失を防止する
+- AIによる過剰な推測を防止する
+- Migrationの意図を明確にする
 
 将来的にはRename候補を提示することは許可する。
 
@@ -980,7 +960,6 @@ sql: ALTER TABLE users ADD COLUMN age INTEGER
 
 ```yaml
 googleSheets:
-
   addColumn: D
 ```
 
@@ -992,7 +971,6 @@ googleSheets:
   model: users
 
   column:
-
     name: age
 
     type: integer
@@ -1006,10 +984,10 @@ Providerが実際の処理へ変換する。
 
 Migrationでは以下を禁止する。
 
-* Credentialの保存
-* Tokenの保存
-* Secretの埋め込み
-* Provider認証情報の記述
+- Credentialの保存
+- Tokenの保存
+- Secretの埋め込み
+- Provider認証情報の記述
 
 Migration FileはGitで公開可能な状態を保つ。
 
@@ -1019,12 +997,12 @@ Migration FileはGitで公開可能な状態を保つ。
 
 AI AgentがMigrationを操作する場合、以下を遵守する。
 
-* Apply前にPlanを実行する
-* Destructive Operationを自動承認しない
-* Renameを推測だけで適用しない
-* Failed Migrationを無視しない
-* Applied Migration Fileを書き換えない
-* Provider Capabilityを確認する
+- Apply前にPlanを実行する
+- Destructive Operationを自動承認しない
+- Renameを推測だけで適用しない
+- Failed Migrationを無視しない
+- Applied Migration Fileを書き換えない
+- Provider Capabilityを確認する
 
 ---
 
@@ -1034,32 +1012,32 @@ AI AgentがMigrationを操作する場合、以下を遵守する。
 
 Operations
 
-* create_model
-* drop_model
-* add_column
-* drop_column
-* alter_column
-* rename_column
-* add_index
-* drop_index
-* add_relation
-* drop_relation
+- create_model
+- drop_model
+- add_column
+- drop_column
+- alter_column
+- rename_column
+- add_index
+- drop_index
+- add_relation
+- drop_relation
 
 Commands
 
-* plan
-* apply
-* status
-* history
-* rollback
+- plan
+- apply
+- status
+- history
+- rollback
 
 その他
 
-* Migration File
-* Checksum
-* Risk判定
-* Destructive Change検出
-* Provider Capability確認
+- Migration File
+- Checksum
+- Risk判定
+- Destructive Change検出
+- Provider Capability確認
 
 ---
 
@@ -1067,17 +1045,17 @@ Commands
 
 将来的に追加する候補
 
-* Migration Squash
-* Migration Rebase
-* Data Migration
-* Seed Migration
-* Online Migration
-* Schema Drift Detection
-* Automatic Backup
-* Migration Hooks
-* Migration Dependencies
-* Parallel Migration
-* Branch-aware Migration
+- Migration Squash
+- Migration Rebase
+- Data Migration
+- Seed Migration
+- Online Migration
+- Schema Drift Detection
+- Automatic Backup
+- Migration Hooks
+- Migration Dependencies
+- Parallel Migration
+- Branch-aware Migration
 
 ---
 
@@ -1085,12 +1063,12 @@ Commands
 
 初期バージョンでは以下を対象外とする。
 
-* 任意SQL Migration
-* Provider固有Script
-* 完全な自動Rename判定
-* Distributed Transaction
-* Zero Downtime Migrationの保証
-* Database固有チューニング
+- 任意SQL Migration
+- Provider固有Script
+- 完全な自動Rename判定
+- Distributed Transaction
+- Zero Downtime Migrationの保証
+- Database固有チューニング
 
 ---
 
@@ -1106,13 +1084,15 @@ Primary Key変更とMigration File／checksumのcanonical contractは`DECISIONS.
 
 Migration File parserはYAML 1.2、duplicate key、未知root／Operation key、format、checksumをstrictに検証し、Provider固有keyを拒否する。filesystem上の探索・読込はこのpure parserと分離する。
 
-| Document        | Purpose                   |
-| --------------- | ------------------------- |
-| ARCHITECTURE.md | 全体アーキテクチャ                 |
-| CLI.md          | Migration CLIの公開仕様        |
-| REQUIREMENTS.md | システム要件                    |
-| SCHEMA.md       | Desired Stateを定義するDSL     |
-| PROVIDER.md     | Operationの実行先             |
-| GENERATOR.md    | Source Code生成             |
+History entryと許可された状態遷移は`DECISIONS.md` D-023を規範とする。History model自体はProvider非依存とし、保存方法は将来のProvider側storage interfaceへ分離する。
+
+| Document        | Purpose                          |
+| --------------- | -------------------------------- |
+| ARCHITECTURE.md | 全体アーキテクチャ               |
+| CLI.md          | Migration CLIの公開仕様          |
+| REQUIREMENTS.md | システム要件                     |
+| SCHEMA.md       | Desired Stateを定義するDSL       |
+| PROVIDER.md     | Operationの実行先                |
+| GENERATOR.md    | Source Code生成                  |
 | DEVELOPER.md    | Diff Engine・Planner等の内部設計 |
 | ROADMAP.md      | Migration機能の実装計画          |

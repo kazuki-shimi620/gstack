@@ -26,6 +26,16 @@ export {
 } from './file.js';
 export type { MigrationFile, MigrationFilePayload } from './file.js';
 export {
+  completeMigration,
+  createPendingHistory,
+  failMigration,
+  MigrationHistoryError,
+  recordOperationCompleted,
+  recordRollback,
+  startMigration,
+} from './history.js';
+export type { MigrationHistoryEntry, MigrationStatus } from './history.js';
+export {
   MigrationFileError,
   parseMigrationFile,
   serializeMigrationFile,
