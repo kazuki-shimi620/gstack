@@ -3,16 +3,41 @@ import { describe, expect, it, vi } from 'vitest';
 import { ProviderRegistry, ProviderRuntime } from '@gstack/provider';
 
 import { parseGoogleProviderConfig } from './config.js';
+import {
+  GOOGLE_OAUTH_SCOPES,
+  googleCredentialRequest,
+} from './authentication.js';
 import { createGoogleProvider, googleProviderManifest } from './provider.js';
 
 const configuration = {
   spreadsheetId: 'spreadsheet-id',
   appsScriptProjectId: 'script-id',
   driveFolderId: 'folder-id',
-  credentialSecret: 'GOOGLE_CREDENTIALS',
+  authentication: {
+    mode: 'user_oauth' as const,
+    credentialSecret: 'GOOGLE_CREDENTIALS',
+  },
 };
 
 describe('Google Provider foundation', () => {
+  it('operationごとに最小OAuth scopeを固定する', () => {
+    expect(GOOGLE_OAUTH_SCOPES.database_read).toEqual([
+      'https://www.googleapis.com/auth/spreadsheets.readonly',
+    ]);
+    expect(GOOGLE_OAUTH_SCOPES.storage_write).toEqual([
+      'https://www.googleapis.com/auth/drive.file',
+    ]);
+    expect(GOOGLE_OAUTH_SCOPES.deploy).toEqual([
+      'https://www.googleapis.com/auth/script.deployments',
+    ]);
+    expect(
+      googleCredentialRequest('GOOGLE_CREDENTIALS', 'script_read'),
+    ).toEqual({
+      credentialSecret: 'GOOGLE_CREDENTIALS',
+      scopes: ['https://www.googleapis.com/auth/script.projects.readonly'],
+    });
+  });
+
   it('5つのGoogle Workspace capabilityと未実装Migration supportを宣言する', () => {
     expect(googleProviderManifest).toMatchObject({
       name: 'google',
@@ -43,7 +68,7 @@ describe('Google Provider foundation', () => {
       config: null,
       issues: [
         { path: 'appsScriptProjectId' },
-        { path: 'credentialSecret' },
+        { path: 'authentication' },
         { path: 'driveFolderId' },
         { path: 'spreadsheetId' },
         { path: 'token' },
@@ -86,6 +111,10 @@ describe('Google Provider foundation', () => {
       projectRoot: '/project',
       config: configuration,
       secrets,
+      credential: {
+        credentialSecret: 'GOOGLE_CREDENTIALS',
+        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+      },
     });
     expect(secrets.get).not.toHaveBeenCalled();
   });

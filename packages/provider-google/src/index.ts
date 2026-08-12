@@ -5,3 +5,11 @@ export type {
 } from './config.js';
 export { createGoogleProvider, googleProviderManifest } from './provider.js';
 export type { GoogleWorkspaceGateway } from './provider.js';
+export {
+  GOOGLE_OAUTH_SCOPES,
+  googleCredentialRequest,
+} from './authentication.js';
+export type {
+  GoogleCredentialRequest,
+  GoogleProviderOperation,
+} from './authentication.js';

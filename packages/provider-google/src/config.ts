@@ -2,7 +2,10 @@ export interface GoogleProviderConfig {
   readonly spreadsheetId: string;
   readonly appsScriptProjectId: string;
   readonly driveFolderId: string;
-  readonly credentialSecret: string;
+  readonly authentication: {
+    readonly mode: 'user_oauth';
+    readonly credentialSecret: string;
+  };
 }
 
 export interface GoogleProviderConfigIssue {
@@ -15,7 +18,7 @@ const KEYS = [
   'spreadsheetId',
   'appsScriptProjectId',
   'driveFolderId',
-  'credentialSecret',
+  'authentication',
 ] as const;
 
 export function parseGoogleProviderConfig(
@@ -35,8 +38,50 @@ export function parseGoogleProviderConfig(
     }
   }
   for (const key of KEYS) {
-    if (typeof value[key] !== 'string' || value[key].trim().length === 0) {
+    if (
+      key !== 'authentication' &&
+      (typeof value[key] !== 'string' || value[key].trim().length === 0)
+    ) {
       issues.push(issue(key, `Google Provider configuration requires ${key}.`));
+    }
+  }
+  const authentication = value.authentication;
+  if (!isRecord(authentication)) {
+    issues.push(
+      issue(
+        'authentication',
+        'Google Provider configuration requires authentication.',
+      ),
+    );
+  } else {
+    for (const key of Object.keys(authentication)) {
+      if (!['mode', 'credentialSecret'].includes(key)) {
+        issues.push(
+          issue(
+            `authentication.${key}`,
+            `Unknown Google Provider authentication key: ${key}`,
+          ),
+        );
+      }
+    }
+    if (authentication.mode !== 'user_oauth') {
+      issues.push(
+        issue(
+          'authentication.mode',
+          'Google Provider authentication mode must be user_oauth.',
+        ),
+      );
+    }
+    if (
+      typeof authentication.credentialSecret !== 'string' ||
+      authentication.credentialSecret.trim().length === 0
+    ) {
+      issues.push(
+        issue(
+          'authentication.credentialSecret',
+          'Google Provider authentication requires credentialSecret.',
+        ),
+      );
     }
   }
   if (issues.length > 0) {
@@ -52,10 +97,18 @@ export function parseGoogleProviderConfig(
       spreadsheetId: value.spreadsheetId as string,
       appsScriptProjectId: value.appsScriptProjectId as string,
       driveFolderId: value.driveFolderId as string,
-      credentialSecret: value.credentialSecret as string,
+      authentication: Object.freeze({
+        mode: 'user_oauth',
+        credentialSecret: (value.authentication as Record<string, unknown>)
+          .credentialSecret as string,
+      }),
     }),
     issues: [],
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function issue(path: string, message: string): GoogleProviderConfigIssue {

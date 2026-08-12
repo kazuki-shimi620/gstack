@@ -12,6 +12,7 @@ import {
   parseGoogleProviderConfig,
   type GoogleProviderConfig,
 } from './config.js';
+import { googleCredentialRequest } from './authentication.js';
 
 export const googleProviderManifest: ProviderManifest = Object.freeze({
   formatVersion: 1,
@@ -45,6 +46,10 @@ export interface GoogleWorkspaceGateway {
     readonly projectRoot: string;
     readonly config: GoogleProviderConfig;
     readonly secrets: ProviderSecretResolver;
+    readonly credential: {
+      readonly credentialSecret: string;
+      readonly scopes: readonly string[];
+    };
   }): Promise<ProviderHealth>;
 }
 
@@ -76,6 +81,10 @@ export function createGoogleProvider(
             projectRoot: context.projectRoot,
             config: parsed.config,
             secrets: context.secrets,
+            credential: googleCredentialRequest(
+              parsed.config.authentication.credentialSecret,
+              'health',
+            ),
           });
         },
         dispose: async () => {
