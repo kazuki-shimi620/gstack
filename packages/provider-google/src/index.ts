@@ -3,6 +3,17 @@ export type {
   GoogleProviderConfig,
   GoogleProviderConfigIssue,
 } from './config.js';
+export {
+  GoogleCredentialError,
+  GoogleCredentialService,
+  parseGoogleAuthorizedUserCredential,
+} from './credential.js';
+export type {
+  GoogleAccessCredential,
+  GoogleAuthorizedUserCredential,
+  GoogleCredentialErrorCode,
+  GoogleOAuthTokenGateway,
+} from './credential.js';
 export { GoogleDatabaseError, GoogleDatabaseReadService } from './database.js';
 export type {
   GoogleSheetMetadata,

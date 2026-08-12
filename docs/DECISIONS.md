@@ -247,3 +247,9 @@ OAuth scopeはoperationごとの最小集合としてProvider内で固定する�
 Google Database capabilityの最初の外部Read境界は、configurationで指定された1つのSpreadsheetのmetadata取得だけとする。結果はSpreadsheet ID、title、optional locale／time zone、およびSheet ID、title、row／column countを持つimmutableなread modelへ正規化し、Sheet title／ID順で決定的に返す。Cell value、record、formula、format、permission、credentialは含めない。
 
 Google SDK／HTTPは注入可能なGatewayが所有し、Serviceは`database_read`のcredential requestとSecret Resolverを渡す。Gateway resultはSpreadsheet ID一致、型、正のgrid size、Sheet ID／title一意性を検証する。Gateway errorと不正resultはそれぞれstable codeとsafe messageへ変換し、生errorを公開しない。このRead境界はSchemaとのdiffやMigration baselineを作らず、Google Sheetsへのwriteも行わない。
+
+## D-041 Google OAuth Credential Boundary
+
+MVPのSecret Resolver payloadはUTF-8 JSONの`formatVersion: 1`、`type: "authorized_user"`、`clientId`、`clientSecret`、`refreshToken`だけを許可し、未知keyと保存済みaccess tokenを拒否する。Provider Configにはpayloadを置かず、Secret Resolver keyだけを保持する。Credential Serviceはoperation別scopeとstrictにparseしたcredentialを注入済みToken Gatewayへ渡し、access token、UTC expiry、granted scopeだけの短命なmemory resultを返す。
+
+Token Gateway resultはaccess token、未来のexpiry、要求scope包含を必須とし、不正resultを拒否する。返却順序はscopeを重複除去してsortする。gstackはrefresh後のcredentialやaccess tokenをfilesystem、config、Schema、Migration、History、Manifest、logへ永続化しない。Secret解決、parse、refresh、result検証の失敗はstable codeとsafe messageへ変換し、secret key名、credential内容、Google error messageを公開しない。Local／CIの具体Secret ResolverとOAuth HTTP adapterは別adapterとして実装する。
