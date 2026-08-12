@@ -299,3 +299,9 @@ Not Foundはresource別のsafe code、credential／authentication／permission�
 `gstack.yaml`のoptionalな`providers`はProvider nameをkeyとするmappingとし、各entryは必須の`enabled: boolean`と`configuration: mapping`だけを持つ。Provider nameはlowercase kebab-case、読込結果はname順のimmutable arrayとする。Config packageはconfigurationをJSON互換のopaque dataとして保持し、Googleその他の具体Provider keyを解釈しない。Provider固有packageが自身のconfigurationをstrictに検証する。
 
 Provider package名、Factory、credential値、access／refresh tokenはProject Configへ保存しない。SecretはProvider configuration内の参照名だけを許可する責任を具体Providerが持つ。未知Providerの解決、package install／dynamic import、複数Providerのcapability routingは標準composition／Plugin Loaderの責務とし、Config LoaderやCoreへ実装しない。
+
+## D-049 Standard Runtime Composition
+
+`@gstack/runtime`は公式配布物のcomposition rootとしてConfig、Core、Provider Registry、公式具体Providerを接続する唯一のpackageとする。Core、Config、Schema、Migration、Generatorはruntimeや具体Providerへ依存しない。CLIとMCPの実entry pointはRuntime経由でProjectをloadするが、presentation／protocolとbusiness logicの境界は維持する。
+
+MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知enabled Providerを安全に拒否する。disabled Providerは登録／初期化しない。Package install、dynamic import、Marketplace、capability routingは行わない。Google InspectionにはProject Root、Googleのopaque configuration、Environment Secret Resolverを注入する。Environment Resolverはuppercase snake-case名だけを解決し、値を列挙、log、返却modelへ公開しない。将来のlocal／CI Secret Resolverは同じportの別adapterとする。

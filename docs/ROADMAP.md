@@ -160,7 +160,7 @@ ai/
 
 Google Workspaceを実行基盤として利用可能にする。
 
-Status: Provider package、Manifest、strict configuration、offline validation、OAuth／HTTP safety、Google Sheets、Drive folder、Apps Script projectのread-only metadata REST adapter、実Sheets接続を使うread-only healthまで実装済み。各Capabilityのwrite、Migration Apply、Deployは未実装。
+Status: Provider package、Manifest、strict configuration、offline validation、OAuth／HTTP safety、Google Sheets、Drive folder、Apps Script projectのread-only metadata REST adapter、統合health、Project Config、標準RuntimeからCLI／MCPへの接続まで実装済み。各Capabilityのwrite、Migration Apply、Deployは未実装。
 
 ## Tasks
 

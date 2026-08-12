@@ -10,6 +10,7 @@
     { "path": "./packages/generator" },
     { "path": "./packages/provider" },
     { "path": "./packages/provider-google" },
+    { "path": "./packages/runtime" },
     { "path": "./packages/core" },
     { "path": "./packages/mcp" },
     { "path": "./cli" }

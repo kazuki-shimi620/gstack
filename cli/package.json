@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@gstack/core": "0.0.0",
+    "@gstack/runtime": "0.0.0",
     "commander": "^15.0.0"
   }
 }

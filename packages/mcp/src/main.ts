@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { loadProject } from '@gstack/core';
+import { loadStandardProject } from '@gstack/runtime';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
 import { createMcpServer } from './server.js';
 
 async function main(): Promise<void> {
-  const project = await loadProject(
+  const project = await loadStandardProject(
     process.env.GSTACK_PROJECT_ROOT
       ? { root: process.env.GSTACK_PROJECT_ROOT }
       : { startDirectory: process.cwd() },

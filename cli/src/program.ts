@@ -1,9 +1,5 @@
-import {
-  failureResult,
-  getErrorDetails,
-  loadProject,
-  successResult,
-} from '@gstack/core';
+import { failureResult, getErrorDetails, successResult } from '@gstack/core';
+import { loadStandardProject } from '@gstack/runtime';
 import { Command } from 'commander';
 
 import {
@@ -41,7 +37,7 @@ export function createProgram(
     .option('--json', 'output structured JSON')
     .action(async (options: { json?: boolean }) => {
       try {
-        const project = await loadProject();
+        const project = await loadStandardProject();
         const result = await project.validateSchema();
         io.stdout(
           options.json
@@ -69,7 +65,7 @@ export function createProgram(
     .option('--json', 'output structured JSON')
     .action(async (options: { dryRun?: boolean; json?: boolean }) => {
       try {
-        const project = await loadProject();
+        const project = await loadStandardProject();
         const plan = options.dryRun
           ? await project.previewGeneration()
           : await project.generate();

@@ -17,6 +17,7 @@ const packages = {
   '@gstack/generator': 'packages/generator',
   '@gstack/provider': 'packages/provider',
   '@gstack/provider-google': 'packages/provider-google',
+  '@gstack/runtime': 'packages/runtime',
   '@gstack/cli': 'cli',
 };
 const allowedInternalDependencies = {
@@ -39,12 +40,18 @@ const allowedInternalDependencies = {
     '@gstack/provider',
     '@gstack/schema',
   ],
-  '@gstack/mcp': ['@gstack/core'],
+  '@gstack/mcp': ['@gstack/core', '@gstack/runtime'],
   '@gstack/migration': ['@gstack/application'],
   '@gstack/generator': ['@gstack/application'],
   '@gstack/provider': ['@gstack/migration'],
   '@gstack/provider-google': ['@gstack/provider'],
-  '@gstack/cli': ['@gstack/core'],
+  '@gstack/runtime': [
+    '@gstack/config',
+    '@gstack/core',
+    '@gstack/provider',
+    '@gstack/provider-google',
+  ],
+  '@gstack/cli': ['@gstack/core', '@gstack/runtime'],
 };
 
 test('workspace packageの内部依存がArchitectureのallowlistに一致する', () => {
@@ -86,7 +93,7 @@ test('TypeScript project referenceがmanifestの内部依存と一致する', ()
 
 test('基盤packageとCLIにProvider固有importやGoogle固有識別子を含めない', () => {
   for (const [name, directory] of Object.entries(packages)) {
-    if (name === '@gstack/provider-google') continue;
+    if (['@gstack/provider-google', '@gstack/runtime'].includes(name)) continue;
     for (const file of sourceFiles(path.join(root, directory, 'src'))) {
       if (file.endsWith('.test.ts')) continue;
       const source = readFileSync(file, 'utf8');
