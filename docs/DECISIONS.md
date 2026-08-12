@@ -269,3 +269,9 @@ OAuth refresh adapterは`https://oauth2.googleapis.com/token`へform-urlencoded 
 Sheets metadata adapterはCredential Serviceから得た短命access tokenをAuthorization headerだけに設定し、URL queryへ含めない。`GET https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}`をretryable requestとして呼び、`includeGridData=false`と明示的fields maskでSpreadsheet ID、title、locale、time zone、Sheet ID／title／grid sizeだけを要求する。Spreadsheet IDはpath segmentとしてpercent encodeする。
 
 Google REST responseのnested propertiesをProvider内のflat metadata Gateway resultへ変換し、cell dataなど未知fieldは捨てる。その後D-040のDatabase Read ServiceがID一致、一意性、型、grid sizeを検証する。JSON parse／shape failure、OAuth failure、HTTP failureは既存の安全なProvider境界を通し、body、token、credentialを公開しない。
+
+## D-044 Default Google Provider Composition
+
+標準composition rootはFetch Transport、Google HTTP Executor、OAuth HTTP Gateway、Sheets HTTP GatewayをGoogle Provider package内で組み立て、Core／CLI／MCPへGoogle固有dependencyを要求しない。Fetch、clock、wait、timeout、attempt policyはtestおよびhost要件のため注入可能にするが、安全な既定値はD-042に従う。
+
+初期health checkはconfigured Spreadsheetのmetadata取得をend-to-endで行い、成功時だけ`healthy / GOOGLE_SHEETS_READY`を返す。Credential未検出／不正、認証失敗、権限拒否、Spreadsheet未検出、不正responseは`unavailable`、rate limit／一時的API障害は`degraded`へ分類する。Health resultはsafe codeだけを返し、HTTP status、Google payload、credential、token、生errorを含めない。このhealthはread-onlyであり、Sheets、Drive、Apps Scriptを変更しない。
