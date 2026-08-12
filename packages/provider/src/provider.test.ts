@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ProviderCatalog } from './catalog.js';
 import { validateProviderManifest } from './manifest.js';
 import { ProviderRegistry } from './registry.js';
+import { ProviderRuntime } from './runtime.js';
 import type { ProviderFactory, ProviderManifest } from './types.js';
 
 const manifest = (name: string): ProviderManifest => ({
@@ -99,6 +100,119 @@ describe('Provider Foundation', () => {
     expect(catalog.supportsCapability('example', 'database')).toBe(true);
     expect(catalog.supportsCapability('example', 'deploy')).toBe(false);
     expect(catalog.supportsCapability('missing', 'database')).toBeNull();
+  });
+
+  it('明示的なvalidateとhealthの後にSessionを破棄する', async () => {
+    const dispose = vi.fn().mockResolvedValue(undefined);
+    const initialize = vi.fn().mockResolvedValue({
+      validate: vi
+        .fn()
+        .mockResolvedValue([
+          { code: 'CONFIG_OK', severity: 'warning', message: 'Safe message.' },
+        ]),
+      health: vi.fn().mockResolvedValue({ status: 'healthy', code: 'READY' }),
+      dispose,
+    });
+    const registry = new ProviderRegistry();
+    registry.register({ manifest: manifest('example'), initialize });
+    const runtime = new ProviderRuntime(registry);
+    const context = {
+      projectRoot: '/project',
+      configuration: { database: { region: 'local' } },
+      secrets: { get: vi.fn().mockResolvedValue(null) },
+    };
+
+    await expect(runtime.validate('example', context)).resolves.toEqual([
+      { code: 'CONFIG_OK', severity: 'warning', message: 'Safe message.' },
+    ]);
+    await expect(runtime.health('example', context)).resolves.toEqual({
+      status: 'healthy',
+      code: 'READY',
+    });
+    expect(initialize).toHaveBeenCalledTimes(2);
+    expect(initialize.mock.calls[0]?.[0]).not.toBe(context);
+    expect(Object.isFrozen(initialize.mock.calls[0]?.[0].configuration)).toBe(
+      true,
+    );
+    expect(dispose).toHaveBeenCalledTimes(2);
+  });
+
+  it('未登録、初期化、操作、破棄の失敗をstable codeへ変換する', async () => {
+    const context = {
+      projectRoot: '/project',
+      configuration: {},
+      secrets: { get: vi.fn().mockResolvedValue(null) },
+    };
+    await expect(
+      new ProviderRuntime(new ProviderRegistry()).health('missing', context),
+    ).rejects.toMatchObject({ code: 'PROVIDER_NOT_REGISTERED' });
+
+    const initializeRegistry = new ProviderRegistry();
+    initializeRegistry.register({
+      manifest: manifest('initialize'),
+      initialize: vi.fn().mockRejectedValue(new Error('credential=value')),
+    });
+    await expect(
+      new ProviderRuntime(initializeRegistry).health('initialize', context),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_INITIALIZATION_FAILED',
+      message: 'Provider initialization failed: initialize',
+    });
+
+    const dispose = vi.fn().mockResolvedValue(undefined);
+    const operationRegistry = new ProviderRegistry();
+    operationRegistry.register({
+      manifest: manifest('operation'),
+      initialize: vi.fn().mockResolvedValue({
+        validate: vi.fn(),
+        health: vi.fn().mockRejectedValue(new Error('token=secret')),
+        dispose,
+      }),
+    });
+    await expect(
+      new ProviderRuntime(operationRegistry).health('operation', context),
+    ).rejects.toMatchObject({
+      code: 'PROVIDER_OPERATION_FAILED',
+      message: 'Provider operation failed: operation',
+    });
+    expect(dispose).toHaveBeenCalledOnce();
+
+    const disposalRegistry = new ProviderRegistry();
+    disposalRegistry.register({
+      manifest: manifest('disposal'),
+      initialize: vi.fn().mockResolvedValue({
+        validate: vi.fn(),
+        health: vi.fn().mockResolvedValue({ status: 'healthy', code: 'OK' }),
+        dispose: vi.fn().mockRejectedValue(new Error('dispose failed')),
+      }),
+    });
+    await expect(
+      new ProviderRuntime(disposalRegistry).health('disposal', context),
+    ).rejects.toMatchObject({ code: 'PROVIDER_DISPOSAL_FAILED' });
+  });
+
+  it('不正なProvider結果を拒否して破棄する', async () => {
+    const dispose = vi.fn().mockResolvedValue(undefined);
+    const registry = new ProviderRegistry();
+    registry.register({
+      manifest: manifest('example'),
+      initialize: vi.fn().mockResolvedValue({
+        validate: vi.fn().mockResolvedValue([]),
+        health: vi
+          .fn()
+          .mockResolvedValue({ status: 'healthy', code: 'not safe' }),
+        dispose,
+      }),
+    });
+
+    await expect(
+      new ProviderRuntime(registry).health('example', {
+        projectRoot: '/project',
+        configuration: {},
+        secrets: { get: vi.fn().mockResolvedValue(null) },
+      }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_RESULT_INVALID' });
+    expect(dispose).toHaveBeenCalledOnce();
   });
 });
 

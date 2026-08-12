@@ -229,3 +229,7 @@ Provider factoryはManifestと`initialize(context)`を持ち、contextはProject
 ## D-037 Provider Catalog Read Model
 
 CoreおよびMCPが参照するProvider情報は、Registry内のFactoryを直接公開せず、Manifest由来のimmutableな`ProviderSummary`へ射影する。CatalogはProvider一覧をname順で返し、単一Providerおよびtop-level capabilityを参照できる。Summaryにはpackage名、version、minimum gstack version、capability、Migration Operation supportだけを含め、初期化関数、Session、Provider config、credential、secret、healthのlive stateを含めない。
+
+## D-038 Provider Lifecycle Orchestration
+
+Providerのvalidation／healthは、明示的なProvider名と、Project Root、secretを含まないconfiguration、注入済みSecret Resolverを受ける短命な操作とする。Runtimeは操作ごとにFactoryを初期化し、1つのSession操作を実行し、成功・失敗にかかわらずSessionを1回破棄する。SessionやSecret Resolverの値をresultへ含めない。未登録、初期化、操作、不正result、破棄の失敗はstable codeとsafe messageを持つRuntime errorへ変換し、Provider由来の生messageを公開しない。Validation issueとhealth codeも契約に沿う形式を検証してimmutableなcopyを返す。
