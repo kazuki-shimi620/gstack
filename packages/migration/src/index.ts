@@ -36,6 +36,19 @@ export {
 } from './history.js';
 export type { MigrationHistoryEntry, MigrationStatus } from './history.js';
 export {
+  createApplicationModelSnapshot,
+  parseApplicationModelSnapshot,
+  serializeApplicationModelSnapshot,
+  snapshotChecksum,
+  SnapshotError,
+} from './snapshot.js';
+export type {
+  ApplicationModelSnapshot,
+  ApplicationModelSnapshotPayload,
+} from './snapshot.js';
+export { MigrationHistoryRepository } from './storage.js';
+export type { MigrationHistoryStorage } from './storage.js';
+export {
   MigrationFileError,
   parseMigrationFile,
   serializeMigrationFile,

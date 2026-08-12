@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ApplicationModel } from '@gstack/application';
 import { createMigrationFile } from './file.js';
 import {
   completeMigration,
@@ -10,13 +9,14 @@ import {
   recordRollback,
   startMigration,
 } from './history.js';
+import { createApplicationModelSnapshot } from './snapshot.js';
 
-const snapshot: ApplicationModel = {
+const snapshot = createApplicationModelSnapshot({
   schemaVersion: 1,
   name: 'app',
   models: [],
   metadata: {},
-};
+});
 const file = createMigrationFile('20260812_000001', 'initial', []);
 
 describe('Migration History', () => {

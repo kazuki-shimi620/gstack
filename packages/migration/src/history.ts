@@ -1,6 +1,5 @@
-import type { ApplicationModel } from '@gstack/application';
-
 import type { MigrationFile } from './file.js';
+import type { ApplicationModelSnapshot } from './snapshot.js';
 
 export type MigrationStatus =
   'pending' | 'applying' | 'applied' | 'failed' | 'rolled_back';
@@ -17,7 +16,7 @@ export interface MigrationHistoryEntry {
   readonly rolledBackAt: string | null;
   readonly failedOperationId: string | null;
   readonly errorCode: string | null;
-  readonly appliedSnapshot: ApplicationModel | null;
+  readonly appliedSnapshot: ApplicationModelSnapshot | null;
 }
 
 export class MigrationHistoryError extends Error {
@@ -73,7 +72,7 @@ export function recordOperationCompleted(
 export function completeMigration(
   entry: MigrationHistoryEntry,
   completedAt: string,
-  appliedSnapshot: ApplicationModel,
+  appliedSnapshot: ApplicationModelSnapshot,
 ): MigrationHistoryEntry {
   requireStatus(entry, 'applying');
   isoUtc(completedAt);
