@@ -1,6 +1,7 @@
 import type { ApplicationModel } from '@gstack/application';
 import type { GstackConfig } from '@gstack/config';
 import type { Diagnostic, SchemaSource } from '@gstack/schema';
+import type { GenerationPlan } from '@gstack/generator';
 import type {
   MigrationHistoryEntry,
   MigrationPlanPreview,
@@ -64,7 +65,7 @@ export interface ProjectContext {
     readonly applicationModel: 'available';
     readonly providerStatus: 'not_implemented';
     readonly migrationPlan: 'available' | 'not_configured';
-    readonly generatedArtifacts: 'not_implemented';
+    readonly generatedArtifacts: 'available' | 'not_configured';
   };
 }
 
@@ -82,6 +83,8 @@ export interface GstackProject {
   previewMigrationPlan(
     renameIntents?: readonly RenameColumnIntent[],
   ): Promise<MigrationPlanPreview>;
+  previewGeneration(): Promise<GenerationPlan>;
+  generate(): Promise<GenerationPlan>;
 }
 
 export interface MigrationReader {

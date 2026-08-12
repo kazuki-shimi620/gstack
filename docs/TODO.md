@@ -25,7 +25,7 @@
 
 ## MCP／AI supportの後続作業
 
-- [ ] 対応サブシステムの実装に合わせてCore Read APIを拡張する。Application Modelと注入可能なMigration status／history／planは完了。Provider capability／health、Migration History Storageの具体実装、generated artifact inventoryが残っている。
+- [ ] 対応サブシステムの実装に合わせてCore Read APIを拡張する。Application Model、注入可能なMigration status／history／plan、Generation Plan previewは完了。Provider capability／health、Migration History Storageの具体実装、生成済みartifact inventoryが残っている。
 - [ ] 対応するCore Read APIが存在してからMCP Resourceを追加する。Application ModelとMigration status／historyは完了。Providerとgenerated artifactが残っている。
 - [x] Generator設計で生成領域向け`AGENTS.md`と永続化する`PROJECT_CONTEXT.md`の形式を定義し、Application Modelから導出する（`DECISIONS.md` D-031）。現在のCore／MCP Project Contextはmemory上のread modelであり、生成物ではない。
 - [ ] package配布commandが安定してから、Codex、Claude、その他MCP host向けのinstallation例を文書化する。

@@ -1,13 +1,73 @@
-import { lstat, mkdir, rename, unlink, writeFile } from 'node:fs/promises';
+import {
+  lstat,
+  mkdir,
+  readFile,
+  rename,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 import { validateGeneratedPath } from './artifact.js';
 import {
   GENERATED_MANIFEST_PATH,
+  parseGeneratedManifest,
   serializeGeneratedManifest,
 } from './manifest.js';
+import type { GeneratedArtifactManifest } from './manifest.js';
 import type { GenerationPlan } from './plan.js';
+
+export async function loadGeneratedManifest(
+  projectRoot: string,
+): Promise<GeneratedArtifactManifest | null> {
+  if (!path.isAbsolute(projectRoot)) {
+    throw new GenerationWriteError(
+      'GENERATION_ROOT_INVALID',
+      'Generation Project Root must be absolute.',
+    );
+  }
+  try {
+    await rejectSymlink(projectRoot);
+    const target = path.join(
+      projectRoot,
+      ...GENERATED_MANIFEST_PATH.split('/'),
+    );
+    if (!(await existingSafeDirectory(projectRoot, path.dirname(target))))
+      return null;
+    await rejectSymlinkIfExists(target);
+    const content = await readFile(target, 'utf8').catch(
+      (error: NodeJS.ErrnoException) =>
+        error.code === 'ENOENT' ? null : Promise.reject(error),
+    );
+    return content === null ? null : parseGeneratedManifest(content);
+  } catch (error: unknown) {
+    if (error instanceof GenerationWriteError) throw error;
+    throw new GenerationWriteError(
+      'GENERATION_WRITE_FAILED',
+      'Generated Artifact Manifest could not be loaded.',
+      { cause: error },
+    );
+  }
+}
+
+async function existingSafeDirectory(
+  projectRoot: string,
+  directory: string,
+): Promise<boolean> {
+  const relative = path.relative(projectRoot, directory);
+  let current = projectRoot;
+  for (const segment of relative.split(path.sep).filter(Boolean)) {
+    current = path.join(current, segment);
+    const status = await lstat(current).catch((error: NodeJS.ErrnoException) =>
+      error.code === 'ENOENT' ? null : Promise.reject(error),
+    );
+    if (!status) return false;
+    if (status.isSymbolicLink()) symlink();
+    if (!status.isDirectory()) return false;
+  }
+  return true;
+}
 
 export class GenerationWriteError extends Error {
   public constructor(

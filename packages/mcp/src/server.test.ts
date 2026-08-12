@@ -72,6 +72,8 @@ describe('gstack MCP server', () => {
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
+      previewGeneration: vi.fn(),
+      generate: vi.fn(),
     };
     const server = createMcpServer(project);
     const client = new Client({ name: 'test-client', version: '0.0.0' });
@@ -209,6 +211,8 @@ describe('gstack MCP server', () => {
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
+      previewGeneration: vi.fn(),
+      generate: vi.fn(),
     };
     const server = createMcpServer(project);
     const client = new Client({ name: 'test-client', version: '0.0.0' });

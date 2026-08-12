@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGenerationPlan } from './plan.js';
-import { writeGenerationPlan } from './writer.js';
+import { loadGeneratedManifest, writeGenerationPlan } from './writer.js';
 
 const roots: string[] = [];
 
@@ -47,6 +47,7 @@ describe('Generated Artifact Writer', () => {
     expect(
       manifest.artifacts.map(({ path: artifactPath }) => artifactPath),
     ).toEqual(['generated/types/user.ts']);
+    await expect(loadGeneratedManifest(root)).resolves.toEqual(plan.manifest);
   });
 
   it('generated内のsymlinkを拒否して外部fileを変更しない', async () => {
@@ -73,6 +74,12 @@ describe('Generated Artifact Writer', () => {
     await expect(
       writeGenerationPlan('relative', createGenerationPlan([], null)),
     ).rejects.toMatchObject({ code: 'GENERATION_ROOT_INVALID' });
+  });
+
+  it('Manifestが存在しない場合はnullを返す', async () => {
+    await expect(
+      loadGeneratedManifest(await temporaryRoot()),
+    ).resolves.toBeNull();
   });
 });
 

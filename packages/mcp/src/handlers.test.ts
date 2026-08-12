@@ -69,6 +69,8 @@ describe('MCP read handlers', () => {
         baselineVersion: null,
         plan: { operations: [] },
       }),
+      previewGeneration: vi.fn(),
+      generate: vi.fn(),
     };
 
     await expect(createReadHandlers(project).getProjectStatus()).resolves.toBe(

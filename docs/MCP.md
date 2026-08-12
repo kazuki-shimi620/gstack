@@ -54,7 +54,7 @@ await project.previewMigrationPlan();
 
 Validationは、Parserで失敗した場合に`level: "syntax"`、構文通過後は`level: "semantic"`を返す。Application ModelはSemantic Validation成功時だけ生成する。この契約は`DECISIONS.md` D-003からD-006に従う。
 
-`getProjectContext()`は、現在利用可能なstatus、Schema summary、validation resultを集約する。capability mapではSemantic ValidationとApplication Modelを`available`とする。Migration PlanはHistory Storageを実装するReaderが注入されている場合だけ`available`、それ以外は`not_configured`とする。Provider Statusとgenerated artifact inventoryは`not_implemented`とし、利用できないstateを捏造してはいけない。
+`getProjectContext()`は、現在利用可能なstatus、Schema summary、validation resultを集約する。capability mapではSemantic ValidationとApplication Modelを`available`とする。Migration PlanはHistory Storageを実装するReaderが注入されている場合だけ`available`、Generator Artifactは`generator`設定が存在する場合だけ`available`とする。Provider Statusは`not_implemented`とし、利用できないstateを捏造してはいけない。
 
 Migration Read APIはCoreへ注入されたProvider非依存Readerへ委譲する。Core自身がHistoryの保存先やProvider実装を選択してはいけない。Plan previewはSemantic Validation成功時のApplication ModelだけをtargetとしてReaderへ渡し、不正SchemaまたはReader未設定は安全なCore errorとして返す。
 

@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -173,6 +176,58 @@ describe('gstack project read API', () => {
     });
     await expect(invalid.previewMigrationPlan()).rejects.toMatchObject({
       details: { code: 'MIGRATION_SCHEMA_INVALID', category: 'migration' },
+    });
+  });
+
+  it('Generation previewと明示的writeを分離する', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'gstack-core-generator-'));
+    try {
+      const project = await loadProject({
+        root,
+        loadConfig: async () => ({
+          ...TEST_CONFIG,
+          generator: {
+            formatVersion: 1,
+            types: true,
+            validation: false,
+            openapi: false,
+            documentation: false,
+            aiDocumentation: false,
+          },
+        }),
+        loadSources: async () => [
+          source(
+            'users',
+            'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+          ),
+        ],
+      });
+
+      const preview = await project.previewGeneration();
+      expect(
+        preview.writes.map(({ path: artifactPath }) => artifactPath),
+      ).toEqual(['generated/types/index.ts', 'generated/types/users.ts']);
+      await expect(access(path.join(root, 'generated'))).rejects.toMatchObject({
+        code: 'ENOENT',
+      });
+
+      await expect(project.generate()).resolves.toEqual(preview);
+      await expect(
+        readFile(path.join(root, 'generated', 'types', 'users.ts'), 'utf8'),
+      ).resolves.toContain('export interface Users');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('Generator未設定を安全なCore errorにする', async () => {
+    const project = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [],
+    });
+    await expect(project.previewGeneration()).rejects.toMatchObject({
+      details: { code: 'GENERATOR_NOT_CONFIGURED', category: 'generator' },
     });
   });
 

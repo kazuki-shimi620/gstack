@@ -5,10 +5,13 @@ export type GstackErrorCode =
   | 'SCHEMA_NOT_FOUND'
   | 'MIGRATION_NOT_AVAILABLE'
   | 'MIGRATION_SCHEMA_INVALID'
+  | 'GENERATOR_NOT_CONFIGURED'
+  | 'GENERATOR_SCHEMA_INVALID'
+  | 'GENERATION_FAILED'
   | 'INTERNAL_ERROR';
 
 export type GstackErrorCategory =
-  'configuration' | 'schema' | 'migration' | 'internal';
+  'configuration' | 'schema' | 'migration' | 'generator' | 'internal';
 
 export interface GstackErrorDetails {
   readonly code: GstackErrorCode;

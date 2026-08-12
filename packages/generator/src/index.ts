@@ -26,4 +26,8 @@ export { generateDocumentationArtifact } from './documentation.js';
 export { generateAiDocumentationArtifacts } from './ai-documentation.js';
 export { generateApplication } from './generator.js';
 export type { GeneratorConfig } from './generator.js';
-export { GenerationWriteError, writeGenerationPlan } from './writer.js';
+export {
+  GenerationWriteError,
+  loadGeneratedManifest,
+  writeGenerationPlan,
+} from './writer.js';

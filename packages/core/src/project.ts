@@ -10,6 +10,12 @@ import {
 } from '@gstack/config';
 import { parseSchemaSource } from '@gstack/parser';
 import { compareDiagnostics, loadSchemaSources } from '@gstack/schema';
+import {
+  generateApplication,
+  loadGeneratedManifest,
+  writeGenerationPlan,
+  type GenerationPlan,
+} from '@gstack/generator';
 
 import type {
   GstackProject,
@@ -86,7 +92,10 @@ class Project implements GstackProject {
         schemaDirectory: this.config.schema.directory,
       },
       providers: { configured: false, details: null },
-      generators: { configured: false, details: null },
+      generators: {
+        configured: this.config.generator !== null,
+        details: this.config.generator ? { ...this.config.generator } : null,
+      },
       migration: {
         availability: this.migrationReader ? 'available' : 'not_configured',
       },
@@ -119,7 +128,9 @@ class Project implements GstackProject {
         applicationModel: 'available',
         providerStatus: 'not_implemented',
         migrationPlan: this.migrationReader ? 'available' : 'not_configured',
-        generatedArtifacts: 'not_implemented',
+        generatedArtifacts: this.config.generator
+          ? 'available'
+          : 'not_configured',
       },
     };
   }
@@ -180,6 +191,46 @@ class Project implements GstackProject {
       application,
       renameIntents,
     );
+  }
+
+  public async previewGeneration(): Promise<GenerationPlan> {
+    const config = this.requireGeneratorConfig();
+    const application = await this.getApplicationModel();
+    if (!application) {
+      throw new GstackError({
+        code: 'GENERATOR_SCHEMA_INVALID',
+        category: 'generator',
+        message: 'Generation Plan cannot be created from an invalid Schema.',
+        hint: 'Fix Schema validation errors before generating Artifacts.',
+      });
+    }
+    try {
+      const previous = await loadGeneratedManifest(this.root);
+      return generateApplication(application, config, previous);
+    } catch (error: unknown) {
+      throw generationError(error);
+    }
+  }
+
+  public async generate(): Promise<GenerationPlan> {
+    const plan = await this.previewGeneration();
+    try {
+      await writeGenerationPlan(this.root, plan);
+      return plan;
+    } catch (error: unknown) {
+      throw generationError(error);
+    }
+  }
+
+  private requireGeneratorConfig() {
+    if (!this.config.generator) {
+      throw new GstackError({
+        code: 'GENERATOR_NOT_CONFIGURED',
+        category: 'generator',
+        message: 'Generator is not configured in gstack.yaml.',
+      });
+    }
+    return this.config.generator;
   }
 
   private requireMigrationReader(): MigrationReader {
@@ -245,6 +296,18 @@ class Project implements GstackProject {
       );
     }
   }
+}
+
+function generationError(error: unknown): GstackError {
+  if (error instanceof GstackError) return error;
+  return new GstackError(
+    {
+      code: 'GENERATION_FAILED',
+      category: 'generator',
+      message: 'Generated Artifacts could not be processed.',
+    },
+    { cause: error },
+  );
 }
 
 async function loadConfigSafely(

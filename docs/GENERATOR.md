@@ -407,6 +407,8 @@ gstack generate
 
 は常に最新Schemaから再生成する。
 
+Coreは副作用のないGeneration Plan previewと、同じPlanをWriterへ渡す明示的なgenerate操作を分離する。previewはManifestを読み取るだけでfilesystemを変更せず、generateだけがD-033のWriterを実行する。Generator未設定またはSchema Validation失敗時は生成しない。
+
 ---
 
 # 22. Incremental Generation
