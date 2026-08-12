@@ -233,6 +233,8 @@ API Layerを生成する。
 
 GeneratorはBusiness Logicを生成しない。
 
+MVPではruntime framework非依存のroute／request／response contractだけを生成する。handler、database access、authentication、business logicを生成しない境界は`DECISIONS.md` D-034を規範とする。
+
 ---
 
 # 12. UI Generator
