@@ -1,4 +1,15 @@
 export { createMigrationPlan, operationId } from './plan.js';
+export {
+  MigrationApplyError,
+  migrationPlanFingerprint,
+  validateMigrationApply,
+} from './apply.js';
+export type {
+  MigrationApplyApproval,
+  MigrationApplyPreflight,
+  MigrationLock,
+  MigrationLockLease,
+} from './apply.js';
 export type {
   AddColumnOperation,
   AddIndexOperation,

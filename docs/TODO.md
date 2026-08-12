@@ -44,8 +44,8 @@
 - [x] explicit rename intentの形式と検証規則を確定する（`DECISIONS.md` D-019）。
 - [x] capability resultの付与段階を確定する（`DECISIONS.md` D-020）。
 - [x] Primary Key変更の扱いを確定する。MVPでは禁止し、専用errorを返す（`DECISIONS.md` D-021）。
-- [ ] Rollback Planのcanonical順序、初回Migrationのrollback target、Migration Fileへrollback Operationを保持するかを確定する。適用処理や自動Rollbackは決定前に実装しない。
-- [ ] Migration Lock、部分失敗からの再開、Apply承認token／destructive確認の契約を確定する。具体Providerを変更するApplyは決定前に実装しない。
+- [x] Rollback Planのcanonical順序、初回Migrationのrollback target、Migration Fileへrollback Operationを保持するかを確定する（`DECISIONS.md` D-051）。
+- [x] Migration Lock、部分失敗からの再開、Apply承認／destructive確認の契約を確定する（`DECISIONS.md` D-052）。具体Providerのidempotencyが未実装のためApply自体はまだ有効化しない。
 
 ## Generator Engine実装前の設計判断
 

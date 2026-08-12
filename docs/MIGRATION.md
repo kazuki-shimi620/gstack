@@ -1078,6 +1078,8 @@ Commands
 
 `DECISIONS.md` D-007とD-008により、適用済みApplication Model snapshotを正式なDiff baselineとし、Provider stateはdrift／capability入力だけに使用する。Migration Planはstable Operation ID、aggregate risk、destructive／reversible情報、warning、capability resultを持つ構造化データとする。Renameには常に明示的なintentが必要である。
 
+Rollback PlanとApply safety protocolの規範は`DECISIONS.md` D-051、D-052とする。Rollback Operationは完了済みforward Operationの逆順から都度生成し、Migration Fileへ重複保存しない。Applyはchecksum、History、capability、approval、lockを検証し、部分失敗の再開時も同一Planの確認と新しいapprovalを必須とする。具体Providerのidempotencyが保証されるまでProvider writeを有効化しない。
+
 Operation scope、stable ID、alter risk、初回baseline、rename intent、capability評価時点の詳細は`DECISIONS.md` D-015からD-020を規範とする。
 
 Capability評価結果の完全性、Planの集約状態、適用可否は`DECISIONS.md` D-025を規範とする。Migration packageは評価結果を反映するpure functionだけを所有し、具体的Providerの呼出しはProvider／Core側のOrchestrationが担当する。
