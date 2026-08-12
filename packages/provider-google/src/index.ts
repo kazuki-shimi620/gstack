@@ -29,6 +29,12 @@ export {
 } from './http.js';
 export { GoogleOAuthHttpGateway } from './oauth-http.js';
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
+export { GoogleScriptHttpGateway } from './script-http.js';
+export { GoogleScriptError, GoogleScriptReadService } from './script.js';
+export type {
+  GoogleScriptMetadataGateway,
+  GoogleScriptProjectMetadata,
+} from './script.js';
 export { GoogleDriveHttpGateway } from './drive-http.js';
 export {
   GOOGLE_DRIVE_FOLDER_MIME_TYPE,

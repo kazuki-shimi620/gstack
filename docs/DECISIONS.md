@@ -281,3 +281,9 @@ Google REST responseのnested propertiesをProvider内のflat metadata Gateway r
 Storage capabilityの最初のRead境界は、configurationで指定された1つのDrive folderのmetadata取得だけとする。結果はfolder ID、name、sort済みparent IDs、trashed、`canAddChildren`／`canListChildren`だけを持つimmutable read modelとし、file内容、子file一覧、permission、owner、email、credentialを含めない。ID一致、Google Drive folder MIME type、型、parent ID一意性をstrictに検証する。
 
 REST adapterは`GET https://www.googleapis.com/drive/v3/files/{folderId}`を`drive.metadata.readonly` scopeと短命Bearer tokenで呼び、fields maskを上記metadataに限定する。Shared Drive互換のため`supportsAllDrives=true`を指定する。Folder IDはpath encodeし、tokenをqueryへ置かない。このsliceはfolderの作成、移動、list、upload、download、deleteを行わない。
+
+## D-046 Google Apps Script Project Metadata Boundary
+
+API／Deploy capabilityの最初のRead境界は、configurationで指定された1つのApps Script projectのmetadata取得だけとする。結果はscript ID、title、optional parent ID、create／update UTC timestampだけを持つimmutable read modelとし、source file、manifest content、deployment、version、metric、execution result、creator／last modifier profileを含めない。ID一致、型、timestampをstrictに検証する。
+
+REST adapterは公式`projects.get` endpointを`script.projects.readonly` scopeと短命Bearer tokenでretryable GETし、fields maskを`scriptId,title,parentId,createTime,updateTime`へ限定する。Script IDはpath encodeし、tokenをqueryへ置かない。このsliceはproject作成、source取得／更新、version／deployment操作、script実行を行わない。
