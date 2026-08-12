@@ -1104,6 +1104,8 @@ Operation scope、stable ID、alter risk、初回baseline、rename intent、capa
 
 Primary Key変更とMigration File／checksumのcanonical contractは`DECISIONS.md` D-021、D-022を規範とする。
 
+Migration File parserはYAML 1.2、duplicate key、未知root／Operation key、format、checksumをstrictに検証し、Provider固有keyを拒否する。filesystem上の探索・読込はこのpure parserと分離する。
+
 | Document        | Purpose                   |
 | --------------- | ------------------------- |
 | ARCHITECTURE.md | 全体アーキテクチャ                 |

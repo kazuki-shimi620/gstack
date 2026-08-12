@@ -25,3 +25,8 @@ export {
   verifyMigrationChecksum,
 } from './file.js';
 export type { MigrationFile, MigrationFilePayload } from './file.js';
+export {
+  MigrationFileError,
+  parseMigrationFile,
+  serializeMigrationFile,
+} from './yaml.js';

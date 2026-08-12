@@ -190,4 +190,4 @@ Core Foundation完了後はRoadmap 0.2へ進む。実装順序は次のとおり
 6. Provider capability contractが利用可能になってからcapability checkを統合する。
 7. Apply／Rollbackは明示的な安全設計とProvider境界が完成するまで実装しない。
 
-Status: 実装中。Provider非依存のOperation／Plan契約、canonical ID、aggregate risk、初回`null` baseline、Model／Column／Index／Relationのpure Diff、明示rename intent、Primary Key変更拒否、Migration File payloadとcanonical SHA-256 checksumを実装済み。YAML serialization／loader、history contractへ進む。Apply／Rollbackは引き続き未実装とする。
+Status: 実装中。Provider非依存のOperation／Plan契約、canonical ID、aggregate risk、pure Diff、明示rename、Primary Key変更拒否、Migration File payload、canonical SHA-256 checksum、strictなYAML serialization／parseを実装済み。history contractへ進む。Apply／Rollbackは引き続き未実装とする。

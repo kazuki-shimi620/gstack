@@ -6,6 +6,7 @@
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "@gstack/application": "0.0.0"
+    "@gstack/application": "0.0.0",
+    "yaml": "^2.9.0"
   }
 }
