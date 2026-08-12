@@ -102,6 +102,58 @@ export function createMcpServer(project: GstackProject): McpServer {
       })),
   );
 
+  server.registerTool(
+    'get_migration_status',
+    {
+      title: 'Get gstack Migration status',
+      description: 'Returns a read-only summary of Migration History state.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () =>
+      safeStructured(async () => ({
+        migrationStatus: await handlers.getMigrationStatus(),
+      })),
+  );
+
+  server.registerTool(
+    'list_migration_history',
+    {
+      title: 'List gstack Migration History',
+      description: 'Lists Migration History in deterministic version order.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () =>
+      safeStructured(async () => ({
+        migrationHistory: await handlers.listMigrationHistory(),
+      })),
+  );
+
+  server.registerTool(
+    'preview_migration_plan',
+    {
+      title: 'Preview gstack Migration Plan',
+      description:
+        'Computes a Provider-independent Migration Plan without applying it.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () =>
+      safeStructured(async () => ({
+        migrationPlan: await handlers.previewMigrationPlan(),
+      })),
+  );
+
   server.registerResource(
     'project',
     'gstack://project',
@@ -239,6 +291,44 @@ export function createMcpServer(project: GstackProject): McpServer {
           uri: uri.href,
           mimeType: 'application/json',
           text: JSON.stringify(await handlers.getApplicationModel(), null, 2),
+        },
+      ],
+    }),
+  );
+
+  server.registerResource(
+    'migration-status',
+    'gstack://migration/status',
+    {
+      title: 'gstack Migration status',
+      description: 'Read-only summary of Migration History state.',
+      mimeType: 'application/json',
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(await handlers.getMigrationStatus(), null, 2),
+        },
+      ],
+    }),
+  );
+
+  server.registerResource(
+    'migration-history',
+    'gstack://migration/history',
+    {
+      title: 'gstack Migration History',
+      description: 'Migration History entries in deterministic version order.',
+      mimeType: 'application/json',
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(await handlers.listMigrationHistory(), null, 2),
         },
       ],
     }),

@@ -69,9 +69,9 @@ describe('gstack MCP server', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
-      getMigrationStatus: vi.fn(),
-      listMigrationHistory: vi.fn(),
-      previewMigrationPlan: vi.fn(),
+      getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
+      listMigrationHistory: vi.fn().mockResolvedValue([]),
+      previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
     };
     const server = createMcpServer(project);
     const client = new Client({ name: 'test-client', version: '0.0.0' });
@@ -92,6 +92,9 @@ describe('gstack MCP server', () => {
       'list_schemas',
       'get_schema',
       'validate_schema',
+      'get_migration_status',
+      'list_migration_history',
+      'preview_migration_plan',
     ]);
     expect(
       tools.tools.every((tool) => tool.annotations?.readOnlyHint === true),
@@ -109,6 +112,20 @@ describe('gstack MCP server', () => {
       warnings: [],
     });
     expect(getStatus).toHaveBeenCalledOnce();
+
+    const migration = await client.callTool({
+      name: 'preview_migration_plan',
+    });
+    expect(migration.structuredContent).toMatchObject({
+      ok: true,
+      data: {
+        migrationPlan: {
+          baselineVersion: null,
+          plan: { operations: [] },
+        },
+      },
+    });
+    expect(project.previewMigrationPlan).toHaveBeenCalledOnce();
 
     const missing = await client.callTool({
       name: 'get_schema',
@@ -189,9 +206,9 @@ describe('gstack MCP server', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
-      getMigrationStatus: vi.fn(),
-      listMigrationHistory: vi.fn(),
-      previewMigrationPlan: vi.fn(),
+      getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
+      listMigrationHistory: vi.fn().mockResolvedValue([]),
+      previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
     };
     const server = createMcpServer(project);
     const client = new Client({ name: 'test-client', version: '0.0.0' });
@@ -215,6 +232,8 @@ describe('gstack MCP server', () => {
         'gstack://schema',
         'gstack://schema/users',
         'gstack://application-model',
+        'gstack://migration/status',
+        'gstack://migration/history',
         'gstack://architecture',
       ]),
     );
@@ -257,5 +276,42 @@ describe('gstack MCP server', () => {
       throw new Error('Expected text Application Model resource');
     }
     expect(JSON.parse(applicationContent.text)).toBeNull();
+
+    const migrationStatus = await client.readResource({
+      uri: 'gstack://migration/status',
+    });
+    const migrationContent = migrationStatus.contents[0];
+    if (!migrationContent || !('text' in migrationContent)) {
+      throw new Error('Expected text Migration status resource');
+    }
+    expect(JSON.parse(migrationContent.text)).toEqual(emptyMigrationStatus());
   });
 });
+
+function emptyMigrationStatus() {
+  return {
+    totalCount: 0,
+    pendingCount: 0,
+    applyingCount: 0,
+    appliedCount: 0,
+    failedCount: 0,
+    rolledBackCount: 0,
+    latestAttempt: null,
+    latestApplied: null,
+  };
+}
+
+function emptyMigrationPlan() {
+  return {
+    baselineVersion: null,
+    plan: {
+      operations: [],
+      risk: 'safe',
+      destructive: false,
+      reversible: true,
+      capabilityStatus: 'supported',
+      applicable: true,
+      warnings: [],
+    },
+  };
+}

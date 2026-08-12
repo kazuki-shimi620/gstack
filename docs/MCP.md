@@ -60,12 +60,15 @@ Migration Read APIはCoreへ注入されたProvider非依存Readerへ委譲す�
 
 ## 4. Tool
 
-| Tool                 | Core呼出                   | 分類                             |
-| -------------------- | -------------------------- | -------------------------------- |
-| `get_project_status` | `project.getStatus()`      | Read専用、idempotent             |
-| `list_schemas`       | `project.listSchemas()`    | Read専用、idempotent             |
-| `get_schema`         | `project.getSchema(name)`  | Read専用、idempotent             |
-| `validate_schema`    | `project.validateSchema()` | 副作用のないRead計算、idempotent |
+| Tool                     | Core呼出                         | 分類                             |
+| ------------------------ | -------------------------------- | -------------------------------- |
+| `get_project_status`     | `project.getStatus()`            | Read専用、idempotent             |
+| `list_schemas`           | `project.listSchemas()`          | Read専用、idempotent             |
+| `get_schema`             | `project.getSchema(name)`        | Read専用、idempotent             |
+| `validate_schema`        | `project.validateSchema()`       | 副作用のないRead計算、idempotent |
+| `get_migration_status`   | `project.getMigrationStatus()`   | Read専用、idempotent             |
+| `list_migration_history` | `project.listMigrationHistory()` | Read専用、idempotent             |
+| `preview_migration_plan` | `project.previewMigrationPlan()` | 副作用のないRead計算、idempotent |
 
 Tool responseは互換性のためのJSON textと、machine consumer向け`structuredContent`を含む。すべてのToolはD-013で確定したenvelopeを使う。成功データは`data`内のnamespace（`status`、`schemas`、`schema`、`validation`）に格納する。
 
@@ -92,7 +95,7 @@ Tool responseは互換性のためのJSON textと、machine consumer向け`struc
 
 想定外のexceptionは`INTERNAL_ERROR`へ変換し、stack traceやlibrary／filesystemのerror messageをmachine outputへ露出しない。
 
-Application Model、Provider capability、Migration、generated artifact用Toolは、対応するCore Read APIが存在してから追加する。MCP固有の代替実装は禁止する。
+Migration ToolはCore Read APIへだけ委譲し、History StorageのReaderが注入されていないprojectでは`MIGRATION_NOT_AVAILABLE`を返す。Plan previewはMigration Fileを作成せず、Provider capability評価やApplyも実行しない。Provider capabilityとgenerated artifact用Toolは、対応するCore Read APIが存在してから追加する。MCP固有の代替実装は禁止する。
 
 ## 5. Resource
 
@@ -104,13 +107,15 @@ Application Model、Provider capability、Migration、generated artifact用Tool�
 | `gstack://schema`            | Schema index                                                                         |
 | `gstack://schema/{name}`     | 1つのraw YAML Schema source。resource templateからdiscover可能                       |
 | `gstack://application-model` | Validation成功時の正規化済みApplication Model。失敗時は`null`                        |
+| `gstack://migration/status`  | 注入済みHistory Storageから集約したMigration状態                                     |
+| `gstack://migration/history` | version順のMigration History                                                         |
 | `gstack://architecture`      | Architecture Invariantsとrepository Agent ruleへの入口                               |
 
 ResourceはRead専用contextを公開する。Validationは外部副作用を持たないが計算を実行するため、ResourceではなくToolとする。
 
 ## 6. 安全方針
 
-初期serverは4つのRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
+serverは7つのRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
 
 - Migration Apply／Rollback
 - Deploy／Publish

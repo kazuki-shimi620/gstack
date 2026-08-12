@@ -44,8 +44,9 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Semantic Validation／Application Modelを含む構造化Core Read APIとmachine-readable envelope
 - `schema validate --json`
 - Application Model Resourceを含む読取専用local stdio MCP Tool／Resource
+- Provider非依存のMigration Diff／Plan／File／Historyと注入可能なCore／MCP Read API
 
-Core／CLIへのsemantic validation統合、Migration、Generator、Provider実装、Deployは今後のPhaseです。
+Migration Apply／Rollback、Generator、Provider実装、Deployは今後のPhaseです。
 
 ## 開発時の検証
 

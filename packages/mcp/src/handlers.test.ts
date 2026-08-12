@@ -25,6 +25,16 @@ describe('MCP read handlers', () => {
       validation: { checked: false, valid: null, level: null },
     };
     const getStatus = vi.fn().mockResolvedValue(status);
+    const migrationStatus = {
+      totalCount: 0,
+      pendingCount: 0,
+      applyingCount: 0,
+      appliedCount: 0,
+      failedCount: 0,
+      rolledBackCount: 0,
+      latestAttempt: null,
+      latestApplied: null,
+    };
     const project: GstackProject = {
       root: '/project',
       getConfig: vi.fn().mockResolvedValue(config),
@@ -53,9 +63,12 @@ describe('MCP read handlers', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
-      getMigrationStatus: vi.fn(),
-      listMigrationHistory: vi.fn(),
-      previewMigrationPlan: vi.fn(),
+      getMigrationStatus: vi.fn().mockResolvedValue(migrationStatus),
+      listMigrationHistory: vi.fn().mockResolvedValue([]),
+      previewMigrationPlan: vi.fn().mockResolvedValue({
+        baselineVersion: null,
+        plan: { operations: [] },
+      }),
     };
 
     await expect(createReadHandlers(project).getProjectStatus()).resolves.toBe(
@@ -66,5 +79,12 @@ describe('MCP read handlers', () => {
     await expect(
       createReadHandlers(project).getApplicationModel(),
     ).resolves.toBeNull();
+    await expect(
+      createReadHandlers(project).getMigrationStatus(),
+    ).resolves.toBe(migrationStatus);
+    await expect(
+      createReadHandlers(project).listMigrationHistory(),
+    ).resolves.toEqual([]);
+    expect(project.getMigrationStatus).toHaveBeenCalledOnce();
   });
 });
