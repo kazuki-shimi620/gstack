@@ -3,8 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { applyCapabilityResults } from './capability.js';
 import { createMigrationFile } from './file.js';
 import { createMigrationPlan } from './plan.js';
-import { migrationPlanFingerprint, validateMigrationApply } from './apply.js';
-import type { MigrationApplyError } from './apply.js';
+import {
+  migrationPlanFingerprint,
+  validateMigrationApply,
+  withMigrationLock,
+} from './apply.js';
+import type {
+  MigrationApplyError,
+  MigrationLock,
+  MigrationLockError,
+} from './apply.js';
 import type { CreateModelOperation, MigrationOperation } from './types.js';
 
 const operation = {
@@ -83,5 +91,48 @@ describe('Migration Apply preflight', () => {
         code: 'MIGRATION_DESTRUCTIVE_NOT_ALLOWED',
       }),
     );
+  });
+});
+
+describe('Migration lock', () => {
+  it('処理が失敗しても取得済みleaseを解放する', async () => {
+    const events: string[] = [];
+    const lock: MigrationLock = {
+      acquire: async (key) => {
+        events.push(`acquire:${key}`);
+        return {
+          release: async () => {
+            events.push('release');
+          },
+        };
+      },
+    };
+
+    await expect(
+      withMigrationLock(lock, 'google:sheet:version', async () => {
+        events.push('execute');
+        throw new Error('operation failed');
+      }),
+    ).rejects.toThrow('operation failed');
+    expect(events).toEqual([
+      'acquire:google:sheet:version',
+      'execute',
+      'release',
+    ]);
+  });
+
+  it('lock取得失敗時は処理を開始しない', async () => {
+    let executed = false;
+    const lock: MigrationLock = { acquire: async () => null };
+    await expect(
+      withMigrationLock(lock, 'google:sheet:version', async () => {
+        executed = true;
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining<Partial<MigrationLockError>>({
+        code: 'MIGRATION_LOCK_UNAVAILABLE',
+      }),
+    );
+    expect(executed).toBe(false);
   });
 });

@@ -25,6 +25,42 @@ export interface MigrationLock {
   acquire(key: string): Promise<MigrationLockLease | null>;
 }
 
+export class MigrationLockError extends Error {
+  public constructor(
+    public readonly code:
+      'MIGRATION_LOCK_INVALID' | 'MIGRATION_LOCK_UNAVAILABLE',
+    message: string,
+  ) {
+    super(message);
+    this.name = 'MigrationLockError';
+  }
+}
+
+export async function withMigrationLock<T>(
+  lock: MigrationLock,
+  key: string,
+  execute: () => Promise<T>,
+): Promise<T> {
+  if (!key.trim()) {
+    throw new MigrationLockError(
+      'MIGRATION_LOCK_INVALID',
+      'Migration lock key is required.',
+    );
+  }
+  const lease = await lock.acquire(key);
+  if (!lease) {
+    throw new MigrationLockError(
+      'MIGRATION_LOCK_UNAVAILABLE',
+      'Migration lock is already held.',
+    );
+  }
+  try {
+    return await execute();
+  } finally {
+    await lease.release();
+  }
+}
+
 export class MigrationApplyError extends Error {
   public constructor(
     public readonly code:

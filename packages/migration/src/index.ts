@@ -1,8 +1,10 @@
 export { createMigrationPlan, operationId } from './plan.js';
 export {
   MigrationApplyError,
+  MigrationLockError,
   migrationPlanFingerprint,
   validateMigrationApply,
+  withMigrationLock,
 } from './apply.js';
 export type {
   MigrationApplyApproval,
