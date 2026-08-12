@@ -46,6 +46,7 @@ generator:
   types: true
   validation: true
   api: true
+  frontend: true
   openapi: false
   documentation: true
   aiDocumentation: false
@@ -56,6 +57,7 @@ generator:
         types: true,
         validation: true,
         api: true,
+        frontend: true,
         openapi: false,
         documentation: true,
         aiDocumentation: false,
@@ -74,6 +76,7 @@ generator:
   types: true
   validation: true
   api: true
+  frontend: true
   openapi: true
   documentation: true
   extra: true

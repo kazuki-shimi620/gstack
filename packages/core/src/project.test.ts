@@ -191,6 +191,7 @@ describe('gstack project read API', () => {
             types: true,
             validation: false,
             api: false,
+            frontend: false,
             openapi: false,
             documentation: false,
             aiDocumentation: false,

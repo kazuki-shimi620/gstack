@@ -207,4 +207,8 @@ Status: Artifact／Manifest／Generation Plan基盤、Type Generator、外部lib
 
 ### 0.3完了監査
 
-完了済みはType、Validation、framework非依存API contract、OpenAPI、Documentation、AI Documentation、Artifact ownership／Manifest、Config、Writer、Core／CLI／MCP統合である。RoadmapのTaskとDeliverableに含まれるUI Generatorと`generated/frontend/`は未達であるため、0.3は完了扱いにしない。API runtime adapterはrouting／Template契約を確定するまで保留し、UIはframework／Template／styling境界を確定してから実装する。UIを省略して0.4へ進んではいけない。
+Type、Validation、framework非依存API contract、React UI、OpenAPI、Documentation、AI Documentation、Artifact ownership／Manifest、Config、Writer、Core／CLI／MCP統合を実装済みである。`generated/api/`、`generated/frontend/`を含むRoadmapのTask／DeliverableがGeneration PlanとCLI contract testで確認でき、全生成TS／TSXをTypeScript parserへ通すcontract testも追加済みである。0.3のMVP範囲は完了とする。API runtime adapter、Detail／Search／Filter／Pagination、Template overrideは将来拡張として残す。
+
+## 11. 次Phase: Provider Foundation／Google Provider
+
+Roadmap 0.4へ進む前に、具体ProviderをCoreから分離する`@gstack/provider` contract、Manifest、capability declaration、lifecycle、Registry／Loader境界を実装する。その後に`@gstack/provider-google`を追加する。Google API、credential、live external serviceへ接続する前にfake ProviderだけでCore／Migration／History境界を検証する。

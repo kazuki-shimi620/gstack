@@ -19,6 +19,7 @@ describe('Generator orchestration', () => {
       'generated/ai/PROJECT_CONTEXT.md',
       'generated/api/contracts.ts',
       'generated/docs/models.md',
+      'generated/frontend/index.ts',
       'generated/openapi/openapi.json',
       'generated/types/index.ts',
       'generated/validation/index.ts',
@@ -34,6 +35,7 @@ describe('Generator orchestration', () => {
       ...allEnabled,
       validation: false,
       api: false,
+      frontend: false,
       documentation: false,
       aiDocumentation: false,
     });
@@ -68,6 +70,7 @@ const allEnabled: GeneratorConfig = {
   types: true,
   validation: true,
   api: true,
+  frontend: true,
   openapi: true,
   documentation: true,
   aiDocumentation: true,

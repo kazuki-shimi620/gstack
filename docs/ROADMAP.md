@@ -12,10 +12,10 @@
 
 目的は以下のとおり。
 
-* 開発の優先順位を明確にする
-* MVPの範囲を定義する
-* 将来の拡張計画を整理する
-* 機能追加時の判断基準を示す
+- 開発の優先順位を明確にする
+- MVPの範囲を定義する
+- 将来の拡張計画を整理する
+- 機能追加時の判断基準を示す
 
 ---
 
@@ -59,26 +59,26 @@ Application Modelまで完成させる。
 
 ## Tasks
 
-* CLI
-* Config Loader
-* Schema Loader
-* YAML Parser
-* AST
-* Semantic Analyzer
-* Application Model
-* Error System
-* Logging
-* Programmatic Core Read API
-* Structured Result
-* Read-only local MCP Adapter
+- CLI
+- Config Loader
+- Schema Loader
+- YAML Parser
+- AST
+- Semantic Analyzer
+- Application Model
+- Error System
+- Logging
+- Programmatic Core Read API
+- Structured Result
+- Read-only local MCP Adapter
 
 ## Deliverables
 
-* Schemaを読み込める
-* Application Modelを生成できる
-* Validationが動作する
-* CLI以外からCore Read APIを呼び出せる
-* AI Agentがstdio MCP経由でProject・Schema・Validationを読み取れる
+- Schemaを読み込める
+- Application Modelを生成できる
+- Validationが動作する
+- CLI以外からCore Read APIを呼び出せる
+- AI Agentがstdio MCP経由でProject・Schema・Validationを読み取れる
 
 ---
 
@@ -90,13 +90,13 @@ Schema変更をProvider非依存Operationへ変換する。
 
 ## Tasks
 
-* Diff Engine
-* Migration Planner
-* Migration File
-* Migration History
-* Checksum
-* Rollback
-* Risk Detection
+- Diff Engine
+- Migration Planner
+- Migration File
+- Migration History
+- Checksum
+- Rollback
+- Risk Detection
 
 ## Deliverables
 
@@ -120,15 +120,17 @@ Migration File
 
 Application Modelからコード生成を行う。
 
+Status: MVP実装完了。Type、Validation、framework非依存API contract、React UI、OpenAPI、Model／AI Documentation、Manifest／Writer、Core／CLI／MCP integrationを含む。
+
 ## Tasks
 
-* Type Generator
-* Validation Generator
-* API Generator
-* UI Generator
-* OpenAPI Generator
-* Documentation Generator
-* AI Documentation Generator
+- Type Generator
+- Validation Generator
+- API Generator
+- UI Generator
+- OpenAPI Generator
+- Documentation Generator
+- AI Documentation Generator
 
 ## Deliverables
 
@@ -162,23 +164,23 @@ Google Workspaceを実行基盤として利用可能にする。
 
 Database
 
-* Google Sheets
+- Google Sheets
 
 API
 
-* Apps Script
+- Apps Script
 
 Storage
 
-* Google Drive
+- Google Drive
 
 Authentication
 
-* Google OAuth
+- Google OAuth
 
 Deploy
 
-* Apps Script
+- Apps Script
 
 ---
 
@@ -190,11 +192,11 @@ CLIだけでアプリケーションを公開できるようにする。
 
 ## Tasks
 
-* Build
-* Deploy
-* Publish
-* Project Initialization
-* Local Development
+- Build
+- Deploy
+- Publish
+- Project Initialization
+- Local Development
 
 ---
 
@@ -206,11 +208,11 @@ Coreを変更せずに拡張できる構造を完成させる。
 
 ## Tasks
 
-* Provider Plugin
-* Generator Plugin
-* Plugin Registry
-* Plugin Loader
-* Plugin Manifest
+- Provider Plugin
+- Generator Plugin
+- Plugin Registry
+- Plugin Loader
+- Plugin Manifest
 
 ---
 
@@ -222,12 +224,12 @@ AI Agentが安全にgstackを操作できる環境を整備する。
 
 ## Tasks
 
-* AGENTS.md Generator
-* Project Context Generator
-* AI Friendly Logs
-* JSON Output
-* MCP Support拡張（Application Model、Migration、Provider Context）
-* AI Safety Rules
+- AGENTS.md Generator
+- Project Context Generator
+- AI Friendly Logs
+- JSON Output
+- MCP Support拡張（Application Model、Migration、Provider Context）
+- AI Safety Rules
 
 ---
 
@@ -239,14 +241,14 @@ Google Workspace上で実用的なアプリケーションを開発できる状�
 
 提供機能
 
-* Schema DSL
-* Migration
-* CRUD
-* React UI
-* OpenAPI
-* Google Provider
-* Deploy
-* Documentation
+- Schema DSL
+- Migration
+- CRUD
+- React UI
+- OpenAPI
+- Google Provider
+- Deploy
+- Documentation
 
 ---
 
@@ -254,40 +256,40 @@ Google Workspace上で実用的なアプリケーションを開発できる状�
 
 Database
 
-* SQLite
-* PostgreSQL
-* MySQL
-* Supabase
+- SQLite
+- PostgreSQL
+- MySQL
+- Supabase
 
 API
 
-* Cloud Run
-* AWS Lambda
-* Azure Functions
+- Cloud Run
+- AWS Lambda
+- Azure Functions
 
 Authentication
 
-* Auth0
-* Microsoft Entra ID
+- Auth0
+- Microsoft Entra ID
 
 Storage
 
-* Amazon S3
-* Azure Blob Storage
+- Amazon S3
+- Azure Blob Storage
 
 ---
 
 # 13. Future Generators
 
-* Vue
-* Angular
-* Flutter
-* GraphQL
-* SDK
-* Terraform
-* Storybook
-* Test Generator
-* ER Diagram Generator
+- Vue
+- Angular
+- Flutter
+- GraphQL
+- SDK
+- Terraform
+- Storybook
+- Test Generator
+- ER Diagram Generator
 
 ---
 
@@ -295,15 +297,15 @@ Storage
 
 将来的には以下を実現する。
 
-* 複数Providerの組み合わせ
-* サードパーティPlugin
-* Provider Marketplace
-* Generator Marketplace
-* MCP Server
-* Language Server
-* VS Code Extension
-* Visual Designer
-* CI/CD Integration
+- 複数Providerの組み合わせ
+- サードパーティPlugin
+- Provider Marketplace
+- Generator Marketplace
+- MCP Server
+- Language Server
+- VS Code Extension
+- Visual Designer
+- CI/CD Integration
 
 ---
 
@@ -330,13 +332,13 @@ Coreより上位の優先順位は存在しない。
 
 MVP完成条件
 
-* CLIだけでプロジェクト作成できる
-* Schemaを記述できる
-* Validationできる
-* Migrationできる
-* CRUD生成できる
-* React画面生成できる
-* Google Workspaceへデプロイできる
+- CLIだけでプロジェクト作成できる
+- Schemaを記述できる
+- Validationできる
+- Migrationできる
+- CRUD生成できる
+- React画面生成できる
+- Google Workspaceへデプロイできる
 
 ---
 
@@ -344,12 +346,12 @@ MVP完成条件
 
 新機能追加時は以下を確認する。
 
-* Schemaで表現できるか
-* Application Modelへ追加すべきか
-* Coreへ追加すべきか
-* Generatorで対応すべきか
-* Providerで対応すべきか
-* Pluginとして実装すべきか
+- Schemaで表現できるか
+- Application Modelへ追加すべきか
+- Coreへ追加すべきか
+- Generatorで対応すべきか
+- Providerで対応すべきか
+- Pluginとして実装すべきか
 
 Coreを肥大化させないことを最優先とする。
 
@@ -421,9 +423,9 @@ AI Support
 
 # 19. Release Policy
 
-* Major Version：破壊的変更
-* Minor Version：新機能追加
-* Patch Version：バグ修正
+- Major Version：破壊的変更
+- Minor Version：新機能追加
+- Patch Version：バグ修正
 
 MVP期間中は互換性よりも設計品質を優先する。
 
@@ -435,29 +437,29 @@ Version 1.0以降は公開APIおよびCLIの後方互換性を維持する。
 
 現在は対象外だが、将来的に検討する。
 
-* リアルタイム同期
-* オフライン開発
-* GUI Builder
-* AIによるSchema生成
-* AIによるMigration提案
-* Visual Workflow Editor
-* Marketplace
-* Remote Plugin Registry
+- リアルタイム同期
+- オフライン開発
+- GUI Builder
+- AIによるSchema生成
+- AIによるMigration提案
+- Visual Workflow Editor
+- Marketplace
+- Remote Plugin Registry
 
 ---
 
 # 21. Relationship with Other Documents
 
-| Document        | Purpose     |
-| --------------- | ----------- |
-| ARCHITECTURE.md | 全体設計        |
-| REQUIREMENTS.md | 要件定義        |
+| Document        | Purpose       |
+| --------------- | ------------- |
+| ARCHITECTURE.md | 全体設計      |
+| REQUIREMENTS.md | 要件定義      |
 | CLI.md          | CLI仕様       |
 | SCHEMA.md       | DSL仕様       |
 | MIGRATION.md    | Migration仕様 |
 | GENERATOR.md    | Generator仕様 |
 | PROVIDER.md     | Provider仕様  |
-| DEVELOPER.md    | 内部設計        |
+| DEVELOPER.md    | 内部設計      |
 
 ---
 
@@ -465,13 +467,13 @@ Version 1.0以降は公開APIおよびCLIの後方互換性を維持する。
 
 各機能は以下を満たした時点で完了とする。
 
-* 実装済み
-* Unit Test作成済み
-* Integration Test作成済み
-* ドキュメント更新済み
-* CLI動作確認済み
-* AI Agentから利用可能
-* サンプルプロジェクトで動作確認済み
+- 実装済み
+- Unit Test作成済み
+- Integration Test作成済み
+- ドキュメント更新済み
+- CLI動作確認済み
+- AI Agentから利用可能
+- サンプルプロジェクトで動作確認済み
 
 ---
 
@@ -481,10 +483,10 @@ gstackはGoogle Workspace専用フレームワークではない。
 
 Schemaを中心としたDSLをコンパイルし、
 
-* アプリケーション
-* API
-* UI
-* インフラ
+- アプリケーション
+- API
+- UI
+- インフラ
 
 を統一的に構築するプラットフォームを目指す。
 
