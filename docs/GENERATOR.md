@@ -469,6 +469,8 @@ generator:
 
 Generator ConfigはProject単位で管理する。
 
+MVPのbuilt-in producer有効化とpure orchestrationは`DECISIONS.md` D-032を規範とする。Project Config Loaderへの永続形式追加は、filesystem Writer／CLI統合と同じPhaseで行う。
+
 ---
 
 # 26. Template Override

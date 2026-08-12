@@ -24,3 +24,5 @@ export { generateValidationArtifacts } from './validation.js';
 export { generateOpenApiArtifact } from './openapi.js';
 export { generateDocumentationArtifact } from './documentation.js';
 export { generateAiDocumentationArtifacts } from './ai-documentation.js';
+export { generateApplication } from './generator.js';
+export type { GeneratorConfig } from './generator.js';
