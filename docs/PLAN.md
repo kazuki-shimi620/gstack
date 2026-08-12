@@ -203,4 +203,4 @@ GeneratorはApplication Model、Generator Config、Templateだけを入力とし
 5. UI／Documentation／AI Documentation Generatorは対応する出力契約を確定してから追加する。
 6. filesystem Writer、Core Read API、CLI `generate`はManifestの安全なwrite／delete契約とGenerator Configが完成してから接続する。
 
-Status: Artifact／Manifest／Generation Plan基盤、Type Generator、外部library非依存のValidation Generator、OpenAPI 3.1 Generator、Model／AI Documentation Generator、built-in producerのConfig／orchestration、安全なfilesystem Writer、Project Config、Core preview／write境界を実装済み。API runtime Generatorはtransport／Template契約を確定するまで保留する。次はCLI `generate`とMCPのread-only previewを接続する。React、Provider固有生成は未実装とする。
+Status: Artifact／Manifest／Generation Plan基盤、Type Generator、外部library非依存のValidation Generator、OpenAPI 3.1 Generator、Model／AI Documentation Generator、built-in producerのConfig／orchestration、安全なfilesystem Writer、Project Config、Core preview／write境界、CLI `generate --dry-run [--json]`／writeを実装済み。API runtime Generatorはtransport／Template契約を確定するまで保留する。次はMCPのread-only previewを接続する。React、Provider固有生成は未実装とする。

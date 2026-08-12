@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -25,7 +32,7 @@ function project(schema) {
   mkdirSync(path.join(root, 'schema'));
   writeFileSync(
     path.join(root, 'gstack.yaml'),
-    'version: 1\nname: sample-app\nschemaVersion: 1\nschema:\n  directory: schema\n',
+    'version: 1\nname: sample-app\nschemaVersion: 1\nschema:\n  directory: schema\ngenerator:\n  formatVersion: 1\n  types: true\n  validation: false\n  openapi: false\n  documentation: false\n  aiDocumentation: false\n',
   );
   writeFileSync(path.join(root, 'schema/users.yaml'), schema);
   return root;
@@ -120,5 +127,34 @@ test('Project未検出をexit code 3とJSON stderrで返す', (t) => {
 test('built CLIが実行可能である', () => {
   assert.doesNotThrow(() =>
     execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' }),
+  );
+});
+
+test('generate dry-runと明示的writeを分離する', (t) => {
+  const root = project(
+    'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+  );
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const preview = run(['generate', '--dry-run', '--json'], root);
+  assert.equal(preview.status, 0);
+  assert.equal(preview.stderr, '');
+  const previewJson = JSON.parse(preview.stdout);
+  assert.equal(previewJson.ok, true);
+  assert.equal(previewJson.data.dryRun, true);
+  assert.deepEqual(
+    previewJson.data.plan.writes.map(({ path: artifactPath }) => artifactPath),
+    ['generated/types/index.ts', 'generated/types/users.ts'],
+  );
+  assert.equal(existsSync(path.join(root, 'generated')), false);
+
+  const generated = run(['generate'], root);
+  assert.equal(generated.status, 0);
+  assert.match(generated.stdout, /Generated Artifacts:/u);
+  assert.match(generated.stdout, /WRITE generated\/types\/users\.ts/u);
+  assert.equal(generated.stderr, '');
+  assert.match(
+    readFileSync(path.join(root, 'generated', 'types', 'users.ts'), 'utf8'),
+    /export interface Users/u,
   );
 });

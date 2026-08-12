@@ -42,10 +42,10 @@ CLIは状態を保持しない。
 
 状態は以下のみが管理する。
 
-* Schema
-* Migration
-* Config
-* Environment Variables
+- Schema
+- Migration
+- Config
+- Environment Variables
 
 ---
 
@@ -55,9 +55,9 @@ CLIは人間だけではなくAI Agentからも利用されることを想定す
 
 そのため
 
-* コマンド体系
-* 出力形式
-* エラー内容
+- コマンド体系
+- 出力形式
+- エラー内容
 
 は一貫性を維持する。
 
@@ -129,7 +129,7 @@ package.json
 
 ### Side Effects
 
-* 新規プロジェクトを作成する
+- 新規プロジェクトを作成する
 
 ---
 
@@ -173,11 +173,11 @@ Project rootが明示されていない場合、CLIは現在Directoryから親�
 
 検証内容
 
-* YAML構文
-* 型
-* Relation
-* 命名規則
-* 重複
+- YAML構文
+- 型
+- Relation
+- 命名規則
+- 重複
 
 ---
 
@@ -239,8 +239,8 @@ gstack migration apply
 
 副作用
 
-* Database更新
-* Provider更新
+- Database更新
+- Provider更新
 
 ---
 
@@ -282,15 +282,24 @@ gstack migration status
 gstack generate
 ```
 
+設定済みのbuilt-in Generatorを実行し、`generated/`配下とManifestを更新する。実行前に副作用なしで確認する場合:
+
+```bash
+gstack generate --dry-run
+gstack generate --dry-run --json
+```
+
+`--dry-run`はwrite／deleteを含むGeneration Planを返すがfilesystemを変更しない。`--json`はD-013のenvelope内に`dryRun`と構造化Planを返す。`generator`未設定またはSchema Validation失敗時は生成せずerrorにする。CLIはArtifact内容や削除対象を独自計算せず、Coreのpreview／generate APIへ委譲する。
+
 生成対象
 
-* API
-* Frontend
-* TypeScript
-* Validation
-* OpenAPI
-* Documentation
-* AI Documentation
+- API
+- Frontend
+- TypeScript
+- Validation
+- OpenAPI
+- Documentation
+- AI Documentation
 
 ---
 
@@ -412,11 +421,11 @@ gstack doctor
 
 確認内容
 
-* CLI
-* Config
-* Provider
-* Authentication
-* Required Files
+- CLI
+- Config
+- Provider
+- Authentication
+- Required Files
 
 ---
 
@@ -480,10 +489,10 @@ CLIは利用者との契約である。
 
 CLIが扱う入力
 
-* Schema
-* Config
-* Environment Variables
-* Migration Files
+- Schema
+- Config
+- Environment Variables
+- Migration Files
 
 ---
 
@@ -491,11 +500,11 @@ CLIが扱う入力
 
 CLIが生成するもの
 
-* Generated Source Code
-* Migration Plan
-* Documentation
-* Logs
-* Exit Code
+- Generated Source Code
+- Migration Plan
+- Documentation
+- Logs
+- Exit Code
 
 Coreは構造化されたResultを返し、CLI FormatterがHuman outputまたはJSONへ変換する。`--json`指定時、通常結果はstdoutへ`{ "ok": true, "data": ..., "warnings": [] }`形式で出力する。
 
@@ -507,10 +516,10 @@ Coreは構造化されたResultを返し、CLI FormatterがHuman outputまたは
 
 CLIが変更を加える対象
 
-* Generated Files
-* Database
-* Provider
-* Deploy Target
+- Generated Files
+- Database
+- Provider
+- Deploy Target
 
 ---
 
@@ -532,9 +541,9 @@ CLIが変更を加える対象
 
 CLIは後方互換性を重視する。
 
-* 同一Major Versionでは互換性を維持する
-* 破壊的変更はMajor Versionでのみ実施する
-* Deprecatedなコマンドは一定期間維持する
+- 同一Major Versionでは互換性を維持する
+- 破壊的変更はMajor Versionでのみ実施する
+- Deprecatedなコマンドは一定期間維持する
 
 ---
 
@@ -568,11 +577,11 @@ gstack monitor
 
 その他の仕様は以下を参照する。
 
-| Document        | Description    |
-| --------------- | -------------- |
+| Document        | Description                  |
+| --------------- | ---------------------------- |
 | ARCHITECTURE.md | 全体アーキテクチャ・設計思想 |
-| SCHEMA.md       | Schema(YAML)仕様 |
-| PROVIDER.md     | Provider実装仕様   |
-| GENERATOR.md    | コード生成仕様        |
-| DEVELOPER.md    | 内部設計・開発者向け仕様   |
-| ROADMAP.md      | 今後の実装計画        |
+| SCHEMA.md       | Schema(YAML)仕様             |
+| PROVIDER.md     | Provider実装仕様             |
+| GENERATOR.md    | コード生成仕様               |
+| DEVELOPER.md    | 内部設計・開発者向け仕様     |
+| ROADMAP.md      | 今後の実装計画               |

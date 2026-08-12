@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatErrorHuman,
+  formatGenerationHuman,
   formatJson,
   formatValidationHuman,
 } from './formatters.js';
@@ -34,6 +35,27 @@ describe('CLI formatters', () => {
         'Path: /project/app',
         'Hint: Run inside a gstack project.',
       ].join('\n'),
+    );
+  });
+
+  it('Generation Planのwrite／deleteをhuman表示する', () => {
+    expect(
+      formatGenerationHuman(
+        {
+          writes: [
+            {
+              path: 'generated/types/users.ts',
+              content: 'content',
+              checksum: 'a'.repeat(64),
+            },
+          ],
+          deletes: ['generated/types/old.ts'],
+          manifest: { formatVersion: 1, artifacts: [] },
+        },
+        true,
+      ),
+    ).toBe(
+      'Generation Plan:\nWRITE generated/types/users.ts\nDELETE generated/types/old.ts\nSummary: 1 write(s), 1 delete(s).',
     );
   });
 });

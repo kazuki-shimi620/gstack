@@ -8,6 +8,7 @@ import { Command } from 'commander';
 
 import {
   formatErrorHuman,
+  formatGenerationHuman,
   formatJson,
   formatValidationHuman,
 } from './formatters.js';
@@ -50,6 +51,35 @@ export function createProgram(
         if (!result.valid) {
           process.exitCode = 2;
         }
+      } catch (error: unknown) {
+        const details = getErrorDetails(error);
+        io.stderr(
+          options.json
+            ? formatJson(failureResult(details))
+            : formatErrorHuman(details),
+        );
+        process.exitCode = details.category === 'configuration' ? 3 : 1;
+      }
+    });
+
+  program
+    .command('generate')
+    .description('Generate configured Artifacts from the Application Model')
+    .option('--dry-run', 'preview writes and deletes without changing files')
+    .option('--json', 'output structured JSON')
+    .action(async (options: { dryRun?: boolean; json?: boolean }) => {
+      try {
+        const project = await loadProject();
+        const plan = options.dryRun
+          ? await project.previewGeneration()
+          : await project.generate();
+        io.stdout(
+          options.json
+            ? formatJson(
+                successResult({ dryRun: Boolean(options.dryRun), plan }),
+              )
+            : formatGenerationHuman(plan, Boolean(options.dryRun)),
+        );
       } catch (error: unknown) {
         const details = getErrorDetails(error);
         io.stderr(

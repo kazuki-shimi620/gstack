@@ -405,6 +405,8 @@ Generatorは何度でも実行できる。
 gstack generate
 ```
 
+事前確認には`gstack generate --dry-run`を使う。dry-runと実行は同じCore Generation Plan契約を利用する。
+
 は常に最新Schemaから再生成する。
 
 Coreは副作用のないGeneration Plan previewと、同じPlanをWriterへ渡す明示的なgenerate操作を分離する。previewはManifestを読み取るだけでfilesystemを変更せず、generateだけがD-033のWriterを実行する。Generator未設定またはSchema Validation失敗時は生成しない。
