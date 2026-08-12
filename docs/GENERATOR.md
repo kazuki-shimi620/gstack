@@ -256,6 +256,8 @@ UIデザインはTemplateに依存する。
 
 以下を生成する。
 
+MVPのModel reference documentは`DECISIONS.md` D-030を規範とし、Application Modelの構造だけを決定的なMarkdown Artifactへ変換する。
+
 - API Documentation
 - OpenAPI
 - Entity一覧
