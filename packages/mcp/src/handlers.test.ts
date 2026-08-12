@@ -105,6 +105,12 @@ describe('MCP read handlers', () => {
       createReadHandlers(project).getProvider('missing'),
     ).resolves.toBeNull();
     await expect(
+      createReadHandlers(project).validateProvider('example'),
+    ).resolves.toEqual([]);
+    await expect(
+      createReadHandlers(project).getProviderHealth('example'),
+    ).resolves.toEqual({ status: 'healthy', code: 'READY' });
+    await expect(
       createReadHandlers(project).previewGeneration(),
     ).resolves.toMatchObject({ writes: [], deletes: [] });
   });

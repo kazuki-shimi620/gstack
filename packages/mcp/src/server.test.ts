@@ -106,6 +106,8 @@ describe('gstack MCP server', () => {
       'validate_schema',
       'list_providers',
       'get_provider',
+      'validate_provider',
+      'get_provider_health',
       'get_migration_status',
       'list_migration_history',
       'preview_migration_plan',
@@ -157,6 +159,26 @@ describe('gstack MCP server', () => {
       ok: true,
       data: { provider: { name: 'example' } },
     });
+
+    const validation = await client.callTool({
+      name: 'validate_provider',
+      arguments: { name: 'example' },
+    });
+    expect(validation.structuredContent).toMatchObject({
+      ok: true,
+      data: { issues: [] },
+    });
+    expect(project.validateProvider).toHaveBeenCalledWith('example');
+
+    const health = await client.callTool({
+      name: 'get_provider_health',
+      arguments: { name: 'example' },
+    });
+    expect(health.structuredContent).toMatchObject({
+      ok: true,
+      data: { health: { status: 'healthy', code: 'READY' } },
+    });
+    expect(project.getProviderHealth).toHaveBeenCalledWith('example');
 
     const missingProvider = await client.callTool({
       name: 'get_provider',

@@ -148,6 +148,44 @@ export function createMcpServer(project: GstackProject): McpServer {
   );
 
   server.registerTool(
+    'validate_provider',
+    {
+      title: 'Validate a gstack Provider',
+      description:
+        'Initializes one explicitly named Provider, validates its configuration, and disposes its session.',
+      inputSchema: { name: z.string().min(1) },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async ({ name }) =>
+      safeStructured(async () => ({
+        issues: await handlers.validateProvider(name),
+      })),
+  );
+
+  server.registerTool(
+    'get_provider_health',
+    {
+      title: 'Get gstack Provider health',
+      description:
+        'Initializes one explicitly named Provider, reads its safe health status, and disposes its session.',
+      inputSchema: { name: z.string().min(1) },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async ({ name }) =>
+      safeStructured(async () => ({
+        health: await handlers.getProviderHealth(name),
+      })),
+  );
+
+  server.registerTool(
     'get_migration_status',
     {
       title: 'Get gstack Migration status',

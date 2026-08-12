@@ -69,6 +69,8 @@ Migration Read APIはCoreへ注入されたProvider非依存Readerへ委譲す�
 | `validate_schema`        | `project.validateSchema()`       | 副作用のないRead計算、idempotent |
 | `list_providers`         | `project.listProviders()`        | Read専用、idempotent             |
 | `get_provider`           | `project.getProvider(name)`      | Read専用、idempotent             |
+| `validate_provider`      | `project.validateProvider(name)` | Read検査、idempotent             |
+| `get_provider_health`    | `project.getProviderHealth(name)`| Read検査、idempotent             |
 | `get_migration_status`   | `project.getMigrationStatus()`   | Read専用、idempotent             |
 | `list_migration_history` | `project.listMigrationHistory()` | Read専用、idempotent             |
 | `preview_migration_plan` | `project.previewMigrationPlan()` | 副作用のないRead計算、idempotent |
@@ -99,7 +101,7 @@ Tool responseは互換性のためのJSON textと、machine consumer向け`struc
 
 想定外のexceptionは`INTERNAL_ERROR`へ変換し、stack traceやlibrary／filesystemのerror messageをmachine outputへ露出しない。
 
-Migration ToolはCore Read APIへだけ委譲し、History StorageのReaderが注入されていないprojectでは`MIGRATION_NOT_AVAILABLE`を返す。Plan previewはMigration Fileを作成せず、Provider capability評価やApplyも実行しない。Provider ToolはCoreのCatalog Read APIへだけ委譲し、Factory初期化、health check、credential accessを行わない。Generated artifact inventory Toolは、対応するCore Read APIが存在してから追加する。MCP固有の代替実装は禁止する。
+Migration ToolはCore Read APIへだけ委譲し、History StorageのReaderが注入されていないprojectでは`MIGRATION_NOT_AVAILABLE`を返す。Plan previewはMigration Fileを作成せず、Provider capability評価やApplyも実行しない。Provider Catalog ToolはCoreのCatalog Read APIへだけ委譲し、Factory初期化を行わない。Provider検査Toolは明示的なProvider名を必須とし、Coreへ注入されたInspection Serviceによる短命Sessionだけを利用する。MCP Adapter自身はProvider configuration、Secret Resolver、credentialを組み立てず、healthはsafe status／codeだけを返す。Generated artifact inventory Toolは、対応するCore Read APIが存在してから追加する。MCP固有の代替実装は禁止する。
 
 `preview_generation`はCoreの副作用なしpreviewへ委譲し、Artifact write／deleteとManifest更新を実行しない。write可能な`generate` Toolは登録しない。
 
@@ -123,7 +125,7 @@ ResourceはRead専用contextを公開する。Validationは外部副作用を持
 
 ## 6. 安全方針
 
-serverは10個のRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
+serverは12個のRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
 
 - Migration Apply／Rollback
 - Deploy／Publish

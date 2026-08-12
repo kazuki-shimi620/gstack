@@ -11,6 +11,8 @@ export function createReadHandlers(project: GstackProject) {
     getApplicationModel: () => project.getApplicationModel(),
     listProviders: () => project.listProviders(),
     getProvider: (name: string) => project.getProvider(name),
+    validateProvider: (name: string) => project.validateProvider(name),
+    getProviderHealth: (name: string) => project.getProviderHealth(name),
     getMigrationStatus: () => project.getMigrationStatus(),
     listMigrationHistory: () => project.listMigrationHistory(),
     previewMigrationPlan: () => project.previewMigrationPlan(),
