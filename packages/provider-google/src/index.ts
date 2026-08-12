@@ -20,6 +20,14 @@ export type {
   GoogleSpreadsheetMetadata,
   GoogleSpreadsheetMetadataGateway,
 } from './database.js';
+export { GoogleHttpError, GoogleHttpExecutor } from './http.js';
+export type {
+  GoogleHttpErrorCode,
+  GoogleHttpExecutorOptions,
+  GoogleHttpRequest,
+  GoogleHttpResponse,
+  GoogleHttpTransport,
+} from './http.js';
 export { createGoogleProvider, googleProviderManifest } from './provider.js';
 export type { GoogleWorkspaceGateway } from './provider.js';
 export {
