@@ -13,12 +13,14 @@
   ],
   "scripts": {
     "build": "tsc -b",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run test:cli",
     "clean": "tsc -b --clean",
     "format": "prettier --write \"**/*.{ts,js,mjs,json,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,yaml,yml}\"",
     "lint": "eslint .",
     "mcp": "node packages/mcp/dist/main.js",
     "test": "vitest run",
+    "test:architecture": "node --test tests/architecture.test.mjs",
     "test:cli": "npm run build && node --test tests/cli-contract.test.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false && tsc -p tsconfig.test.json --noEmit --pretty false"

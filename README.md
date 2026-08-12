@@ -15,21 +15,21 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 
 ## ドキュメント
 
-| ドキュメント | 目的 |
-| --- | --- |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | アーキテクチャ、依存ルール、不変条件 |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | MVPで確定済みの横断的な設計判断 |
-| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | 機能要件・非機能要件 |
-| [`docs/CLI.md`](docs/CLI.md) | 公開CLI契約 |
-| [`docs/SCHEMA.md`](docs/SCHEMA.md) | Schema DSL仕様 |
-| [`docs/MIGRATION.md`](docs/MIGRATION.md) | Migration計画と安全性 |
-| [`docs/GENERATOR.md`](docs/GENERATOR.md) | 生成物と所有権 |
-| [`docs/PROVIDER.md`](docs/PROVIDER.md) | Provider Interfaceと分離規則 |
-| [`docs/DEVELOPER.md`](docs/DEVELOPER.md) | 内部モジュールと開発ルール |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestoneと開発順序 |
-| [`docs/PLAN.md`](docs/PLAN.md) | 現在の実装Phase |
-| [`docs/MCP.md`](docs/MCP.md) | MCP Tool、Resource、Transport、安全方針 |
-| [`docs/TODO.md`](docs/TODO.md) | 残作業と将来対応 |
+| ドキュメント                                   | 目的                                    |
+| ---------------------------------------------- | --------------------------------------- |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | アーキテクチャ、依存ルール、不変条件    |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md)       | MVPで確定済みの横断的な設計判断         |
+| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | 機能要件・非機能要件                    |
+| [`docs/CLI.md`](docs/CLI.md)                   | 公開CLI契約                             |
+| [`docs/SCHEMA.md`](docs/SCHEMA.md)             | Schema DSL仕様                          |
+| [`docs/MIGRATION.md`](docs/MIGRATION.md)       | Migration計画と安全性                   |
+| [`docs/GENERATOR.md`](docs/GENERATOR.md)       | 生成物と所有権                          |
+| [`docs/PROVIDER.md`](docs/PROVIDER.md)         | Provider Interfaceと分離規則            |
+| [`docs/DEVELOPER.md`](docs/DEVELOPER.md)       | 内部モジュールと開発ルール              |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md)           | Milestoneと開発順序                     |
+| [`docs/PLAN.md`](docs/PLAN.md)                 | 現在の実装Phase                         |
+| [`docs/MCP.md`](docs/MCP.md)                   | MCP Tool、Resource、Transport、安全方針 |
+| [`docs/TODO.md`](docs/TODO.md)                 | 残作業と将来対応                        |
 
 ## 現在の実装状況
 
@@ -46,3 +46,11 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Application Model Resourceを含む読取専用local stdio MCP Tool／Resource
 
 Core／CLIへのsemantic validation統合、Migration、Generator、Provider実装、Deployは今後のPhaseです。
+
+## 開発時の検証
+
+```bash
+npm run check
+```
+
+format、lint、TypeScript、unit／integration test、Architecture test、built CLI contract testをまとめて実行します。

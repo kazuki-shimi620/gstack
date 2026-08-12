@@ -21,33 +21,33 @@ raw Schema構文をEngineの入力にしてはいけない。正規化されたA
 
 ## 2. 技術選定
 
-| 領域 | 選定 | 理由 |
-| --- | --- | --- |
-| Runtime | Node.js 24 LTS、ESM | support対象のproduction LTSと標準Node module semanticsを使う。CIとreleaseでは最新のNode 24 patchを固定する。 |
-| 言語 | TypeScript、`strict: true`、追加の安全なindex／optional property check | `DEVELOPER.md`の必須要件。compiler境界でunknown／optional dataを正確に扱える。 |
-| Package Manager | npmと`package-lock.json` | Node同梱のnpm workspacesで小規模monorepoに十分であり、追加bootstrap toolが不要。 |
-| Monorepo | npm workspaces: `cli`、`packages/*` | orchestration frameworkを増やさず責務と依存境界をpackageとして表現できる。 |
-| YAML | `yaml`（eemeli）、`parseDocument`によるYAML 1.2 | document error、line／column、duplicate key、source tokenを扱え、診断とAST source locationに必要な情報を得られる。 |
-| CLI | Commander | strictなoption parsing、async action、自動help、test可能なoutput／exit handlingを小さな構成で提供できる。 |
-| Test | Vitest | TypeScript／ESMのunit・integration testを追加transform設定なしで高速に実行できる。 |
-| Build | TypeScript `tsc -b` project references | bundlerを追加せずpackage依存graphを検証し、declarationを生成できる。配布要件が生じた場合だけCLI bundlingを検討する。 |
-| Lint | ESLint flat configとtypescript-eslint | `DEVELOPER.md`に従い、correctnessとmaintainability ruleを担当する。 |
-| Format | Prettier | `DEVELOPER.md`に従い、formattingをlint ruleから分離する。 |
+| 領域            | 選定                                                                   | 理由                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Runtime         | Node.js 24 LTS、ESM                                                    | support対象のproduction LTSと標準Node module semanticsを使う。CIとreleaseでは最新のNode 24 patchを固定する。         |
+| 言語            | TypeScript、`strict: true`、追加の安全なindex／optional property check | `DEVELOPER.md`の必須要件。compiler境界でunknown／optional dataを正確に扱える。                                       |
+| Package Manager | npmと`package-lock.json`                                               | Node同梱のnpm workspacesで小規模monorepoに十分であり、追加bootstrap toolが不要。                                     |
+| Monorepo        | npm workspaces: `cli`、`packages/*`                                    | orchestration frameworkを増やさず責務と依存境界をpackageとして表現できる。                                           |
+| YAML            | `yaml`（eemeli）、`parseDocument`によるYAML 1.2                        | document error、line／column、duplicate key、source tokenを扱え、診断とAST source locationに必要な情報を得られる。   |
+| CLI             | Commander                                                              | strictなoption parsing、async action、自動help、test可能なoutput／exit handlingを小さな構成で提供できる。            |
+| Test            | Vitest                                                                 | TypeScript／ESMのunit・integration testを追加transform設定なしで高速に実行できる。                                   |
+| Build           | TypeScript `tsc -b` project references                                 | bundlerを追加せずpackage依存graphを検証し、declarationを生成できる。配布要件が生じた場合だけCLI bundlingを検討する。 |
+| Lint            | ESLint flat configとtypescript-eslint                                  | `DEVELOPER.md`に従い、correctnessとmaintainability ruleを担当する。                                                  |
+| Format          | Prettier                                                               | `DEVELOPER.md`に従い、formattingをlint ruleから分離する。                                                            |
 
 dependency versionは`package-lock.json`で固定する。TypeScript strictnessとCLI／test behaviorはcontributor向け契約であるため、major upgradeは個別にreviewする。
 
 ## 3. 初期Packageと責務
 
-| Package | 責務 | 依存可能な対象 |
-| --- | --- | --- |
-| `@gstack/config` | Project設定の探索、読込、parse、validation。Schemaやsecretを読み込まない | Node標準library、ConfigがYAMLである間のみYAML utility |
-| `@gstack/schema` | Schema source fileの探索・読込、source file／diagnostic contractの定義 | Node標準library |
-| `@gstack/parser` | 1つのSchema sourceをYAML 1.2としてparseし、位置付きsyntax diagnosticと構文専用AST／IRを生成 | `@gstack/schema`、`yaml` |
-| `@gstack/application` | Provider・構文非依存の正規化Application Model型 | なし |
-| `@gstack/analyzer` | 全ASTを解析し、semantic／cross-file ruleを検証してApplication Modelまたは順序付きdiagnosticを生成 | `@gstack/parser`、`@gstack/application` |
-| `@gstack/core` | Config／Schema読込、parse、analysis、validation use caseのorchestrationと境界error変換 | public interfaceを介した上記全package |
-| `@gstack/cli` | CLI entry point、`schema validate` adapter、output formatting、文書化されたexit code mapping | `@gstack/core`、Commander |
-| `@gstack/mcp` | 承認済みCore Read／Validate APIをMCP Tool／Resourceとして公開する薄いstdio adapter | `@gstack/core`、MCP TypeScript SDK |
+| Package               | 責務                                                                                              | 依存可能な対象                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `@gstack/config`      | Project設定の探索、読込、parse、validation。Schemaやsecretを読み込まない                          | Node標準library、ConfigがYAMLである間のみYAML utility |
+| `@gstack/schema`      | Schema source fileの探索・読込、source file／diagnostic contractの定義                            | Node標準library                                       |
+| `@gstack/parser`      | 1つのSchema sourceをYAML 1.2としてparseし、位置付きsyntax diagnosticと構文専用AST／IRを生成       | `@gstack/schema`、`yaml`                              |
+| `@gstack/application` | Provider・構文非依存の正規化Application Model型                                                   | なし                                                  |
+| `@gstack/analyzer`    | 全ASTを解析し、semantic／cross-file ruleを検証してApplication Modelまたは順序付きdiagnosticを生成 | `@gstack/parser`、`@gstack/application`               |
+| `@gstack/core`        | Config／Schema読込、parse、analysis、validation use caseのorchestrationと境界error変換            | public interfaceを介した上記全package                 |
+| `@gstack/cli`         | CLI entry point、`schema validate` adapter、output formatting、文書化されたexit code mapping      | `@gstack/core`、Commander                             |
+| `@gstack/mcp`         | 承認済みCore Read／Validate APIをMCP Tool／Resourceとして公開する薄いstdio adapter                | `@gstack/core`、MCP TypeScript SDK                    |
 
 禁止する依存方向は、Schema／Parser／Analyzer／ApplicationからCoreまたはCLIへの依存、基盤packageから具体的Providerへの依存、Analyzerからfilesystem I/Oへの依存である。
 
@@ -167,7 +167,7 @@ CoreをCLIなしで呼び出せ、MCP ToolがCoreへ委譲し、構造化error�
 - Unit test: Config／Schema Loader、YAMLからASTへの変換、各semantic rule、normalization、diagnostic順序、CLI formatter。
 - Boundary test: Schema sourceからAST、AST setからApplication Model、filesystem fixtureからCore validation result。
 - CLI test: build済みCLIをfixtureに対して起動し、network／credentialなしでoutputとexit codeを検証する。
-- Architecture test: workspace package manifestの依存方向を検証し、Core／基盤packageからProvider packageのimportを禁止する。
+- Architecture test: workspace package manifestとTypeScript project referenceが明示的な依存allowlistに一致することを検証し、Core／基盤package／CLIからProvider固有importとGoogle固有識別子を禁止する。`npm run test:architecture`で実行し、`npm run check`にも含める。
 - Property／fuzz testは後回しとし、まずduplicate key、alias、tag、multiple document、null、numeric coercion、Unicode、不正indentationのYAML corpusを保持する。
 
 ## 7. 確定済み実装判断
