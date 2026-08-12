@@ -1007,6 +1007,8 @@ Providerは以下を担当しない。
 
 `DECISIONS.md` D-011 and D-012 clarify that Core may know Provider interfaces/registry abstractions but not concrete implementations. Providers declare Database/API/Authentication/Storage/Deploy capabilities and Migration support per abstract Operation as `native`, `emulated`, or `unsupported`.
 
+Google Sheetsへの最初のMigration writeは`DECISIONS.md` D-053を規範とする。`create_model`だけをatomicなbatchUpdate、管理用Developer Metadata、明示resumeによるidempotency確認で実装する。Google固有request、quota、markerはGoogle Provider内に閉じ込め、Migration EngineやMigration Fileへ書かない。
+
 MVPのProvider Manifest、factory／session lifecycle、Secret Resolver境界、safe health、memory Registryは`DECISIONS.md` D-036を規範とする。package install、dynamic import、credential storageはこのFoundationに含めない。
 
 | Document        | Purpose                      |

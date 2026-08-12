@@ -327,3 +327,13 @@ approvalはversion、Migration checksum、評価済みPlan fingerprintへ結び�
 部分失敗は`failed` Historyと完了Operation数を保存する。再開は同一version／checksum／Plan fingerprintに対する明示的なresume要求と新しいapproval、lock取得を必須とし、先頭から再実行せず、完了数に対応する次のOperationから続行する。failed Operation自体は未完了として再実行する。HistoryとPlanのOperation数、順序、checksumが一致しない場合は再開を拒否する。Provider Operationはこの契約に加えて個別のidempotency keyを受け取れる必要があり、具体Providerで保証できるまでsupportを有効化しない。
 
 再開時は同じHistory entryを`failed -> applying`へ遷移させ、完了Operation数を保持し、失敗Operation／error code／失敗完了時刻をclearする。`startedAt`は再開attemptの開始時刻へ更新する。過去attemptの詳細監査logはHistory entryへsecretを含み得るmessageを追加せず、将来の構造化event sinkで扱う。
+
+## D-053 Google Sheets Create Model Migration
+
+Google Databaseの最初のwrite sliceは`create_model`だけとし、1 Modelを同名の1 Sheet、FieldをcanonicalなApplication Model順のcolumn、先頭rowをField名のheaderとして表現する。初期row数は1000、column数は`max(Field数, 1)`とする。Index、Relation、validation rule、runtime dataはこのOperationで別resourceへ展開せず、後続Operationのsupportが確定するまでApplication Model定義内の情報として扱う。
+
+1 OperationはSheets `spreadsheets.batchUpdate` 1回にまとめ、決定的な正のSheet IDを指定した`addSheet`、headerの`updateCells`、Sheetに紐付くgstack管理用Developer Metadataの作成を同一request内で行う。管理markerはsecretやcredentialを含めず、format version、Migration checksum、Operation IDを識別できる値だけを持つ。既存markerが同じchecksum／Operationを示す場合は成功済みとしてskipし、同名Sheet、同じSheet ID、競合markerが存在する場合は上書きせずdrift／conflict errorとする。
+
+write requestはresponse喪失後に同じ`addSheet`を安全に自動再送できないため、HTTP層では`retryable: false`とする。429／5xx／network failureはsafe errorとしてHistoryへ記録し、lock取得と最新metadata再読込を伴う明示resumeでmarkerを確認してから続行する。公式上のatomic batch、推奨2 MB以下、write quota 300／分／project・60／分／user／projectを上限として扱うが、MVPは1 spreadsheetにつき直列実行し、1 Operationを1 batchに制限する。quota値をアプリケーション側の並列化許可として解釈しない。
+
+`create_model`をManifestで`native`へ変更する条件は、strict request／response adapter、OAuth `database_write` scope、markerによる再開時idempotency、競合拒否、safe error変換のtestが揃うことである。他Operationは各々のデータ保持・rollback意味論が確定するまで`unsupported`を維持する。

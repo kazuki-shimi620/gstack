@@ -25,7 +25,7 @@
 - [x] Google Providerの初期configuration／Gateway境界を定義する（`DECISIONS.md` D-039）。
 - [x] Project Provider ConfigurationのProvider非依存契約を定義する（`DECISIONS.md` D-048）。
 - [ ] Google認証方式とoperation別最小scopeは`DECISIONS.md` D-039、credential payload／refresh境界はD-041で確定。local／CIの具体Secret Resolver構成を確定する。credential値やtokenをProject Configへ保存しない。
-- [ ] Google Sheets metadata read、HTTP retry、Migration Operation mappingはD-040／D-042／D-050で確定。write Operationのidempotency、quota、lock、resume、approvalを確定してからApplyを実装する。
+- [ ] Google Sheets metadata read、HTTP retry、Migration Operation mapping、`create_model` write契約はD-040／D-042／D-050／D-053で確定。`create_model` adapterを実装後、残りのwrite Operationごとにデータ保持、rollback、idempotencyを確定する。
 
 ## MCP／AI supportの後続作業
 
