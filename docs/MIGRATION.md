@@ -1080,6 +1080,8 @@ Commands
 
 Rollback PlanとApply safety protocolの規範は`DECISIONS.md` D-051、D-052とする。Rollback Operationは完了済みforward Operationの逆順から都度生成し、Migration Fileへ重複保存しない。Applyはchecksum、History、capability、approval、lockを検証し、部分失敗の再開時も同一Planの確認と新しいapprovalを必須とする。具体Providerのidempotencyが保証されるまでProvider writeを有効化しない。
 
+Provider非依存のApply Orchestratorはlock内でHistoryを再確認し、Operationをcanonical順に1件ずつ実行して各成功後に進捗を保存する。ExecutorにはMigration version、checksum、Operation IDから導出したstable idempotency keyを渡す。未知のProvider errorはsafeな`PROVIDER_OPERATION_FAILED`へ変換し、生messageをHistoryへ保存しない。適用済みの同一version／checksumはProviderを再実行せずskipする。failed Historyは明示的なresume指定がない限り拒否する。
+
 Operation scope、stable ID、alter risk、初回baseline、rename intent、capability評価時点の詳細は`DECISIONS.md` D-015からD-020を規範とする。
 
 Capability評価結果の完全性、Planの集約状態、適用可否は`DECISIONS.md` D-025を規範とする。Migration packageは評価結果を反映するpure functionだけを所有し、具体的Providerの呼出しはProvider／Core側のOrchestrationが担当する。

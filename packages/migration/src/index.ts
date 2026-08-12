@@ -12,6 +12,14 @@ export type {
   MigrationLock,
   MigrationLockLease,
 } from './apply.js';
+export { applyMigration, MigrationExecutionError } from './apply-engine.js';
+export type {
+  MigrationApplyDependencies,
+  MigrationApplyRequest,
+  MigrationApplyResult,
+  MigrationOperationContext,
+  MigrationOperationExecutor,
+} from './apply-engine.js';
 export type {
   AddColumnOperation,
   AddIndexOperation,
