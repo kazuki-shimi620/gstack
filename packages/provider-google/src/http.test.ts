@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { GoogleHttpExecutor } from './http.js';
+import { FetchGoogleHttpTransport, GoogleHttpExecutor } from './http.js';
 
 const request = {
   method: 'GET' as const,
@@ -95,5 +95,57 @@ describe('Google HTTP executor', () => {
           { maxAttempts: 3, retryDelaysMilliseconds: [] },
         ),
     ).toThrow(TypeError);
+  });
+});
+
+describe('Fetch Google HTTP transport', () => {
+  it('timeout、redirect禁止、requestをfetchへ渡してresponseを正規化する', async () => {
+    const fetchImplementation = vi.fn().mockResolvedValue(
+      new Response('{"ok":true}', {
+        status: 200,
+        headers: { 'x-request-id': 'request-id' },
+      }),
+    );
+    const transport = new FetchGoogleHttpTransport(fetchImplementation);
+    await expect(
+      transport.send(request, { timeoutMilliseconds: 1234 }),
+    ).resolves.toEqual({
+      status: 200,
+      headers: {
+        'content-type': 'text/plain;charset=UTF-8',
+        'x-request-id': 'request-id',
+      },
+      body: '{"ok":true}',
+    });
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      request.url,
+      expect.objectContaining({
+        method: 'GET',
+        redirect: 'error',
+        signal: expect.any(AbortSignal),
+      }),
+    );
+  });
+
+  it('宣言値と実byte数の両方でresponse sizeを制限する', async () => {
+    const declared = new FetchGoogleHttpTransport(
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('small', { headers: { 'content-length': '101' } }),
+        ),
+      100,
+    );
+    await expect(
+      declared.send(request, { timeoutMilliseconds: 1000 }),
+    ).rejects.toMatchObject({ code: 'GOOGLE_HTTP_RESPONSE_TOO_LARGE' });
+
+    const actual = new FetchGoogleHttpTransport(
+      vi.fn().mockResolvedValue(new Response('123456')),
+      5,
+    );
+    await expect(
+      actual.send(request, { timeoutMilliseconds: 1000 }),
+    ).rejects.toMatchObject({ code: 'GOOGLE_HTTP_RESPONSE_TOO_LARGE' });
   });
 });

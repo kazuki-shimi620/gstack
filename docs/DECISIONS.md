@@ -259,3 +259,7 @@ Token Gateway resultはaccess token、未来のexpiry、要求scope包含を必�
 Google API HTTP境界はHTTPSだけを許可し、requestごとにretry可能性を明示する。既定timeoutは1 attemptあたり10秒、最大3 attempts、retry delayは250ms、1000msとし、network／timeoutおよび429、500、502、503、504だけを再試行する。非idempotentまたは安全性が確認されていないrequestは`retryable: false`とし、自動再試行しない。Retry-After対応とjitterは将来のrate limit policyで追加するまで推測実装しない。
 
 401、403、404、429、5xx、その他HTTP failure、network failureはstable code、HTTP statusまたはnull、安全な固定messageへ変換する。Response body、Google error payload、Authorization header、URL query、credential、tokenをerror messageやlogへ含めない。Transport、wait、timeoutは注入可能にし、外部networkなしでattempt回数とdelayを検証する。
+
+Fetch Transportはredirectを拒否し、AbortSignalによるattempt timeoutを適用する。Response bodyは既定1 MiBを上限とし、Content-Lengthと実byte数の両方を検証する。上限超過はretryしないstable errorとし、bodyを公開しない。
+
+OAuth refresh adapterは`https://oauth2.googleapis.com/token`へform-urlencoded POSTを行い、同じrefresh tokenによる交換は安全に繰り返せるためretryableとする。ResponseはBearer token、1以上の`expires_in`、space-delimited scope、最大2048 byteのaccess tokenを必須とし、現在時刻からUTC expiryを計算する。未知response fieldと返却refresh tokenは保持しない。Credential Serviceが最終的に要求scope包含を検証する。

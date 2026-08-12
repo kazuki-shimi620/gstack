@@ -20,7 +20,12 @@ export type {
   GoogleSpreadsheetMetadata,
   GoogleSpreadsheetMetadataGateway,
 } from './database.js';
-export { GoogleHttpError, GoogleHttpExecutor } from './http.js';
+export {
+  FetchGoogleHttpTransport,
+  GoogleHttpError,
+  GoogleHttpExecutor,
+} from './http.js';
+export { GoogleOAuthHttpGateway } from './oauth-http.js';
 export type {
   GoogleHttpErrorCode,
   GoogleHttpExecutorOptions,

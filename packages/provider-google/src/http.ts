@@ -31,6 +31,7 @@ export type GoogleHttpErrorCode =
   | 'GOOGLE_HTTP_NOT_FOUND'
   | 'GOOGLE_HTTP_RATE_LIMITED'
   | 'GOOGLE_HTTP_UNAVAILABLE'
+  | 'GOOGLE_HTTP_RESPONSE_TOO_LARGE'
   | 'GOOGLE_HTTP_FAILED';
 
 export class GoogleHttpError extends Error {
@@ -104,6 +105,49 @@ export class GoogleHttpExecutor {
   }
 }
 
+export class FetchGoogleHttpTransport implements GoogleHttpTransport {
+  public constructor(
+    private readonly fetchImplementation: typeof fetch = fetch,
+    private readonly maximumResponseBytes = 1_048_576,
+  ) {
+    if (
+      !Number.isSafeInteger(maximumResponseBytes) ||
+      maximumResponseBytes <= 0
+    ) {
+      throw new TypeError('Google HTTP maximum response size is invalid.');
+    }
+  }
+
+  async send(
+    request: GoogleHttpRequest,
+    options: { readonly timeoutMilliseconds: number },
+  ): Promise<GoogleHttpResponse> {
+    const response = await this.fetchImplementation(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      signal: AbortSignal.timeout(options.timeoutMilliseconds),
+      redirect: 'error',
+    });
+    const declaredLength = Number(response.headers.get('content-length'));
+    if (
+      Number.isFinite(declaredLength) &&
+      declaredLength > this.maximumResponseBytes
+    ) {
+      throw responseTooLarge();
+    }
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength > this.maximumResponseBytes) {
+      throw responseTooLarge();
+    }
+    return Object.freeze({
+      status: response.status,
+      headers: Object.freeze(Object.fromEntries(response.headers.entries())),
+      body: new TextDecoder('utf-8', { fatal: true }).decode(bytes),
+    });
+  }
+}
+
 function shouldRetry(
   request: GoogleHttpRequest,
   status: number | null,
@@ -155,6 +199,14 @@ function responseError(status: number): GoogleHttpError {
     default:
       return error('GOOGLE_HTTP_FAILED', status, 'Google API request failed.');
   }
+}
+
+function responseTooLarge(): GoogleHttpError {
+  return new GoogleHttpError(
+    'GOOGLE_HTTP_RESPONSE_TOO_LARGE',
+    null,
+    'Google API response exceeded the size limit.',
+  );
 }
 
 function error(
