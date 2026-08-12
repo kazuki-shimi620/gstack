@@ -35,6 +35,7 @@ const allowedInternalDependencies = {
     '@gstack/generator',
     '@gstack/migration',
     '@gstack/parser',
+    '@gstack/provider',
     '@gstack/schema',
   ],
   '@gstack/mcp': ['@gstack/core'],
@@ -88,7 +89,7 @@ test('基盤packageとCLIにProvider固有importやGoogle固有識別子を含�
       const source = readFileSync(file, 'utf8');
       assert.doesNotMatch(
         source,
-        /from\s+['"]@gstack\/provider(?:-|\/|['"])/u,
+        /from\s+['"]@gstack\/provider(?:-|\/)/u,
         file,
       );
       assert.doesNotMatch(source, /from\s+['"][^'"]*providers\//u, file);

@@ -3,6 +3,7 @@ export type GstackErrorCode =
   | 'CONFIG_INVALID'
   | 'SCHEMA_LOAD_FAILED'
   | 'SCHEMA_NOT_FOUND'
+  | 'PROVIDER_NOT_AVAILABLE'
   | 'MIGRATION_NOT_AVAILABLE'
   | 'MIGRATION_SCHEMA_INVALID'
   | 'GENERATOR_NOT_CONFIGURED'
@@ -11,7 +12,12 @@ export type GstackErrorCode =
   | 'INTERNAL_ERROR';
 
 export type GstackErrorCategory =
-  'configuration' | 'schema' | 'migration' | 'generator' | 'internal';
+  | 'configuration'
+  | 'schema'
+  | 'provider'
+  | 'migration'
+  | 'generator'
+  | 'internal';
 
 export interface GstackErrorDetails {
   readonly code: GstackErrorCode;

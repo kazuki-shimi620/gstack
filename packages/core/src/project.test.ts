@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ConfigLoadError, type GstackConfig } from '@gstack/config';
 import type { SchemaSource } from '@gstack/schema';
 import type { MigrationReader } from './types.js';
+import type { ProviderReader } from './types.js';
 
 import { loadProject } from './project.js';
 
@@ -100,6 +101,73 @@ describe('gstack project read API', () => {
         file: 'schema/broken.yaml',
       }),
     ]);
+  });
+
+  it('注入されたProvider Readerから安全なCatalog情報を返す', async () => {
+    const summary = {
+      name: 'example',
+      packageName: '@example/provider-example',
+      version: '0.1.0',
+      minimumGstackVersion: '0.0.0',
+      capabilities: {
+        database: true,
+        api: false,
+        authentication: false,
+        storage: false,
+        deploy: false,
+      },
+      migrationSupport: {
+        create_model: 'native' as const,
+        drop_model: 'unsupported' as const,
+        add_column: 'native' as const,
+        drop_column: 'unsupported' as const,
+        rename_column: 'unsupported' as const,
+        alter_column: 'emulated' as const,
+        add_index: 'unsupported' as const,
+        drop_index: 'unsupported' as const,
+        add_relation: 'unsupported' as const,
+        drop_relation: 'unsupported' as const,
+      },
+    };
+    const providerReader: ProviderReader = {
+      listProviders: vi.fn().mockResolvedValue([summary]),
+      getProvider: vi
+        .fn()
+        .mockImplementation(async (name: string) =>
+          name === summary.name ? summary : null,
+        ),
+    };
+    const project = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [],
+      providerReader,
+    });
+
+    await expect(project.listProviders()).resolves.toEqual([summary]);
+    await expect(project.getProvider('example')).resolves.toBe(summary);
+    await expect(project.getProvider('missing')).resolves.toBeNull();
+    await expect(project.getStatus()).resolves.toMatchObject({
+      providers: { configured: true, details: { count: 1 } },
+    });
+    await expect(project.getProjectContext()).resolves.toMatchObject({
+      capabilities: { providerStatus: 'available' },
+    });
+  });
+
+  it('Provider Reader未設定を安全なCore errorにする', async () => {
+    const project = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [],
+    });
+
+    await expect(project.listProviders()).rejects.toMatchObject({
+      details: { code: 'PROVIDER_NOT_AVAILABLE', category: 'provider' },
+    });
+    await expect(project.getProjectContext()).resolves.toMatchObject({
+      capabilities: { providerStatus: 'not_configured' },
+    });
   });
 
   it('注入されたMigration ReaderへRead操作を委譲する', async () => {

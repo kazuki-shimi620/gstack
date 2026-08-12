@@ -63,6 +63,8 @@ describe('MCP read handlers', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
+      listProviders: vi.fn().mockResolvedValue([]),
+      getProvider: vi.fn().mockResolvedValue(null),
       getMigrationStatus: vi.fn().mockResolvedValue(migrationStatus),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue({

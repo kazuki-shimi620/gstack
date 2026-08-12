@@ -20,6 +20,7 @@ import {
 import type {
   GstackProject,
   MigrationReader,
+  ProviderReader,
   ProjectConfigLoader,
   ProjectContext,
   ProjectStatus,
@@ -38,6 +39,7 @@ export interface LoadProjectOptions {
   readonly loadConfig?: ProjectConfigLoader;
   readonly loadSources?: SchemaSourceLoader;
   readonly migrationReader?: MigrationReader;
+  readonly providerReader?: ProviderReader;
 }
 
 export async function loadProject(
@@ -64,6 +66,7 @@ export async function loadProject(
     config,
     options.loadSources ?? loadSchemaSources,
     options.migrationReader ?? null,
+    options.providerReader ?? null,
   );
 }
 
@@ -73,6 +76,7 @@ class Project implements GstackProject {
     private readonly config: GstackConfig,
     private readonly loadSources: SchemaSourceLoader,
     private readonly migrationReader: MigrationReader | null,
+    private readonly providerReader: ProviderReader | null,
   ) {}
 
   public async getConfig(): Promise<GstackConfig> {
@@ -91,7 +95,12 @@ class Project implements GstackProject {
         schemaVersion: this.config.schemaVersion,
         schemaDirectory: this.config.schema.directory,
       },
-      providers: { configured: false, details: null },
+      providers: {
+        configured: this.providerReader !== null,
+        details: this.providerReader
+          ? { count: (await this.providerReader.listProviders()).length }
+          : null,
+      },
       generators: {
         configured: this.config.generator !== null,
         details: this.config.generator ? { ...this.config.generator } : null,
@@ -126,7 +135,7 @@ class Project implements GstackProject {
         schemaSyntaxValidation: 'available',
         semanticValidation: 'available',
         applicationModel: 'available',
-        providerStatus: 'not_implemented',
+        providerStatus: this.providerReader ? 'available' : 'not_configured',
         migrationPlan: this.migrationReader ? 'available' : 'not_configured',
         generatedArtifacts: this.config.generator
           ? 'available'
@@ -167,6 +176,14 @@ class Project implements GstackProject {
   public async getApplicationModel(): Promise<ApplicationModel | null> {
     const compilation = await this.compileSchemas();
     return compilation.application;
+  }
+
+  public async listProviders() {
+    return this.requireProviderReader().listProviders();
+  }
+
+  public async getProvider(name: string) {
+    return this.requireProviderReader().getProvider(name);
   }
 
   public async getMigrationStatus() {
@@ -242,6 +259,17 @@ class Project implements GstackProject {
       });
     }
     return this.migrationReader;
+  }
+
+  private requireProviderReader(): ProviderReader {
+    if (!this.providerReader) {
+      throw new GstackError({
+        code: 'PROVIDER_NOT_AVAILABLE',
+        category: 'provider',
+        message: 'Provider catalog is not configured.',
+      });
+    }
+    return this.providerReader;
   }
 
   private async compileSchemas(): Promise<{

@@ -8,6 +8,7 @@ import type {
   MigrationStatusSummary,
   RenameColumnIntent,
 } from '@gstack/migration';
+import type { ProviderSummary } from '@gstack/provider';
 
 export interface FeatureConfigurationStatus {
   readonly configured: boolean;
@@ -63,7 +64,7 @@ export interface ProjectContext {
     readonly schemaSyntaxValidation: 'available';
     readonly semanticValidation: 'available';
     readonly applicationModel: 'available';
-    readonly providerStatus: 'not_implemented';
+    readonly providerStatus: 'available' | 'not_configured';
     readonly migrationPlan: 'available' | 'not_configured';
     readonly generatedArtifacts: 'available' | 'not_configured';
   };
@@ -78,6 +79,8 @@ export interface GstackProject {
   getSchema(name: string): Promise<SchemaDocument | null>;
   validateSchema(): Promise<ValidationResult>;
   getApplicationModel(): Promise<ApplicationModel | null>;
+  listProviders(): Promise<readonly ProviderSummary[]>;
+  getProvider(name: string): Promise<ProviderSummary | null>;
   getMigrationStatus(): Promise<MigrationStatusSummary>;
   listMigrationHistory(): Promise<readonly MigrationHistoryEntry[]>;
   previewMigrationPlan(
@@ -85,6 +88,11 @@ export interface GstackProject {
   ): Promise<MigrationPlanPreview>;
   previewGeneration(): Promise<GenerationPlan>;
   generate(): Promise<GenerationPlan>;
+}
+
+export interface ProviderReader {
+  listProviders(): Promise<readonly ProviderSummary[]>;
+  getProvider(name: string): Promise<ProviderSummary | null>;
 }
 
 export interface MigrationReader {

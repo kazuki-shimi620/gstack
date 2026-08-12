@@ -10,6 +10,7 @@
     { "path": "../generator" },
     { "path": "../migration" },
     { "path": "../parser" },
+    { "path": "../provider" },
     { "path": "../schema" }
   ]
 }
