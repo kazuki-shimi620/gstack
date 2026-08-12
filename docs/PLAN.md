@@ -212,3 +212,5 @@ Type、Validation、framework非依存API contract、React UI、OpenAPI、Docume
 ## 11. 次Phase: Provider Foundation／Google Provider
 
 Roadmap 0.4へ進む前に、具体ProviderをCoreから分離する`@gstack/provider` contract、Manifest、capability declaration、lifecycle、Registry／Loader境界を実装する。その後に`@gstack/provider-google`を追加する。Google API、credential、live external serviceへ接続する前にfake ProviderだけでCore／Migration／History境界を検証する。
+
+Status: `@gstack/provider`のManifest、5つのtop-level capability、全Migration Operation support、factory／session lifecycle、Secret Resolver境界、memory Registryを実装済み。次はCoreのProvider Read APIとfake Providerによるlifecycle orchestrationへ進む。

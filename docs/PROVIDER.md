@@ -18,12 +18,12 @@ CoreはGoogle Workspace、PostgreSQL、SQLiteなどの具体的な外部サー�
 
 これにより以下を実現する。
 
-* Providerの差し替え
-* Providerの追加・削除
-* Coreと外部サービスの分離
-* テスト容易性
-* 拡張性
-* サードパーティProviderの作成
+- Providerの差し替え
+- Providerの追加・削除
+- Coreと外部サービスの分離
+- テスト容易性
+- 拡張性
+- サードパーティProviderの作成
 
 ---
 
@@ -31,14 +31,14 @@ CoreはGoogle Workspace、PostgreSQL、SQLiteなどの具体的な外部サー�
 
 Providerは以下の原則に従う。
 
-* CoreはProvider Interfaceのみを利用する
-* Providerはプラグインとして独立する
-* Coreは特定Providerに依存しない
-* Provider固有のコードはProvider内部へ閉じ込める
-* Provider同士の依存を原則禁止する
-* Providerは必要なCapabilityのみ実装できる
-* ProviderはCLIからインストール・削除・選択できる
-* サードパーティProviderを追加可能とする
+- CoreはProvider Interfaceのみを利用する
+- Providerはプラグインとして独立する
+- Coreは特定Providerに依存しない
+- Provider固有のコードはProvider内部へ閉じ込める
+- Provider同士の依存を原則禁止する
+- Providerは必要なCapabilityのみ実装できる
+- ProviderはCLIからインストール・削除・選択できる
+- サードパーティProviderを追加可能とする
 
 ---
 
@@ -212,11 +212,11 @@ ProviderはCapability単位で機能を提供する。
 
 主要Capabilityは以下とする。
 
-* Database
-* API
-* Authentication
-* Storage
-* Deploy
+- Database
+- API
+- Authentication
+- Storage
+- Deploy
 
 1つのProviderが複数Capabilityを実装してもよい。
 
@@ -228,15 +228,15 @@ Database Providerはデータ永続化を担当する。
 
 責務
 
-* Database作成
-* Table作成
-* Table削除
-* Column追加
-* Column削除
-* Column変更
-* Index管理
-* Query実行
-* Migration適用
+- Database作成
+- Table作成
+- Table削除
+- Column追加
+- Column削除
+- Column変更
+- Index管理
+- Query実行
+- Migration適用
 
 Interface例
 
@@ -268,11 +268,11 @@ API ProviderはBackend APIの公開を担当する。
 
 責務
 
-* API公開
-* Endpoint作成
-* Routing
-* Request処理
-* Response処理
+- API公開
+- Endpoint作成
+- Routing
+- Request処理
+- Response処理
 
 Interface例
 
@@ -294,12 +294,12 @@ Authentication Providerは認証機能を担当する。
 
 責務
 
-* Login
-* Logout
-* Token取得
-* Token更新
-* Credential管理
-* Authentication Status
+- Login
+- Logout
+- Token取得
+- Token更新
+- Credential管理
+- Authentication Status
 
 Interface例
 
@@ -321,11 +321,11 @@ Storage Providerはファイル保存を担当する。
 
 責務
 
-* Upload
-* Download
-* Delete
-* List
-* Metadata取得
+- Upload
+- Download
+- Delete
+- List
+- Metadata取得
 
 Interface例
 
@@ -349,12 +349,12 @@ Deploy Providerはアプリケーションのデプロイを担当する。
 
 責務
 
-* Build
-* Upload
-* Deploy
-* Publish
-* Rollback
-* Status取得
+- Build
+- Upload
+- Deploy
+- Publish
+- Rollback
+- Status取得
 
 Interface例
 
@@ -441,7 +441,6 @@ name: google
 version: 1.0.0
 
 capabilities:
-
   database: true
 
   api: true
@@ -461,7 +460,6 @@ name: sqlite
 version: 1.0.0
 
 capabilities:
-
   database: true
 
   api: false
@@ -484,16 +482,14 @@ capabilities:
 ```yaml
 name: google
 
-package: "@gstack/provider-google"
+package: '@gstack/provider-google'
 
 version: 1.0.0
 
 gstack:
-
   minimumVersion: 0.1.0
 
 capabilities:
-
   database: true
 
   api: true
@@ -517,18 +513,15 @@ Registry例
 
 ```yaml
 providers:
-
   google:
-
-    package: "@gstack/provider-google"
+    package: '@gstack/provider-google'
 
     version: 1.0.0
 
     enabled: true
 
   sqlite:
-
-    package: "@gstack/provider-sqlite"
+    package: '@gstack/provider-sqlite'
 
     version: 1.0.0
 
@@ -549,25 +542,19 @@ Provider Packageへの参照のみを管理する。
 
 ```yaml
 providers:
-
   database:
-
     provider: google
 
   api:
-
     provider: google
 
   auth:
-
     provider: google
 
   storage:
-
     provider: google
 
   deploy:
-
     provider: google
 ```
 
@@ -575,25 +562,19 @@ providers:
 
 ```yaml
 providers:
-
   database:
-
     provider: postgres
 
   api:
-
     provider: cloudrun
 
   auth:
-
     provider: google
 
   storage:
-
     provider: s3
 
   deploy:
-
     provider: cloudrun
 ```
 
@@ -683,7 +664,6 @@ Schemaでは以下のようなProvider固有情報を禁止する。
 
 ```yaml
 database:
-
   googleSheetId: xxxxx
 ```
 
@@ -693,11 +673,8 @@ Schema
 
 ```yaml
 database:
-
   columns:
-
     id:
-
       type: uuid
 ```
 
@@ -723,10 +700,10 @@ Package
 
 利用するサービス
 
-* Google Sheets
-* Apps Script
-* Google Drive
-* Google OAuth
+- Google Sheets
+- Apps Script
+- Google Drive
+- Google OAuth
 
 ---
 
@@ -766,11 +743,11 @@ Google ProviderのAPI CapabilityではApps Scriptを利用する。
 
 主な責務
 
-* Apps Script Project生成
-* API Code配置
-* Web App Deployment
-* Endpoint公開
-* Deployment更新
+- Apps Script Project生成
+- API Code配置
+- Web App Deployment
+- Endpoint公開
+- Deployment更新
 
 ---
 
@@ -780,11 +757,11 @@ Google OAuthを利用する。
 
 主な責務
 
-* Login
-* Token取得
-* Token更新
-* Scope管理
-* Credential管理
+- Login
+- Token取得
+- Token更新
+- Scope管理
+- Credential管理
 
 認証情報はSchemaへ保存しない。
 
@@ -796,10 +773,10 @@ Google DriveをStorageとして利用する。
 
 主な責務
 
-* File Upload
-* File Download
-* File Delete
-* Metadata取得
+- File Upload
+- File Download
+- File Delete
+- Metadata取得
 
 ---
 
@@ -809,10 +786,10 @@ Google Workspaceへのデプロイを担当する。
 
 対象
 
-* Apps Script
-* Google Sheets
-* Google Drive
-* 必要な設定
+- Apps Script
+- Google Sheets
+- Google Drive
+- 必要な設定
 
 デプロイは以下のCLIから実行する。
 
@@ -860,7 +837,6 @@ Providerは対応するgstack VersionをManifestで宣言する。
 
 ```yaml
 gstack:
-
   minimumVersion: 0.1.0
 
   maximumVersion: 1.x
@@ -874,11 +850,11 @@ gstack:
 
 Providerは以下を遵守する。
 
-* CredentialをSchemaへ保存しない
-* Tokenをログへ出力しない
-* SecretをGenerated Codeへ埋め込まない
-* 必要最小限の権限のみ要求する
-* Provider固有のSecret管理方式を利用できる
+- CredentialをSchemaへ保存しない
+- Tokenをログへ出力しない
+- SecretをGenerated Codeへ埋め込まない
+- 必要最小限の権限のみ要求する
+- Provider固有のSecret管理方式を利用できる
 
 ---
 
@@ -932,15 +908,15 @@ Schema → Provider固有設定
 
 Provider開発者は以下を遵守する。
 
-* Provider Interfaceを実装する
-* Provider Manifestを提供する
-* Capabilityを明示する
-* Coreへ依存しない
-* CLIへ依存しない
-* Provider単体でテスト可能にする
-* External Service固有のErrorを共通Errorへ変換する
-* Credentialを安全に扱う
-* SchemaへProvider固有仕様を持ち込まない
+- Provider Interfaceを実装する
+- Provider Manifestを提供する
+- Capabilityを明示する
+- Coreへ依存しない
+- CLIへ依存しない
+- Provider単体でテスト可能にする
+- External Service固有のErrorを共通Errorへ変換する
+- Credentialを安全に扱う
+- SchemaへProvider固有仕様を持ち込まない
 
 ---
 
@@ -1013,13 +989,13 @@ gstack provider use google --for auth
 
 Providerは以下を担当しない。
 
-* Schema解析
-* Schema Validation
-* Migration Plan生成
-* Code Generation
-* CLI解析
-* Domain Logic
-* UI生成
+- Schema解析
+- Schema Validation
+- Migration Plan生成
+- Code Generation
+- CLI解析
+- Domain Logic
+- UI生成
 
 これらはCoreまたはGeneratorの責務とする。
 
@@ -1031,13 +1007,15 @@ Providerは以下を担当しない。
 
 `DECISIONS.md` D-011 and D-012 clarify that Core may know Provider interfaces/registry abstractions but not concrete implementations. Providers declare Database/API/Authentication/Storage/Deploy capabilities and Migration support per abstract Operation as `native`, `emulated`, or `unsupported`.
 
-| Document        | Purpose               |
-| --------------- | --------------------- |
-| ARCHITECTURE.md | 全体設計・Providerの位置付け    |
+MVPのProvider Manifest、factory／session lifecycle、Secret Resolver境界、safe health、memory Registryは`DECISIONS.md` D-036を規範とする。package install、dynamic import、credential storageはこのFoundationに含めない。
+
+| Document        | Purpose                      |
+| --------------- | ---------------------------- |
+| ARCHITECTURE.md | 全体設計・Providerの位置付け |
 | CLI.md          | Provider操作を含むCLI仕様    |
-| REQUIREMENTS.md | システム要件                |
-| SCHEMA.md       | Provider非依存のDSL仕様     |
+| REQUIREMENTS.md | システム要件                 |
+| SCHEMA.md       | Provider非依存のDSL仕様      |
 | GENERATOR.md    | コード生成仕様               |
-| MIGRATION.md    | Migration仕様           |
-| DEVELOPER.md    | Provider Loader等の内部実装 |
-| ROADMAP.md      | Provider追加計画          |
+| MIGRATION.md    | Migration仕様                |
+| DEVELOPER.md    | Provider Loader等の内部実装  |
+| ROADMAP.md      | Provider追加計画             |

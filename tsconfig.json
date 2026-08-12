@@ -8,6 +8,7 @@
     { "path": "./packages/analyzer" },
     { "path": "./packages/migration" },
     { "path": "./packages/generator" },
+    { "path": "./packages/provider" },
     { "path": "./packages/core" },
     { "path": "./packages/mcp" },
     { "path": "./cli" }
