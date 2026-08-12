@@ -233,3 +233,9 @@ CoreおよびMCPが参照するProvider情報は、Registry内のFactoryを直�
 ## D-038 Provider Lifecycle Orchestration
 
 Providerのvalidation／healthは、明示的なProvider名と、Project Root、secretを含まないconfiguration、注入済みSecret Resolverを受ける短命な操作とする。Runtimeは操作ごとにFactoryを初期化し、1つのSession操作を実行し、成功・失敗にかかわらずSessionを1回破棄する。SessionやSecret Resolverの値をresultへ含めない。未登録、初期化、操作、不正result、破棄の失敗はstable codeとsafe messageを持つRuntime errorへ変換し、Provider由来の生messageを公開しない。Validation issueとhealth codeも契約に沿う形式を検証してimmutableなcopyを返す。Coreへはcontextを固定したInspection Serviceを注入し、Core自身はProvider configurationやSecret Resolverを組み立てない。
+
+## D-039 Google Provider Initial Contract
+
+`@gstack/provider-google`はGoogle固有codeを閉じ込める独立packageとし、Database、API、Authentication、Storage、Deploy capabilityを宣言する。Google Sheets／Apps Script／DriveのMigration操作はadapter実装とintegration testが揃うまで全て`unsupported`とし、Manifestだけでsupport済みと表現しない。
+
+初期configurationは`spreadsheetId`、`appsScriptProjectId`、`driveFolderId`、`credentialSecret`の4つを必須とし、未知keyを拒否する。`credentialSecret`はSecret Resolverへ渡す参照名でありcredential値ではない。offline validationはGatewayやSecret Resolverを呼ばない。外部接続は注入可能な`GoogleWorkspaceGateway`だけが担当し、Provider Sessionのhealth操作から有効なconfigurationとSecret Resolverを受ける。Google SDK、OAuth token保存、Migration Apply、Deployはこのsliceに含めない。

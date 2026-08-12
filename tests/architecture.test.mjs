@@ -16,6 +16,7 @@ const packages = {
   '@gstack/migration': 'packages/migration',
   '@gstack/generator': 'packages/generator',
   '@gstack/provider': 'packages/provider',
+  '@gstack/provider-google': 'packages/provider-google',
   '@gstack/cli': 'cli',
 };
 const allowedInternalDependencies = {
@@ -42,6 +43,7 @@ const allowedInternalDependencies = {
   '@gstack/migration': ['@gstack/application'],
   '@gstack/generator': ['@gstack/application'],
   '@gstack/provider': ['@gstack/migration'],
+  '@gstack/provider-google': ['@gstack/provider'],
   '@gstack/cli': ['@gstack/core'],
 };
 
@@ -83,7 +85,8 @@ test('TypeScript project referenceがmanifestの内部依存と一致する', ()
 });
 
 test('基盤packageとCLIにProvider固有importやGoogle固有識別子を含めない', () => {
-  for (const directory of Object.values(packages)) {
+  for (const [name, directory] of Object.entries(packages)) {
+    if (name === '@gstack/provider-google') continue;
     for (const file of sourceFiles(path.join(root, directory, 'src'))) {
       if (file.endsWith('.test.ts')) continue;
       const source = readFileSync(file, 'utf8');

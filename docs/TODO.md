@@ -22,6 +22,9 @@
 - [x] Core／Provider分離を明確化する（`DECISIONS.md` D-011）。
 - [x] Provider capabilityの粒度を定義する（`DECISIONS.md` D-012）。
 - [x] machine-readable envelopeを定義する（`DECISIONS.md` D-013）。
+- [x] Google Providerの初期configuration／Gateway境界を定義する（`DECISIONS.md` D-039）。
+- [ ] Google認証方式、必要scope、credential形式、refresh／失効、local／CIのSecret Resolver構成を確定する。credential値やtokenをProject Configへ保存しない。
+- [ ] Google Sheets metadata read、Migration Operation mapping、quota／retry／idempotency契約を確定してからDatabase capabilityとApplyを実装する。
 
 ## MCP／AI supportの後続作業
 

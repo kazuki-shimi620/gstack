@@ -9,6 +9,7 @@
     { "path": "./packages/migration" },
     { "path": "./packages/generator" },
     { "path": "./packages/provider" },
+    { "path": "./packages/provider-google" },
     { "path": "./packages/core" },
     { "path": "./packages/mcp" },
     { "path": "./cli" }

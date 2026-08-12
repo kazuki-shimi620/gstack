@@ -160,6 +160,8 @@ ai/
 
 Google Workspaceを実行基盤として利用可能にする。
 
+Status: Provider package、Manifest、strict configuration、offline validation、注入可能なhealth Gatewayまで実装済み。Google API接続、各Capability、Migration Apply、Deployは未実装。
+
 ## Tasks
 
 Database
