@@ -7,8 +7,8 @@ export function formatJson(value: unknown): string {
 export function formatValidationHuman(result: ValidationResult): string {
   const lines = [
     result.valid
-      ? `Schema syntax is valid (${result.level}).`
-      : `Schema syntax validation failed (${result.level}).`,
+      ? `Schema is valid (${result.level}).`
+      : `Schema validation failed (${result.level}).`,
   ];
 
   for (const issue of [...result.errors, ...result.warnings]) {

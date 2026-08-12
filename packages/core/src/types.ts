@@ -1,3 +1,4 @@
+import type { ApplicationModel } from '@gstack/application';
 import type { GstackConfig } from '@gstack/config';
 import type { Diagnostic, SchemaSource } from '@gstack/schema';
 
@@ -24,7 +25,7 @@ export interface ProjectStatus {
   readonly validation: {
     readonly checked: boolean;
     readonly valid: boolean | null;
-    readonly level: 'syntax' | null;
+    readonly level: 'syntax' | 'semantic' | null;
   };
 }
 
@@ -40,7 +41,7 @@ export interface SchemaDocument extends SchemaSummary {
 
 export interface ValidationResult {
   readonly valid: boolean;
-  readonly level: 'syntax';
+  readonly level: 'syntax' | 'semantic';
   readonly errors: readonly Diagnostic[];
   readonly warnings: readonly Diagnostic[];
 }
@@ -53,8 +54,8 @@ export interface ProjectContext {
     readonly projectStatus: 'available';
     readonly schemaRead: 'available';
     readonly schemaSyntaxValidation: 'available';
-    readonly semanticValidation: 'not_implemented';
-    readonly applicationModel: 'not_implemented';
+    readonly semanticValidation: 'available';
+    readonly applicationModel: 'available';
     readonly providerStatus: 'not_implemented';
     readonly migrationPlan: 'not_implemented';
     readonly generatedArtifacts: 'not_implemented';
@@ -69,6 +70,7 @@ export interface GstackProject {
   listSchemas(): Promise<readonly SchemaSummary[]>;
   getSchema(name: string): Promise<SchemaDocument | null>;
   validateSchema(): Promise<ValidationResult>;
+  getApplicationModel(): Promise<ApplicationModel | null>;
 }
 
 export type SchemaSourceLoader = (

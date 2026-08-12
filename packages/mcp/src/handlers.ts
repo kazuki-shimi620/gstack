@@ -8,6 +8,7 @@ export function createReadHandlers(project: GstackProject) {
     listSchemas: () => project.listSchemas(),
     getSchema: (name: string) => project.getSchema(name),
     validateSchema: () => project.validateSchema(),
+    getApplicationModel: () => project.getApplicationModel(),
   } as const;
 }
 

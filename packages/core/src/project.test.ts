@@ -25,7 +25,12 @@ function source(name: string, content: string): SchemaSource {
 
 describe('gstack project read API', () => {
   it('returns structured project status and schema summaries', async () => {
-    const sources = [source('users', 'name: users\n')];
+    const sources = [
+      source(
+        'users',
+        'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+      ),
+    ];
     const loadSources = vi.fn(async () => sources);
     const project = await loadProject({
       root: '/project',
@@ -50,7 +55,6 @@ describe('gstack project read API', () => {
     ]);
     await expect(project.getSchema('users')).resolves.toMatchObject({
       name: 'users',
-      content: 'name: users\n',
     });
     await expect(project.getSchema('../secret')).resolves.toBeNull();
     expect(loadSources).toHaveBeenCalledWith('/project', 'schema');
@@ -58,14 +62,14 @@ describe('gstack project read API', () => {
     await expect(project.getProjectContext()).resolves.toMatchObject({
       status: {
         projectName: 'sample-app',
-        validation: { checked: true, valid: true, level: 'syntax' },
+        validation: { checked: true, valid: true, level: 'semantic' },
       },
       schemas: [{ name: 'users' }],
-      validation: { valid: true, level: 'syntax' },
+      validation: { valid: true, level: 'semantic' },
       capabilities: {
         schemaRead: 'available',
-        semanticValidation: 'not_implemented',
-        applicationModel: 'not_implemented',
+        semanticValidation: 'available',
+        applicationModel: 'available',
       },
     });
   });
@@ -91,6 +95,43 @@ describe('gstack project read API', () => {
         file: 'schema/broken.yaml',
       }),
     ]);
+  });
+
+  it('returns semantic diagnostics and exposes the Application Model only when valid', async () => {
+    const valid = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [
+        source(
+          'users',
+          'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+        ),
+      ],
+    });
+
+    await expect(valid.validateSchema()).resolves.toMatchObject({
+      valid: true,
+      level: 'semantic',
+    });
+    await expect(valid.getApplicationModel()).resolves.toMatchObject({
+      name: 'sample-app',
+      schemaVersion: 1,
+      models: [{ name: 'users' }],
+    });
+
+    const invalid = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [
+        source('users', 'name: users\nmodel: {}\ndatabase: {}\n'),
+      ],
+    });
+    const validation = await invalid.validateSchema();
+    expect(validation).toMatchObject({ valid: false, level: 'semantic' });
+    expect(validation.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ phase: 'semantic' })]),
+    );
+    await expect(invalid.getApplicationModel()).resolves.toBeNull();
   });
 
   it('returns a structured error when no project marker can be found', async () => {

@@ -87,9 +87,9 @@ export function createMcpServer(project: GstackProject): McpServer {
   server.registerTool(
     'validate_schema',
     {
-      title: 'Validate gstack schema syntax',
+      title: 'Validate gstack Schema',
       description:
-        'Runs the currently implemented syntax-level Schema validation and returns structured diagnostics.',
+        'Runs syntax and semantic Schema validation and returns structured diagnostics.',
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -222,6 +222,26 @@ export function createMcpServer(project: GstackProject): McpServer {
         ],
       };
     },
+  );
+
+  server.registerResource(
+    'application-model',
+    'gstack://application-model',
+    {
+      title: 'gstack Application Model',
+      description:
+        'Normalized, provider-independent Application Model, or null when Schema validation fails.',
+      mimeType: 'application/json',
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(await handlers.getApplicationModel(), null, 2),
+        },
+      ],
+    }),
   );
 
   server.registerResource(

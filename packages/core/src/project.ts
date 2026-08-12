@@ -1,5 +1,7 @@
 import path from 'node:path';
 
+import { analyzeSchemas } from '@gstack/analyzer';
+import type { ApplicationModel } from '@gstack/application';
 import {
   ConfigLoadError,
   findProjectRoot,
@@ -103,8 +105,8 @@ class Project implements GstackProject {
         projectStatus: 'available',
         schemaRead: 'available',
         schemaSyntaxValidation: 'available',
-        semanticValidation: 'not_implemented',
-        applicationModel: 'not_implemented',
+        semanticValidation: 'available',
+        applicationModel: 'available',
         providerStatus: 'not_implemented',
         migrationPlan: 'not_implemented',
         generatedArtifacts: 'not_implemented',
@@ -137,6 +139,19 @@ class Project implements GstackProject {
   }
 
   public async validateSchema(): Promise<ValidationResult> {
+    const compilation = await this.compileSchemas();
+    return compilation.validation;
+  }
+
+  public async getApplicationModel(): Promise<ApplicationModel | null> {
+    const compilation = await this.compileSchemas();
+    return compilation.application;
+  }
+
+  private async compileSchemas(): Promise<{
+    readonly application: ApplicationModel | null;
+    readonly validation: ValidationResult;
+  }> {
     const sources = await this.loadSourcesSafely();
     const results = sources.map(parseSchemaSource);
     const errors = results
@@ -145,11 +160,28 @@ class Project implements GstackProject {
     const warnings = results
       .flatMap((result) => result.warnings)
       .sort(compareDiagnostics);
+    if (errors.length > 0) {
+      return {
+        application: null,
+        validation: { valid: false, level: 'syntax', errors, warnings },
+      };
+    }
+
+    const asts = results.flatMap((result) =>
+      result.document ? [result.document.ast] : [],
+    );
+    const analyzed = analyzeSchemas(asts, {
+      applicationName: this.config.name,
+      schemaVersion: this.config.schemaVersion,
+    });
     return {
-      valid: errors.length === 0,
-      level: 'syntax',
-      errors,
-      warnings,
+      application: analyzed.application ?? null,
+      validation: {
+        valid: analyzed.errors.length === 0,
+        level: 'semantic',
+        errors: analyzed.errors,
+        warnings: [...warnings, ...analyzed.warnings].sort(compareDiagnostics),
+      },
     };
   }
 

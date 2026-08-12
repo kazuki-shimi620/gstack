@@ -41,8 +41,8 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Schema source読込、YAML 1.2構文診断、構文専用の独自AST
 - Provider非依存で正規化されたApplication Model契約
 - Semantic AnalyzerとApplication Model生成
-- 構造化されたCore Read APIとmachine-readable envelope
+- Semantic Validation／Application Modelを含む構造化Core Read APIとmachine-readable envelope
 - `schema validate --json`
-- 読取専用のlocal stdio MCP Tool／Resource
+- Application Model Resourceを含む読取専用local stdio MCP Tool／Resource
 
 Core／CLIへのsemantic validation統合、Migration、Generator、Provider実装、Deployは今後のPhaseです。

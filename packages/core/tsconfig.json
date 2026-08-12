@@ -4,6 +4,8 @@
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"],
   "references": [
+    { "path": "../analyzer" },
+    { "path": "../application" },
     { "path": "../config" },
     { "path": "../parser" },
     { "path": "../schema" }

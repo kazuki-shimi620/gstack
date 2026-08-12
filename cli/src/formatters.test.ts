@@ -15,9 +15,7 @@ describe('CLI formatters', () => {
       warnings: [],
     };
 
-    expect(formatValidationHuman(result)).toBe(
-      'Schema syntax is valid (syntax).',
-    );
+    expect(formatValidationHuman(result)).toBe('Schema is valid (syntax).');
     expect(JSON.parse(formatJson(result))).toEqual(result);
   });
 

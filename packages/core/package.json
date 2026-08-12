@@ -6,6 +6,8 @@
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
+    "@gstack/analyzer": "0.0.0",
+    "@gstack/application": "0.0.0",
     "@gstack/config": "0.0.0",
     "@gstack/parser": "0.0.0",
     "@gstack/schema": "0.0.0"

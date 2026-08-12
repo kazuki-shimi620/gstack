@@ -1,4 +1,5 @@
 export { loadProject } from './project.js';
+export type { ApplicationModel } from '@gstack/application';
 export { getErrorDetails, GstackError } from './error.js';
 export type {
   GstackErrorCategory,

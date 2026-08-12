@@ -37,8 +37,8 @@ describe('MCP read handlers', () => {
           projectStatus: 'available',
           schemaRead: 'available',
           schemaSyntaxValidation: 'available',
-          semanticValidation: 'not_implemented',
-          applicationModel: 'not_implemented',
+          semanticValidation: 'available',
+          applicationModel: 'available',
           providerStatus: 'not_implemented',
           migrationPlan: 'not_implemented',
           generatedArtifacts: 'not_implemented',
@@ -52,6 +52,7 @@ describe('MCP read handlers', () => {
         errors: [],
         warnings: [],
       }),
+      getApplicationModel: vi.fn().mockResolvedValue(null),
     };
 
     await expect(createReadHandlers(project).getProjectStatus()).resolves.toBe(
@@ -59,5 +60,8 @@ describe('MCP read handlers', () => {
     );
     expect(getStatus).toHaveBeenCalledOnce();
     await expect(createReadHandlers(project).getConfig()).resolves.toBe(config);
+    await expect(
+      createReadHandlers(project).getApplicationModel(),
+    ).resolves.toBeNull();
   });
 });

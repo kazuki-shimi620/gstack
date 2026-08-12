@@ -53,8 +53,8 @@ describe('gstack MCP server', () => {
           projectStatus: 'available',
           schemaRead: 'available',
           schemaSyntaxValidation: 'available',
-          semanticValidation: 'not_implemented',
-          applicationModel: 'not_implemented',
+          semanticValidation: 'available',
+          applicationModel: 'available',
           providerStatus: 'not_implemented',
           migrationPlan: 'not_implemented',
           generatedArtifacts: 'not_implemented',
@@ -68,6 +68,7 @@ describe('gstack MCP server', () => {
         errors: [],
         warnings: [],
       }),
+      getApplicationModel: vi.fn().mockResolvedValue(null),
     };
     const server = createMcpServer(project);
     const client = new Client({ name: 'test-client', version: '0.0.0' });
@@ -165,8 +166,8 @@ describe('gstack MCP server', () => {
           projectStatus: 'available',
           schemaRead: 'available',
           schemaSyntaxValidation: 'available',
-          semanticValidation: 'not_implemented',
-          applicationModel: 'not_implemented',
+          semanticValidation: 'available',
+          applicationModel: 'available',
           providerStatus: 'not_implemented',
           migrationPlan: 'not_implemented',
           generatedArtifacts: 'not_implemented',
@@ -184,6 +185,7 @@ describe('gstack MCP server', () => {
         errors: [],
         warnings: [],
       }),
+      getApplicationModel: vi.fn().mockResolvedValue(null),
     };
     const server = createMcpServer(project);
     const client = new Client({ name: 'test-client', version: '0.0.0' });
@@ -206,6 +208,7 @@ describe('gstack MCP server', () => {
         'gstack://config',
         'gstack://schema',
         'gstack://schema/users',
+        'gstack://application-model',
         'gstack://architecture',
       ]),
     );
@@ -219,7 +222,7 @@ describe('gstack MCP server', () => {
     }
     expect(JSON.parse(contextContent.text)).toMatchObject({
       status: { projectName: 'project' },
-      capabilities: { semanticValidation: 'not_implemented' },
+      capabilities: { semanticValidation: 'available' },
     });
 
     const schemaResource = await client.readResource({
@@ -239,5 +242,14 @@ describe('gstack MCP server', () => {
       throw new Error('Expected text Config resource');
     }
     expect(JSON.parse(configContent.text)).toEqual(config);
+
+    const applicationResource = await client.readResource({
+      uri: 'gstack://application-model',
+    });
+    const applicationContent = applicationResource.contents[0];
+    if (!applicationContent || !('text' in applicationContent)) {
+      throw new Error('Expected text Application Model resource');
+    }
+    expect(JSON.parse(applicationContent.text)).toBeNull();
   });
 });

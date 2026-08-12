@@ -49,9 +49,9 @@ await project.validateSchema();
 
 すべてのmethodは構造化データを返す。terminal color、説明的な成功message、MCP content block、Provider固有型を含めない。
 
-現在のValidationは意図的に`level: "syntax"`とする。Semantic ValidationとApplication Model生成は実装中であり、その契約は`DECISIONS.md` D-003からD-006で確定している。
+Validationは、Parserで失敗した場合に`level: "syntax"`、構文通過後は`level: "semantic"`を返す。Application ModelはSemantic Validation成功時だけ生成する。この契約は`DECISIONS.md` D-003からD-006に従う。
 
-`getProjectContext()`は、現在利用可能なstatus、Schema summary、validation resultを集約する。capability mapではSemantic Analyzer、Application Model、Provider Status、Migration Plan、generated artifact inventoryを明示的に`not_implemented`とし、利用できないstateを捏造してはいけない。
+`getProjectContext()`は、現在利用可能なstatus、Schema summary、validation resultを集約する。capability mapではSemantic ValidationとApplication Modelを`available`とし、Provider Status、Migration Plan、generated artifact inventoryは`not_implemented`とする。利用できないstateを捏造してはいけない。
 
 ## 4. Tool
 
@@ -98,6 +98,7 @@ Application Model、Provider capability、Migration、generated artifact用Tool�
 | `gstack://config` | Validation済みでsecretを含まない`gstack.yaml`設定 |
 | `gstack://schema` | Schema index |
 | `gstack://schema/{name}` | 1つのraw YAML Schema source。resource templateからdiscover可能 |
+| `gstack://application-model` | Validation成功時の正規化済みApplication Model。失敗時は`null` |
 | `gstack://architecture` | Architecture Invariantsとrepository Agent ruleへの入口 |
 
 ResourceはRead専用contextを公開する。Validationは外部副作用を持たないが計算を実行するため、ResourceではなくToolとする。
