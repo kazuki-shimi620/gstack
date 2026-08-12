@@ -283,6 +283,8 @@ AIがProject全体を理解しやすい情報を出力する。
 
 SchemaからOpenAPIを生成する。
 
+MVPの公開operation、path、component schema、型mappingは`DECISIONS.md` D-029を規範とする。出力はProvider／runtime framework非依存のOpenAPI 3.1 JSON Artifactとする。
+
 例
 
 ```yaml

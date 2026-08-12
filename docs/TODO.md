@@ -48,6 +48,7 @@
 - [x] Generated Artifact Manifestのversion、checksum、path正規化、stale artifact削除手順を確定する（`DECISIONS.md` D-026）。
 - [ ] MVP Generator Config、標準Templateの選択・override規則、生成対象の有効化単位を確定する。
 - [x] TypeScriptのModel／Field命名規則と型mappingを確定する（`DECISIONS.md` D-027）。
+- [ ] API Generatorのruntime transport、routing framework、handler／business logic境界、Template契約を確定する。OpenAPI生成だけを先行し、特定frameworkを暗黙選択しない。
 
 ## Core Foundationの残判断
 
