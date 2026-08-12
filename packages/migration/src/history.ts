@@ -1,4 +1,5 @@
 import type { MigrationFile } from './file.js';
+import { verifyMigrationChecksum } from './file.js';
 import type { ApplicationModelSnapshot } from './snapshot.js';
 
 export type MigrationStatus =
@@ -52,6 +53,52 @@ export function startMigration(
   requireStatus(entry, 'pending');
   isoUtc(startedAt);
   return freeze({ ...entry, status: 'applying', startedAt });
+}
+
+export function resumeMigration(
+  entry: MigrationHistoryEntry,
+  file: MigrationFile,
+  resumedAt: string,
+): MigrationHistoryEntry {
+  requireStatus(entry, 'failed');
+  isoUtc(resumedAt);
+  if (!verifyMigrationChecksum(file)) {
+    throw new MigrationHistoryError(
+      'Failed Migration cannot resume with an invalid checksum.',
+    );
+  }
+  if (
+    entry.version !== file.version ||
+    entry.name !== file.name ||
+    entry.checksum !== file.checksum ||
+    entry.operationCount !== file.operations.length
+  ) {
+    throw new MigrationHistoryError(
+      'Failed Migration cannot resume with a different Migration File.',
+    );
+  }
+  if (entry.completedOperationCount >= entry.operationCount) {
+    throw new MigrationHistoryError(
+      'Failed Migration has no remaining Operation to resume.',
+    );
+  }
+  if (
+    !entry.failedOperationId ||
+    file.operations[entry.completedOperationCount]?.id !==
+      entry.failedOperationId
+  ) {
+    throw new MigrationHistoryError(
+      'Failed Migration progress does not match the Migration File.',
+    );
+  }
+  return freeze({
+    ...entry,
+    status: 'applying',
+    startedAt: resumedAt,
+    completedAt: null,
+    failedOperationId: null,
+    errorCode: null,
+  });
 }
 
 export function recordOperationCompleted(

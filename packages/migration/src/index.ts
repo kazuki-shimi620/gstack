@@ -54,6 +54,7 @@ export {
   MigrationHistoryError,
   recordOperationCompleted,
   recordRollback,
+  resumeMigration,
   startMigration,
 } from './history.js';
 export type { MigrationHistoryEntry, MigrationStatus } from './history.js';
