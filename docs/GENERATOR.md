@@ -252,6 +252,8 @@ UI Generatorは基本画面を生成する。
 
 UIデザインはTemplateに依存する。
 
+MVP標準TemplateはReactのpresentational List／Formとし、data I/Oやbusiness logicをprops境界の外へ保つ。生成条件、input mapping、styling境界は`DECISIONS.md` D-035を規範とする。
+
 ---
 
 # 13. Documentation Generator

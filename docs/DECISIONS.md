@@ -212,3 +212,9 @@ filesystem Writerは明示的なProject Rootと検証済みGeneration Planを受
 MVP API Generatorはruntime framework非依存のTypeScript contractを`generated/api/contracts.ts`へ生成する。`api.resource`があるModelだけを対象とし、collection list、optional create、optional update／deleteを、HTTP method、path、operation ID、request type、response typeを持つreadonly route定義として出力する。request／response typeは`generated/types`のModel型を参照し、update requestは`Partial<Model>`、delete responseは`void`とする。
 
 Generatorはrouting framework、server bootstrap、handler implementation、database access、authentication、authorization、business logic、Provider固有codeを生成しない。単一取得はSchemaにflagがないため生成しない。生成contractは後続のruntime／Template adapterが実装する境界であり、Application Modelにない挙動を推測してはいけない。
+
+## D-035 React UI Generator
+
+MVP標準UI TemplateはReact function componentとし、`generated/frontend/<model.name>/list.tsx`と`form.tsx`、`generated/frontend/index.ts`を生成する。`ui.list.columns`が空のModelはListを、`ui.form.fields`が空のModelはFormを生成しない。Listはreadonly Model itemsをpropsで受け取るsemantic table、Formは各Fieldを`string | boolean`で保持するdraft valueと`onSubmit(draft)`をpropsで受け取るcontrolled formとする。draftからModelへのparse／validationは生成Validation境界の利用者が担当する。
+
+Field inputはbooleanをcheckbox、textをtextarea、Enumをselect、その他をinputへmappingし、number／integer／date／datetimeには標準HTML input typeを付ける。値のparse／validationは生成Validation moduleを利用できる境界に留め、component内でnetwork、Provider、database、routing、authentication、authorization、business logicを実装しない。stylingはclassName hookだけを提供し、CSS frameworkやinline designを固定しない。表示column／form fieldはApplication Modelに宣言された順序を保持する。
