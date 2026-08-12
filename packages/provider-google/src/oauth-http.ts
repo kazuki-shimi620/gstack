@@ -2,13 +2,13 @@ import type {
   GoogleAuthorizedUserCredential,
   GoogleOAuthTokenGateway,
 } from './credential.js';
-import type { GoogleHttpExecutor } from './http.js';
+import type { GoogleHttpClient } from './http.js';
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 
 export class GoogleOAuthHttpGateway implements GoogleOAuthTokenGateway {
   public constructor(
-    private readonly http: GoogleHttpExecutor,
+    private readonly http: GoogleHttpClient,
     private readonly now: () => Date = () => new Date(),
   ) {}
 

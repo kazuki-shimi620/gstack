@@ -26,8 +26,10 @@ export {
   GoogleHttpExecutor,
 } from './http.js';
 export { GoogleOAuthHttpGateway } from './oauth-http.js';
+export { GoogleSheetsHttpGateway } from './sheets-http.js';
 export type {
   GoogleHttpErrorCode,
+  GoogleHttpClient,
   GoogleHttpExecutorOptions,
   GoogleHttpRequest,
   GoogleHttpResponse,

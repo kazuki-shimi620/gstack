@@ -19,6 +19,10 @@ export interface GoogleHttpTransport {
   ): Promise<GoogleHttpResponse>;
 }
 
+export interface GoogleHttpClient {
+  execute(request: GoogleHttpRequest): Promise<GoogleHttpResponse>;
+}
+
 export interface GoogleHttpExecutorOptions {
   readonly timeoutMilliseconds: number;
   readonly maxAttempts: number;
