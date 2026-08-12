@@ -1,3 +1,5 @@
+export { ProviderCatalog } from './catalog.js';
+export type { ProviderSummary } from './catalog.js';
 export { ProviderManifestError, validateProviderManifest } from './manifest.js';
 export { ProviderRegistry, ProviderRegistryError } from './registry.js';
 export type {

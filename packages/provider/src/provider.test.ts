@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { ProviderCatalog } from './catalog.js';
 import { validateProviderManifest } from './manifest.js';
 import { ProviderRegistry } from './registry.js';
 import type { ProviderFactory, ProviderManifest } from './types.js';
@@ -69,6 +70,35 @@ describe('Provider Foundation', () => {
     expect(() => registry.register(factory('alpha'))).toThrow(
       expect.objectContaining({ code: 'PROVIDER_ALREADY_REGISTERED' }),
     );
+  });
+
+  it('Factoryを公開せずProvider情報をname順で返す', () => {
+    const registry = new ProviderRegistry();
+    registry.register(factory('zeta'));
+    registry.register(factory('alpha'));
+    const catalog = new ProviderCatalog(registry);
+
+    const providers = catalog.listProviders();
+    expect(providers.map(({ name }) => name)).toEqual(['alpha', 'zeta']);
+    expect(providers[0]).not.toHaveProperty('initialize');
+    expect(Object.isFrozen(providers)).toBe(true);
+    expect(Object.isFrozen(providers[0])).toBe(true);
+    expect(Object.isFrozen(providers[0]?.capabilities)).toBe(true);
+    expect(Object.isFrozen(providers[0]?.migrationSupport)).toBe(true);
+  });
+
+  it('単一Providerとcapabilityを安全に参照する', () => {
+    const registry = new ProviderRegistry();
+    registry.register(factory('example'));
+    const catalog = new ProviderCatalog(registry);
+
+    expect(catalog.getProvider('example')?.packageName).toBe(
+      '@example/provider-example',
+    );
+    expect(catalog.getProvider('missing')).toBeNull();
+    expect(catalog.supportsCapability('example', 'database')).toBe(true);
+    expect(catalog.supportsCapability('example', 'deploy')).toBe(false);
+    expect(catalog.supportsCapability('missing', 'database')).toBeNull();
   });
 });
 

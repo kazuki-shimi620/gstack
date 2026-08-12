@@ -225,3 +225,7 @@ Field inputはbooleanをcheckbox、textをtextarea、Enumをselect、その他�
 `@gstack/provider`は具体Providerが実装しCoreが参照できるProvider非依存の公開候補contract packageとする。Manifestは`formatVersion: 1`、stable `name`、npm `packageName`、Provider `version`、minimum gstack version、Database／API／Authentication／Storage／Deployのboolean、全MVP Migration Operation typeに対する`native | emulated | unsupported` supportを持つ。未知key、不正name／package／version、Migration supportの欠落・重複を拒否する。
 
 Provider factoryはManifestと`initialize(context)`を持ち、contextはProject Root、secretを含まないProvider config、注入されたSecret Resolverだけを受ける。Sessionは`validate()`、`health()`、`dispose()`を提供し、healthは`healthy | degraded | unavailable`とsafe codeだけを返す。生error、credential、stackを公開しない。Registryはfactoryをnameで登録・取得・一覧化し、重複登録を拒否してname順へ正規化する。MVP Registryはmemory上の参照だけを管理し、package install／dynamic import／credential保管を行わない。
+
+## D-037 Provider Catalog Read Model
+
+CoreおよびMCPが参照するProvider情報は、Registry内のFactoryを直接公開せず、Manifest由来のimmutableな`ProviderSummary`へ射影する。CatalogはProvider一覧をname順で返し、単一Providerおよびtop-level capabilityを参照できる。Summaryにはpackage名、version、minimum gstack version、capability、Migration Operation supportだけを含め、初期化関数、Session、Provider config、credential、secret、healthのlive stateを含めない。
