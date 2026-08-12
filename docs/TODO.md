@@ -40,6 +40,14 @@
 - [x] explicit rename intentの形式と検証規則を確定する（`DECISIONS.md` D-019）。
 - [x] capability resultの付与段階を確定する（`DECISIONS.md` D-020）。
 - [x] Primary Key変更の扱いを確定する。MVPでは禁止し、専用errorを返す（`DECISIONS.md` D-021）。
+- [ ] Rollback Planのcanonical順序、初回Migrationのrollback target、Migration Fileへrollback Operationを保持するかを確定する。適用処理や自動Rollbackは決定前に実装しない。
+- [ ] Migration Lock、部分失敗からの再開、Apply承認token／destructive確認の契約を確定する。具体Providerを変更するApplyは決定前に実装しない。
+
+## Generator Engine実装前の設計判断
+
+- [ ] Generated Artifact Manifestのversion、checksum、path正規化、stale artifact削除手順を確定する。
+- [ ] MVP Generator Config、標準Templateの選択・override規則、生成対象の有効化単位を確定する。
+- [ ] TypeScriptのModel／Field命名規則と型mappingを確定する。
 
 ## Core Foundationの残判断
 
