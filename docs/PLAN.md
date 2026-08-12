@@ -203,4 +203,4 @@ GeneratorはApplication Model、Generator Config、Templateだけを入力とし
 5. UI／Documentation／AI Documentation Generatorは対応する出力契約を確定してから追加する。
 6. filesystem Writer、Core Read API、CLI `generate`はManifestの安全なwrite／delete契約とGenerator Configが完成してから接続する。
 
-Status: Artifact／Manifest／Generation Plan基盤とType Generatorを実装済み。次はValidation Generatorの出力契約を確定する。filesystem Writer、CLI、React、Provider固有生成は未実装とする。
+Status: Artifact／Manifest／Generation Plan基盤、Type Generator、外部library非依存のValidation Generatorを実装済み。次はAPI／OpenAPI Generatorの出力契約を確定する。filesystem Writer、CLI、React、Provider固有生成は未実装とする。

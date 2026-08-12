@@ -203,6 +203,8 @@ export interface User {
 
 Validationコードを生成する。
 
+MVPでは外部libraryに依存しない構造化validatorを生成する。検証対象、result、coercion禁止、出力pathは`DECISIONS.md` D-028を規範とする。
+
 入力
 
 Application Model
