@@ -45,22 +45,27 @@ await project.getProjectContext();
 await project.listSchemas();
 await project.getSchema(name);
 await project.validateSchema();
+await project.getMigrationStatus();
+await project.listMigrationHistory();
+await project.previewMigrationPlan();
 ```
 
 すべてのmethodは構造化データを返す。terminal color、説明的な成功message、MCP content block、Provider固有型を含めない。
 
 Validationは、Parserで失敗した場合に`level: "syntax"`、構文通過後は`level: "semantic"`を返す。Application ModelはSemantic Validation成功時だけ生成する。この契約は`DECISIONS.md` D-003からD-006に従う。
 
-`getProjectContext()`は、現在利用可能なstatus、Schema summary、validation resultを集約する。capability mapではSemantic ValidationとApplication Modelを`available`とし、Provider Status、Migration Plan、generated artifact inventoryは`not_implemented`とする。利用できないstateを捏造してはいけない。
+`getProjectContext()`は、現在利用可能なstatus、Schema summary、validation resultを集約する。capability mapではSemantic ValidationとApplication Modelを`available`とする。Migration PlanはHistory Storageを実装するReaderが注入されている場合だけ`available`、それ以外は`not_configured`とする。Provider Statusとgenerated artifact inventoryは`not_implemented`とし、利用できないstateを捏造してはいけない。
+
+Migration Read APIはCoreへ注入されたProvider非依存Readerへ委譲する。Core自身がHistoryの保存先やProvider実装を選択してはいけない。Plan previewはSemantic Validation成功時のApplication ModelだけをtargetとしてReaderへ渡し、不正SchemaまたはReader未設定は安全なCore errorとして返す。
 
 ## 4. Tool
 
-| Tool | Core呼出 | 分類 |
-| --- | --- | --- |
-| `get_project_status` | `project.getStatus()` | Read専用、idempotent |
-| `list_schemas` | `project.listSchemas()` | Read専用、idempotent |
-| `get_schema` | `project.getSchema(name)` | Read専用、idempotent |
-| `validate_schema` | `project.validateSchema()` | 副作用のないRead計算、idempotent |
+| Tool                 | Core呼出                   | 分類                             |
+| -------------------- | -------------------------- | -------------------------------- |
+| `get_project_status` | `project.getStatus()`      | Read専用、idempotent             |
+| `list_schemas`       | `project.listSchemas()`    | Read専用、idempotent             |
+| `get_schema`         | `project.getSchema(name)`  | Read専用、idempotent             |
+| `validate_schema`    | `project.validateSchema()` | 副作用のないRead計算、idempotent |
 
 Tool responseは互換性のためのJSON textと、machine consumer向け`structuredContent`を含む。すべてのToolはD-013で確定したenvelopeを使う。成功データは`data`内のnamespace（`status`、`schemas`、`schema`、`validation`）に格納する。
 
@@ -91,15 +96,15 @@ Application Model、Provider capability、Migration、generated artifact用Tool�
 
 ## 5. Resource
 
-| URI | 目的 |
-| --- | --- |
-| `gstack://project` | 現在の構造化Project Status |
-| `gstack://project-context` | 最初のproject entry向けに集約したstatus、Schema、Validation、capability availability |
-| `gstack://config` | Validation済みでsecretを含まない`gstack.yaml`設定 |
-| `gstack://schema` | Schema index |
-| `gstack://schema/{name}` | 1つのraw YAML Schema source。resource templateからdiscover可能 |
-| `gstack://application-model` | Validation成功時の正規化済みApplication Model。失敗時は`null` |
-| `gstack://architecture` | Architecture Invariantsとrepository Agent ruleへの入口 |
+| URI                          | 目的                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| `gstack://project`           | 現在の構造化Project Status                                                           |
+| `gstack://project-context`   | 最初のproject entry向けに集約したstatus、Schema、Validation、capability availability |
+| `gstack://config`            | Validation済みでsecretを含まない`gstack.yaml`設定                                    |
+| `gstack://schema`            | Schema index                                                                         |
+| `gstack://schema/{name}`     | 1つのraw YAML Schema source。resource templateからdiscover可能                       |
+| `gstack://application-model` | Validation成功時の正規化済みApplication Model。失敗時は`null`                        |
+| `gstack://architecture`      | Architecture Invariantsとrepository Agent ruleへの入口                               |
 
 ResourceはRead専用contextを公開する。Validationは外部副作用を持たないが計算を実行するため、ResourceではなくToolとする。
 

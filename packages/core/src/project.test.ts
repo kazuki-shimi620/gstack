@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ConfigLoadError, type GstackConfig } from '@gstack/config';
 import type { SchemaSource } from '@gstack/schema';
+import type { MigrationReader } from './types.js';
 
 import { loadProject } from './project.js';
 
@@ -43,7 +44,7 @@ describe('gstack project read API', () => {
       projectName: 'sample-app',
       schemaCount: 1,
       config: { version: 1, schemaVersion: 1, schemaDirectory: 'schema' },
-      migration: { availability: 'not_implemented' },
+      migration: { availability: 'not_configured' },
       validation: { checked: false, valid: null, level: null },
     });
     await expect(project.listSchemas()).resolves.toEqual([
@@ -95,6 +96,83 @@ describe('gstack project read API', () => {
         file: 'schema/broken.yaml',
       }),
     ]);
+  });
+
+  it('注入されたMigration ReaderへRead操作を委譲する', async () => {
+    const status = {
+      totalCount: 0,
+      pendingCount: 0,
+      applyingCount: 0,
+      appliedCount: 0,
+      failedCount: 0,
+      rolledBackCount: 0,
+      latestAttempt: null,
+      latestApplied: null,
+    };
+    const preview = {
+      baselineVersion: null,
+      plan: {
+        operations: [],
+        risk: 'safe' as const,
+        destructive: false,
+        reversible: true,
+        capabilityStatus: 'supported' as const,
+        applicable: true,
+        warnings: [],
+      },
+    };
+    const migrationReader: MigrationReader = {
+      getStatus: vi.fn().mockResolvedValue(status),
+      listHistory: vi.fn().mockResolvedValue([]),
+      previewPlan: vi.fn().mockResolvedValue(preview),
+    };
+    const project = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [
+        source(
+          'users',
+          'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+        ),
+      ],
+      migrationReader,
+    });
+
+    await expect(project.getMigrationStatus()).resolves.toBe(status);
+    await expect(project.listMigrationHistory()).resolves.toEqual([]);
+    await expect(project.previewMigrationPlan()).resolves.toBe(preview);
+    expect(migrationReader.previewPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'sample-app' }),
+      [],
+    );
+    await expect(project.getStatus()).resolves.toMatchObject({
+      migration: { availability: 'available' },
+    });
+  });
+
+  it('Migration storage未設定と不正Schemaを安全なCore errorにする', async () => {
+    const project = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [],
+    });
+    await expect(project.getMigrationStatus()).rejects.toMatchObject({
+      details: { code: 'MIGRATION_NOT_AVAILABLE', category: 'migration' },
+    });
+
+    const invalid = await loadProject({
+      root: '/project',
+      loadConfig: async () => TEST_CONFIG,
+      loadSources: async () => [source('users', 'name: users\nmodel: {}\n')],
+      migrationReader: {
+        getStatus: vi.fn(),
+        listHistory: vi.fn(),
+        previewPlan: vi.fn(),
+      },
+    });
+    await expect(invalid.previewMigrationPlan()).rejects.toMatchObject({
+      details: { code: 'MIGRATION_SCHEMA_INVALID', category: 'migration' },
+    });
   });
 
   it('returns semantic diagnostics and exposes the Application Model only when valid', async () => {

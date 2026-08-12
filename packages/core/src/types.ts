@@ -1,6 +1,12 @@
 import type { ApplicationModel } from '@gstack/application';
 import type { GstackConfig } from '@gstack/config';
 import type { Diagnostic, SchemaSource } from '@gstack/schema';
+import type {
+  MigrationHistoryEntry,
+  MigrationPlanPreview,
+  MigrationStatusSummary,
+  RenameColumnIntent,
+} from '@gstack/migration';
 
 export interface FeatureConfigurationStatus {
   readonly configured: boolean;
@@ -20,7 +26,7 @@ export interface ProjectStatus {
   readonly providers: FeatureConfigurationStatus;
   readonly generators: FeatureConfigurationStatus;
   readonly migration: {
-    readonly availability: 'not_implemented';
+    readonly availability: 'available' | 'not_configured';
   };
   readonly validation: {
     readonly checked: boolean;
@@ -57,7 +63,7 @@ export interface ProjectContext {
     readonly semanticValidation: 'available';
     readonly applicationModel: 'available';
     readonly providerStatus: 'not_implemented';
-    readonly migrationPlan: 'not_implemented';
+    readonly migrationPlan: 'available' | 'not_configured';
     readonly generatedArtifacts: 'not_implemented';
   };
 }
@@ -71,6 +77,20 @@ export interface GstackProject {
   getSchema(name: string): Promise<SchemaDocument | null>;
   validateSchema(): Promise<ValidationResult>;
   getApplicationModel(): Promise<ApplicationModel | null>;
+  getMigrationStatus(): Promise<MigrationStatusSummary>;
+  listMigrationHistory(): Promise<readonly MigrationHistoryEntry[]>;
+  previewMigrationPlan(
+    renameIntents?: readonly RenameColumnIntent[],
+  ): Promise<MigrationPlanPreview>;
+}
+
+export interface MigrationReader {
+  getStatus(): Promise<MigrationStatusSummary>;
+  listHistory(): Promise<readonly MigrationHistoryEntry[]>;
+  previewPlan(
+    target: ApplicationModel,
+    renameIntents?: readonly RenameColumnIntent[],
+  ): Promise<MigrationPlanPreview>;
 }
 
 export type SchemaSourceLoader = (

@@ -1,5 +1,11 @@
 export { loadProject } from './project.js';
 export type { ApplicationModel } from '@gstack/application';
+export type {
+  MigrationHistoryEntry,
+  MigrationPlanPreview,
+  MigrationStatusSummary,
+  RenameColumnIntent,
+} from '@gstack/migration';
 export { getErrorDetails, GstackError } from './error.js';
 export type {
   GstackErrorCategory,
@@ -13,6 +19,7 @@ export type { LoadProjectOptions } from './project.js';
 export type {
   FeatureConfigurationStatus,
   GstackProject,
+  MigrationReader,
   ProjectContext,
   ProjectConfigLoader,
   ProjectStatus,

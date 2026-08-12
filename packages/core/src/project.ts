@@ -13,6 +13,7 @@ import { compareDiagnostics, loadSchemaSources } from '@gstack/schema';
 
 import type {
   GstackProject,
+  MigrationReader,
   ProjectConfigLoader,
   ProjectContext,
   ProjectStatus,
@@ -30,6 +31,7 @@ export interface LoadProjectOptions {
   readonly startDirectory?: string;
   readonly loadConfig?: ProjectConfigLoader;
   readonly loadSources?: SchemaSourceLoader;
+  readonly migrationReader?: MigrationReader;
 }
 
 export async function loadProject(
@@ -51,7 +53,12 @@ export async function loadProject(
     root,
     options.loadConfig ?? loadProjectConfig,
   );
-  return new Project(root, config, options.loadSources ?? loadSchemaSources);
+  return new Project(
+    root,
+    config,
+    options.loadSources ?? loadSchemaSources,
+    options.migrationReader ?? null,
+  );
 }
 
 class Project implements GstackProject {
@@ -59,6 +66,7 @@ class Project implements GstackProject {
     public readonly root: string,
     private readonly config: GstackConfig,
     private readonly loadSources: SchemaSourceLoader,
+    private readonly migrationReader: MigrationReader | null,
   ) {}
 
   public async getConfig(): Promise<GstackConfig> {
@@ -79,7 +87,9 @@ class Project implements GstackProject {
       },
       providers: { configured: false, details: null },
       generators: { configured: false, details: null },
-      migration: { availability: 'not_implemented' },
+      migration: {
+        availability: this.migrationReader ? 'available' : 'not_configured',
+      },
       validation: { checked: false, valid: null, level: null },
     };
   }
@@ -108,7 +118,7 @@ class Project implements GstackProject {
         semanticValidation: 'available',
         applicationModel: 'available',
         providerStatus: 'not_implemented',
-        migrationPlan: 'not_implemented',
+        migrationPlan: this.migrationReader ? 'available' : 'not_configured',
         generatedArtifacts: 'not_implemented',
       },
     };
@@ -146,6 +156,41 @@ class Project implements GstackProject {
   public async getApplicationModel(): Promise<ApplicationModel | null> {
     const compilation = await this.compileSchemas();
     return compilation.application;
+  }
+
+  public async getMigrationStatus() {
+    return this.requireMigrationReader().getStatus();
+  }
+
+  public async listMigrationHistory() {
+    return this.requireMigrationReader().listHistory();
+  }
+
+  public async previewMigrationPlan(renameIntents = []) {
+    const application = await this.getApplicationModel();
+    if (!application) {
+      throw new GstackError({
+        code: 'MIGRATION_SCHEMA_INVALID',
+        category: 'migration',
+        message: 'Migration Plan cannot be created from an invalid Schema.',
+        hint: 'Fix Schema validation errors before previewing a Migration Plan.',
+      });
+    }
+    return this.requireMigrationReader().previewPlan(
+      application,
+      renameIntents,
+    );
+  }
+
+  private requireMigrationReader(): MigrationReader {
+    if (!this.migrationReader) {
+      throw new GstackError({
+        code: 'MIGRATION_NOT_AVAILABLE',
+        category: 'migration',
+        message: 'Migration history storage is not configured.',
+      });
+    }
+    return this.migrationReader;
   }
 
   private async compileSchemas(): Promise<{

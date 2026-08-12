@@ -3,9 +3,12 @@ export type GstackErrorCode =
   | 'CONFIG_INVALID'
   | 'SCHEMA_LOAD_FAILED'
   | 'SCHEMA_NOT_FOUND'
+  | 'MIGRATION_NOT_AVAILABLE'
+  | 'MIGRATION_SCHEMA_INVALID'
   | 'INTERNAL_ERROR';
 
-export type GstackErrorCategory = 'configuration' | 'schema' | 'internal';
+export type GstackErrorCategory =
+  'configuration' | 'schema' | 'migration' | 'internal';
 
 export interface GstackErrorDetails {
   readonly code: GstackErrorCode;

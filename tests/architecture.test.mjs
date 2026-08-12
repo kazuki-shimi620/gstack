@@ -30,6 +30,7 @@ const allowedInternalDependencies = {
     '@gstack/analyzer',
     '@gstack/application',
     '@gstack/config',
+    '@gstack/migration',
     '@gstack/parser',
     '@gstack/schema',
   ],

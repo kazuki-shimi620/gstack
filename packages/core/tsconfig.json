@@ -7,6 +7,7 @@
     { "path": "../analyzer" },
     { "path": "../application" },
     { "path": "../config" },
+    { "path": "../migration" },
     { "path": "../parser" },
     { "path": "../schema" }
   ]

@@ -53,6 +53,9 @@ describe('MCP read handlers', () => {
         warnings: [],
       }),
       getApplicationModel: vi.fn().mockResolvedValue(null),
+      getMigrationStatus: vi.fn(),
+      listMigrationHistory: vi.fn(),
+      previewMigrationPlan: vi.fn(),
     };
 
     await expect(createReadHandlers(project).getProjectStatus()).resolves.toBe(
