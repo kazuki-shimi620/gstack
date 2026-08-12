@@ -57,6 +57,8 @@ export type {
 } from './snapshot.js';
 export { MigrationHistoryRepository } from './storage.js';
 export type { MigrationHistoryStorage } from './storage.js';
+export { MigrationReadService } from './read.js';
+export type { MigrationPlanPreview, MigrationStatusSummary } from './read.js';
 export {
   MigrationFileError,
   parseMigrationFile,

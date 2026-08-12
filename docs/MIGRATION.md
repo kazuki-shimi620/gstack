@@ -1082,6 +1082,8 @@ Operation scope、stable ID、alter risk、初回baseline、rename intent、capa
 
 Capability評価結果の完全性、Planの集約状態、適用可否は`DECISIONS.md` D-025を規範とする。Migration packageは評価結果を反映するpure functionだけを所有し、具体的Providerの呼出しはProvider／Core側のOrchestrationが担当する。
 
+Migration Read Serviceは注入されたHistory Repositoryだけを読み、version順の履歴、状態別件数、最新attempt、最新の正常適用entryを構造化データとして返す。Plan previewは最新の`status: applied`かつchecksum付きsnapshotをbaselineとし、存在しない場合だけ`null` baselineを使う。`failed`、`pending`、`applying`、`rolled_back`のsnapshotをbaselineへ昇格させてはいけない。保存方式、Provider呼出し、ApplyはRead Serviceの責務外とする。
+
 Primary Key変更とMigration File／checksumのcanonical contractは`DECISIONS.md` D-021、D-022を規範とする。
 
 Migration File parserはYAML 1.2、duplicate key、未知root／Operation key、format、checksumをstrictに検証し、Provider固有keyを拒否する。filesystem上の探索・読込はこのpure parserと分離する。
