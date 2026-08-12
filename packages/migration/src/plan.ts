@@ -36,6 +36,8 @@ export function createMigrationPlan(
     risk,
     destructive: ordered.some((operation) => operation.destructive),
     reversible: ordered.every((operation) => operation.reversible),
+    capabilityStatus: ordered.length === 0 ? 'supported' : 'not_evaluated',
+    applicable: ordered.length === 0,
     warnings: Object.freeze([...warnings]),
   });
 }

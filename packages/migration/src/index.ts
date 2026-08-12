@@ -11,12 +11,21 @@ export type {
   DropModelOperation,
   DropRelationOperation,
   MigrationOperation,
+  MigrationCapabilityStatus,
   MigrationPlan,
   MigrationRisk,
   OperationCapability,
   RenameColumnIntent,
   RenameColumnOperation,
 } from './types.js';
+export {
+  applyCapabilityResults,
+  MigrationCapabilityError,
+} from './capability.js';
+export type {
+  EvaluatedOperationCapability,
+  OperationCapabilityResult,
+} from './capability.js';
 export { diffApplicationModels, MigrationDiffError } from './diff.js';
 export type { DiffApplicationModelsOptions } from './diff.js';
 export {

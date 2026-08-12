@@ -3,6 +3,8 @@ import type { Field, Index, Model, Relation } from '@gstack/application';
 export type MigrationRisk = 'safe' | 'caution' | 'destructive';
 export type OperationCapability =
   'not_evaluated' | 'native' | 'emulated' | 'unsupported';
+export type MigrationCapabilityStatus =
+  'not_evaluated' | 'supported' | 'unsupported';
 
 interface OperationBase {
   readonly id: string;
@@ -97,5 +99,7 @@ export interface MigrationPlan {
   readonly risk: MigrationRisk;
   readonly destructive: boolean;
   readonly reversible: boolean;
+  readonly capabilityStatus: MigrationCapabilityStatus;
+  readonly applicable: boolean;
   readonly warnings: readonly string[];
 }

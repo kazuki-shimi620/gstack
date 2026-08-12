@@ -1080,6 +1080,8 @@ Commands
 
 Operation scope、stable ID、alter risk、初回baseline、rename intent、capability評価時点の詳細は`DECISIONS.md` D-015からD-020を規範とする。
 
+Capability評価結果の完全性、Planの集約状態、適用可否は`DECISIONS.md` D-025を規範とする。Migration packageは評価結果を反映するpure functionだけを所有し、具体的Providerの呼出しはProvider／Core側のOrchestrationが担当する。
+
 Primary Key変更とMigration File／checksumのcanonical contractは`DECISIONS.md` D-021、D-022を規範とする。
 
 Migration File parserはYAML 1.2、duplicate key、未知root／Operation key、format、checksumをstrictに検証し、Provider固有keyを拒否する。filesystem上の探索・読込はこのpure parserと分離する。
