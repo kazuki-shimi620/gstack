@@ -72,7 +72,7 @@ describe('gstack MCP server', () => {
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
-      previewGeneration: vi.fn(),
+      previewGeneration: vi.fn().mockResolvedValue(emptyGenerationPlan()),
       generate: vi.fn(),
     };
     const server = createMcpServer(project);
@@ -97,6 +97,7 @@ describe('gstack MCP server', () => {
       'get_migration_status',
       'list_migration_history',
       'preview_migration_plan',
+      'preview_generation',
     ]);
     expect(
       tools.tools.every((tool) => tool.annotations?.readOnlyHint === true),
@@ -128,6 +129,13 @@ describe('gstack MCP server', () => {
       },
     });
     expect(project.previewMigrationPlan).toHaveBeenCalledOnce();
+
+    const generation = await client.callTool({ name: 'preview_generation' });
+    expect(generation.structuredContent).toMatchObject({
+      ok: true,
+      data: { generationPlan: { writes: [], deletes: [] } },
+    });
+    expect(project.previewGeneration).toHaveBeenCalledOnce();
 
     const missing = await client.callTool({
       name: 'get_schema',
@@ -211,7 +219,7 @@ describe('gstack MCP server', () => {
       getMigrationStatus: vi.fn().mockResolvedValue(emptyMigrationStatus()),
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
-      previewGeneration: vi.fn(),
+      previewGeneration: vi.fn().mockResolvedValue(emptyGenerationPlan()),
       generate: vi.fn(),
     };
     const server = createMcpServer(project);
@@ -317,5 +325,13 @@ function emptyMigrationPlan() {
       applicable: true,
       warnings: [],
     },
+  };
+}
+
+function emptyGenerationPlan() {
+  return {
+    writes: [],
+    deletes: [],
+    manifest: { formatVersion: 1, artifacts: [] },
   };
 }

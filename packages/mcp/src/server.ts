@@ -154,6 +154,24 @@ export function createMcpServer(project: GstackProject): McpServer {
       })),
   );
 
+  server.registerTool(
+    'preview_generation',
+    {
+      title: 'Preview gstack Generation Plan',
+      description:
+        'Computes configured Artifact writes and stale deletes without changing files.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () =>
+      safeStructured(async () => ({
+        generationPlan: await handlers.previewGeneration(),
+      })),
+  );
+
   server.registerResource(
     'project',
     'gstack://project',

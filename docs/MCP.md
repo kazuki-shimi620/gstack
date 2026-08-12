@@ -48,6 +48,7 @@ await project.validateSchema();
 await project.getMigrationStatus();
 await project.listMigrationHistory();
 await project.previewMigrationPlan();
+await project.previewGeneration();
 ```
 
 すべてのmethodは構造化データを返す。terminal color、説明的な成功message、MCP content block、Provider固有型を含めない。
@@ -69,6 +70,7 @@ Migration Read APIはCoreへ注入されたProvider非依存Readerへ委譲す�
 | `get_migration_status`   | `project.getMigrationStatus()`   | Read専用、idempotent             |
 | `list_migration_history` | `project.listMigrationHistory()` | Read専用、idempotent             |
 | `preview_migration_plan` | `project.previewMigrationPlan()` | 副作用のないRead計算、idempotent |
+| `preview_generation`     | `project.previewGeneration()`    | 副作用のないRead計算、idempotent |
 
 Tool responseは互換性のためのJSON textと、machine consumer向け`structuredContent`を含む。すべてのToolはD-013で確定したenvelopeを使う。成功データは`data`内のnamespace（`status`、`schemas`、`schema`、`validation`）に格納する。
 
@@ -97,6 +99,8 @@ Tool responseは互換性のためのJSON textと、machine consumer向け`struc
 
 Migration ToolはCore Read APIへだけ委譲し、History StorageのReaderが注入されていないprojectでは`MIGRATION_NOT_AVAILABLE`を返す。Plan previewはMigration Fileを作成せず、Provider capability評価やApplyも実行しない。Provider capabilityとgenerated artifact用Toolは、対応するCore Read APIが存在してから追加する。MCP固有の代替実装は禁止する。
 
+`preview_generation`はCoreの副作用なしpreviewへ委譲し、Artifact write／deleteとManifest更新を実行しない。write可能な`generate` Toolは登録しない。
+
 ## 5. Resource
 
 | URI                          | 目的                                                                                 |
@@ -115,7 +119,7 @@ ResourceはRead専用contextを公開する。Validationは外部副作用を持
 
 ## 6. 安全方針
 
-serverは7つのRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
+serverは8つのRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
 
 - Migration Apply／Rollback
 - Deploy／Publish

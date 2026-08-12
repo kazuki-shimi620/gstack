@@ -69,7 +69,11 @@ describe('MCP read handlers', () => {
         baselineVersion: null,
         plan: { operations: [] },
       }),
-      previewGeneration: vi.fn(),
+      previewGeneration: vi.fn().mockResolvedValue({
+        writes: [],
+        deletes: [],
+        manifest: { formatVersion: 1, artifacts: [] },
+      }),
       generate: vi.fn(),
     };
 
@@ -88,5 +92,8 @@ describe('MCP read handlers', () => {
       createReadHandlers(project).listMigrationHistory(),
     ).resolves.toEqual([]);
     expect(project.getMigrationStatus).toHaveBeenCalledOnce();
+    await expect(
+      createReadHandlers(project).previewGeneration(),
+    ).resolves.toMatchObject({ writes: [], deletes: [] });
   });
 });

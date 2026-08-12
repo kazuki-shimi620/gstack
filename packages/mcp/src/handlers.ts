@@ -12,6 +12,7 @@ export function createReadHandlers(project: GstackProject) {
     getMigrationStatus: () => project.getMigrationStatus(),
     listMigrationHistory: () => project.listMigrationHistory(),
     previewMigrationPlan: () => project.previewMigrationPlan(),
+    previewGeneration: () => project.previewGeneration(),
   } as const;
 }
 
