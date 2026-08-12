@@ -473,6 +473,8 @@ Generator ConfigはProject単位で管理する。
 
 MVPのbuilt-in producer有効化とpure orchestrationは`DECISIONS.md` D-032を規範とする。Project Config Loaderへの永続形式追加は、filesystem Writer／CLI統合と同じPhaseで行う。
 
+`gstack.yaml`の`generator` sectionはoptionalだが、記述する場合は全built-in flagを明示する。section未記述を暗黙の全有効として扱ってはいけない。形式は`DECISIONS.md` D-001を規範とする。
+
 ---
 
 # 26. Template Override

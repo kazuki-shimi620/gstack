@@ -31,6 +31,61 @@ schema:
       name: 'sample-app',
       schemaVersion: 1,
       schema: { directory: 'schemas' },
+      generator: null,
+    });
+  });
+
+  it('型付けされたGenerator設定を読み込む', async () => {
+    const root = await projectWithConfig(`
+version: 1
+name: sample-app
+schemaVersion: 1
+schema: { directory: schema }
+generator:
+  formatVersion: 1
+  types: true
+  validation: true
+  openapi: false
+  documentation: true
+  aiDocumentation: false
+`);
+    await expect(loadProjectConfig(root)).resolves.toMatchObject({
+      generator: {
+        formatVersion: 1,
+        types: true,
+        validation: true,
+        openapi: false,
+        documentation: true,
+        aiDocumentation: false,
+      },
+    });
+  });
+
+  it('Generatorの未知keyと欠落booleanを拒否する', async () => {
+    const root = await projectWithConfig(`
+version: 1
+name: sample-app
+schemaVersion: 1
+schema: { directory: schema }
+generator:
+  formatVersion: 1
+  types: true
+  validation: true
+  openapi: true
+  documentation: true
+  extra: true
+`);
+    await expect(loadProjectConfig(root)).rejects.toMatchObject({
+      issues: expect.arrayContaining([
+        expect.objectContaining({
+          path: 'generator.extra',
+          code: 'CONFIG_UNKNOWN_KEY',
+        }),
+        expect.objectContaining({
+          path: 'generator.aiDocumentation',
+          code: 'CONFIG_REQUIRED',
+        }),
+      ]),
     });
   });
 

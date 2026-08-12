@@ -10,8 +10,22 @@ import {
   type GstackConfig,
 } from './types.js';
 
-const ROOT_KEYS = new Set(['version', 'name', 'schemaVersion', 'schema']);
+const ROOT_KEYS = new Set([
+  'version',
+  'name',
+  'schemaVersion',
+  'schema',
+  'generator',
+]);
 const SCHEMA_KEYS = new Set(['directory']);
+const GENERATOR_KEYS = new Set([
+  'formatVersion',
+  'types',
+  'validation',
+  'openapi',
+  'documentation',
+  'aiDocumentation',
+]);
 
 export async function loadProjectConfig(
   projectRoot: string,
@@ -71,12 +85,67 @@ export async function loadProjectConfig(
     issues,
   );
   const schema = readSchema(value.schema, issues);
+  const generator = readGenerator(value.generator, issues);
 
   if (issues.length > 0 || !version || !name || !schemaVersion || !schema) {
     throw new ConfigLoadError(issues);
   }
 
-  return { version, name, schemaVersion, schema };
+  return { version, name, schemaVersion, schema, generator };
+}
+
+function readGenerator(
+  value: unknown,
+  issues: ConfigIssue[],
+): GstackConfig['generator'] {
+  if (value === undefined) return null;
+  if (!isRecord(value)) {
+    issues.push({
+      code: 'CONFIG_VALUE_INVALID',
+      message: 'generator must be a mapping.',
+      path: 'generator',
+    });
+    return null;
+  }
+  reportUnknownKeys(value, GENERATOR_KEYS, 'generator', issues);
+  const formatVersion = readVersion(
+    value.formatVersion,
+    'generator.formatVersion',
+    'config',
+    issues,
+  );
+  const types = readBoolean(value.types, 'generator.types', issues);
+  const validation = readBoolean(
+    value.validation,
+    'generator.validation',
+    issues,
+  );
+  const openapi = readBoolean(value.openapi, 'generator.openapi', issues);
+  const documentation = readBoolean(
+    value.documentation,
+    'generator.documentation',
+    issues,
+  );
+  const aiDocumentation = readBoolean(
+    value.aiDocumentation,
+    'generator.aiDocumentation',
+    issues,
+  );
+  if (
+    !formatVersion ||
+    [types, validation, openapi, documentation, aiDocumentation].some(
+      (item) => item === null,
+    )
+  )
+    return null;
+  return {
+    formatVersion,
+    types: types!,
+    validation: validation!,
+    openapi: openapi!,
+    documentation: documentation!,
+    aiDocumentation: aiDocumentation!,
+  };
 }
 
 function readSchema(
@@ -148,6 +217,22 @@ function readNonEmptyString(
     issues.push({
       code: 'CONFIG_REQUIRED',
       message: `${propertyPath} must be a non-empty string.`,
+      path: propertyPath,
+    });
+    return null;
+  }
+  return value;
+}
+
+function readBoolean(
+  value: unknown,
+  propertyPath: string,
+  issues: ConfigIssue[],
+): boolean | null {
+  if (typeof value !== 'boolean') {
+    issues.push({
+      code: 'CONFIG_REQUIRED',
+      message: `${propertyPath} must be a boolean.`,
       path: propertyPath,
     });
     return null;

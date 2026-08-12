@@ -5,6 +5,16 @@ export interface GstackConfig {
   readonly schema: {
     readonly directory: string;
   };
+  readonly generator: GeneratorProjectConfig | null;
+}
+
+export interface GeneratorProjectConfig {
+  readonly formatVersion: 1;
+  readonly types: boolean;
+  readonly validation: boolean;
+  readonly openapi: boolean;
+  readonly documentation: boolean;
+  readonly aiDocumentation: boolean;
 }
 
 export interface ConfigIssue {

@@ -13,6 +13,7 @@ const TEST_CONFIG: GstackConfig = {
   name: 'sample-app',
   schemaVersion: 1,
   schema: { directory: 'schema' },
+  generator: null,
 };
 
 function source(name: string, content: string): SchemaSource {

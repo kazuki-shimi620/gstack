@@ -14,9 +14,16 @@ name: sample-app
 schemaVersion: 1
 schema:
   directory: schema
+generator:
+  formatVersion: 1
+  types: true
+  validation: true
+  openapi: true
+  documentation: true
+  aiDocumentation: true
 ```
 
-4項目はすべて必須とし、未知のkeyはerrorとする。pathはProject Rootからの相対pathとする。ProviderとGeneratorのsectionは、将来optionalかつ型付けされたsectionとして追加できるが、secretをConfigの有効値にしてはいけない。環境変数はsecretや運用上のoverrideを提供できるが、application semanticsを再定義してはいけない。具体的なoverride名は各機能の追加時に定義する。
+基本4項目はすべて必須とし、未知のkeyはerrorとする。pathはProject Rootからの相対pathとする。`generator`はoptionalだが、存在する場合は上記6項目をすべて必須とし、未知keyを拒否する。sectionがないProjectはGenerator未設定として扱い、暗黙defaultで生成してはいけない。Provider sectionは将来optionalかつ型付けされたsectionとして追加できる。secretをConfigの有効値にしてはいけない。環境変数はsecretや運用上のoverrideを提供できるが、application semanticsを再定義してはいけない。
 
 ## D-002 Schema Version
 
