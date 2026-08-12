@@ -275,3 +275,9 @@ Google REST responseのnested propertiesをProvider内のflat metadata Gateway r
 標準composition rootはFetch Transport、Google HTTP Executor、OAuth HTTP Gateway、Sheets HTTP GatewayをGoogle Provider package内で組み立て、Core／CLI／MCPへGoogle固有dependencyを要求しない。Fetch、clock、wait、timeout、attempt policyはtestおよびhost要件のため注入可能にするが、安全な既定値はD-042に従う。
 
 初期health checkはconfigured Spreadsheetのmetadata取得をend-to-endで行い、成功時だけ`healthy / GOOGLE_SHEETS_READY`を返す。Credential未検出／不正、認証失敗、権限拒否、Spreadsheet未検出、不正responseは`unavailable`、rate limit／一時的API障害は`degraded`へ分類する。Health resultはsafe codeだけを返し、HTTP status、Google payload、credential、token、生errorを含めない。このhealthはread-onlyであり、Sheets、Drive、Apps Scriptを変更しない。
+
+## D-045 Google Drive Folder Metadata Boundary
+
+Storage capabilityの最初のRead境界は、configurationで指定された1つのDrive folderのmetadata取得だけとする。結果はfolder ID、name、sort済みparent IDs、trashed、`canAddChildren`／`canListChildren`だけを持つimmutable read modelとし、file内容、子file一覧、permission、owner、email、credentialを含めない。ID一致、Google Drive folder MIME type、型、parent ID一意性をstrictに検証する。
+
+REST adapterは`GET https://www.googleapis.com/drive/v3/files/{folderId}`を`drive.metadata.readonly` scopeと短命Bearer tokenで呼び、fields maskを上記metadataに限定する。Shared Drive互換のため`supportsAllDrives=true`を指定する。Folder IDはpath encodeし、tokenをqueryへ置かない。このsliceはfolderの作成、移動、list、upload、download、deleteを行わない。

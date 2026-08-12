@@ -29,6 +29,16 @@ export {
 } from './http.js';
 export { GoogleOAuthHttpGateway } from './oauth-http.js';
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
+export { GoogleDriveHttpGateway } from './drive-http.js';
+export {
+  GOOGLE_DRIVE_FOLDER_MIME_TYPE,
+  GoogleStorageError,
+  GoogleStorageReadService,
+} from './storage.js';
+export type {
+  GoogleDriveFolderMetadata,
+  GoogleDriveMetadataGateway,
+} from './storage.js';
 export type {
   GoogleHttpErrorCode,
   GoogleHttpClient,
