@@ -167,6 +167,8 @@ Generatorはcustom配下を変更しない。
 
 Schemaから型を生成する。
 
+MVPの出力path、命名、Field type mapping、optional property規則は`DECISIONS.md` D-027を規範とする。Type GeneratorはApplication ModelからArtifact inputを返し、Artifact checksumやManifest作成は共通Generator Engineが担当する。
+
 例
 
 Application Model

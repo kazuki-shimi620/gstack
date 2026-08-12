@@ -191,3 +191,16 @@ Core Foundation完了後はRoadmap 0.2へ進む。実装順序は次のとおり
 7. Apply／Rollbackは明示的な安全設計とProvider境界が完成するまで実装しない。
 
 Status: Provider非依存のOperation／Plan、pure Diff、Migration File／checksum／strict YAML、History状態遷移、checksum付きApplication Model snapshot、History Storage port／Repository、Operation単位のcapability評価、Migration Read Service、注入可能なCore Read API、MCPのMigration Read Tool／Resourceを実装済み。Providerを実際に変更するApply／Rollbackは、安全設計とProvider境界が完成するまで未実装とする。Roadmap順序に従い、次の実装Phaseは0.3 Generator EngineのProvider非依存基盤とする。具体的Providerは0.4まで実装しない。
+
+## 10. 次Phase: Generator Engine
+
+GeneratorはApplication Model、Generator Config、Templateだけを入力とし、Providerやlive runtime stateを参照しない。実装順序は次のとおりとする。
+
+1. `generated/`所有権、Artifact checksum、Manifest、stale artifact削除Planをpure contractとして実装する。
+2. Type Generatorを実装し、全Field type、命名、optional property、決定的出力を検証する。
+3. Validation GeneratorをType Generatorと独立したArtifact producerとして実装する。
+4. API／OpenAPI GeneratorをApplication ModelのAPI定義から実装する。
+5. UI／Documentation／AI Documentation Generatorは対応する出力契約を確定してから追加する。
+6. filesystem Writer、Core Read API、CLI `generate`はManifestの安全なwrite／delete契約とGenerator Configが完成してから接続する。
+
+Status: Artifact／Manifest／Generation Plan基盤とType Generatorを実装済み。次はValidation Generatorの出力契約を確定する。filesystem Writer、CLI、React、Provider固有生成は未実装とする。

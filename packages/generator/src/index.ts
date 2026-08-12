@@ -19,3 +19,4 @@ export type {
 } from './manifest.js';
 export { createGenerationPlan } from './plan.js';
 export type { GenerationPlan } from './plan.js';
+export { generateTypeArtifacts, typescriptTypeName } from './typescript.js';
