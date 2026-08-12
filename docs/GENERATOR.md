@@ -24,12 +24,12 @@ GeneratorはProviderへ依存しない。
 
 Generatorは以下の原則に従う。
 
-* Application Modelをアプリケーション定義の唯一の入力とする
-* Providerを意識しない
-* 生成物は再生成可能である
-* 手動編集領域を破壊しない
-* AIが理解しやすい構造を生成する
-* 同じSchemaから常に同じ成果物を生成する
+- Application Modelをアプリケーション定義の唯一の入力とする
+- Providerを意識しない
+- 生成物は再生成可能である
+- 手動編集領域を破壊しない
+- AIが理解しやすい構造を生成する
+- 同じSchemaから常に同じ成果物を生成する
 
 ---
 
@@ -87,10 +87,10 @@ Complete
 
 Generatorが入力として扱うもの
 
-* Application Model
-* Generator Config
-* Template
-* Plugin
+- Application Model
+- Generator Config
+- Template
+- Plugin
 
 GeneratorはDatabaseやProviderの状態を参照しない。
 
@@ -102,26 +102,26 @@ Generatorは以下を生成する。
 
 Backend
 
-* API
-* Routing
-* DTO
-* Validation
-* Service
+- API
+- Routing
+- DTO
+- Validation
+- Service
 
 Frontend
 
-* React Component
-* Form
-* Table
-* List
-* Detail
+- React Component
+- Form
+- Table
+- List
+- Detail
 
 Common
 
-* TypeScript
-* OpenAPI
-* Documentation
-* AI Documentation
+- TypeScript
+- OpenAPI
+- Documentation
+- AI Documentation
 
 ---
 
@@ -175,15 +175,11 @@ Application Model
 name: users
 
 database:
-
   columns:
-
     id:
-
       type: uuid
 
     name:
-
       type: string
 ```
 
@@ -193,11 +189,9 @@ Generated
 
 ```typescript
 export interface User {
+  id: string;
 
-    id: string;
-
-    name: string;
-
+  name: string;
 }
 ```
 
@@ -215,9 +209,9 @@ Application Model
 
 出力
 
-* Validator
-* Request Validation
-* Form Validation
+- Validator
+- Request Validation
+- Form Validation
 
 ---
 
@@ -227,11 +221,11 @@ API Layerを生成する。
 
 生成対象
 
-* CRUD
-* Routing
-* DTO
-* Request
-* Response
+- CRUD
+- Routing
+- DTO
+- Request
+- Response
 
 GeneratorはBusiness Logicを生成しない。
 
@@ -243,12 +237,12 @@ UI Generatorは基本画面を生成する。
 
 生成対象
 
-* List
-* Detail
-* Form
-* Search
-* Filter
-* Pagination
+- List
+- Detail
+- Form
+- Search
+- Filter
+- Pagination
 
 UIデザインはTemplateに依存する。
 
@@ -258,11 +252,11 @@ UIデザインはTemplateに依存する。
 
 以下を生成する。
 
-* API Documentation
-* OpenAPI
-* Entity一覧
-* ER情報
-* Route一覧
+- API Documentation
+- OpenAPI
+- Entity一覧
+- ER情報
+- Route一覧
 
 ---
 
@@ -272,10 +266,10 @@ AI向けドキュメントを生成する。
 
 例
 
-* AGENTS.md
-* Project Context
-* Database Summary
-* API Summary
+- AGENTS.md
+- Project Context
+- Database Summary
+- API Summary
 
 AIがProject全体を理解しやすい情報を出力する。
 
@@ -387,6 +381,8 @@ Generatorは手動変更を保持する責務を持たない。
 
 GeneratorはGenerated Artifact Manifestを保持し、Manifestに記録された`generated/`配下の古い生成物だけを削除できる。
 
+MVPのArtifact／Manifest／再生成Planの厳密な契約は`DECISIONS.md` D-026を規範とする。Generator EngineはpureなPlanまでを所有し、filesystem変更はWriter adapterへ分離する。
+
 ---
 
 # 21. Regeneration
@@ -423,15 +419,15 @@ User.tsのみ更新
 
 Generatorは以下のみ参照する。
 
-* Application Model
-* Template
-* Config
+- Application Model
+- Template
+- Config
 
 参照してはいけない。
 
-* Database
-* Provider
-* Runtime
+- Database
+- Provider
+- Runtime
 
 ---
 
@@ -439,10 +435,10 @@ Generatorは以下のみ参照する。
 
 Generatorは以下のErrorを返す。
 
-* SchemaError
-* TemplateError
-* ValidationError
-* GeneratorError
+- SchemaError
+- TemplateError
+- ValidationError
+- GeneratorError
 
 ---
 
@@ -452,7 +448,6 @@ Generatorは以下のErrorを返す。
 
 ```yaml
 generator:
-
   language: typescript
 
   frontend: react
@@ -488,11 +483,11 @@ GeneratorはCapability単位で構成される。
 
 例
 
-* Type Generator
-* API Generator
-* UI Generator
-* Validation Generator
-* AI Generator
+- Type Generator
+- API Generator
+- UI Generator
+- Validation Generator
+- AI Generator
 
 必要なGeneratorのみ有効化できる。
 
@@ -502,10 +497,10 @@ GeneratorはCapability単位で構成される。
 
 Generatorは以下を生成してはならない。
 
-* Token
-* Password
-* Secret
-* Credential
+- Token
+- Password
+- Secret
+- Credential
 
 環境変数のみ参照する。
 
@@ -517,10 +512,10 @@ GeneratorはAIが理解しやすい成果物を生成する。
 
 例
 
-* 命名規則を統一する
-* コメントを生成する
-* OpenAPIを生成する
-* AI Contextを生成する
+- 命名規則を統一する
+- コメントを生成する
+- OpenAPIを生成する
+- AI Contextを生成する
 
 ---
 
@@ -528,16 +523,16 @@ GeneratorはAIが理解しやすい成果物を生成する。
 
 将来的に追加するGenerator
 
-* Flutter
-* Vue
-* Angular
-* GraphQL
-* SDK
-* Terraform
-* ER Diagram
-* Test Code
-* Storybook
-* Markdown
+- Flutter
+- Vue
+- Angular
+- GraphQL
+- SDK
+- Terraform
+- ER Diagram
+- Test Code
+- Storybook
+- Markdown
 
 ---
 
@@ -545,11 +540,11 @@ GeneratorはAIが理解しやすい成果物を生成する。
 
 初期バージョンでは対象外
 
-* AIによる画面デザイン生成
-* Business Logic生成
-* Provider固有コード生成
-* Database Migration生成
-* Runtimeコード生成
+- AIによる画面デザイン生成
+- Business Logic生成
+- Provider固有コード生成
+- Database Migration生成
+- Runtimeコード生成
 
 ---
 
@@ -559,13 +554,13 @@ GeneratorはAIが理解しやすい成果物を生成する。
 
 `DECISIONS.md` D-009 and D-010 resolve earlier draft ambiguity: Generator consumes Application Model, Generator Config, and Template—not raw Schema/AST or Provider state. Generator owns only `generated/`, tracks outputs in a Generated Artifact Manifest, and may delete only stale paths recorded in that manifest.
 
-| Document        | Purpose         |
-| --------------- | --------------- |
-| ARCHITECTURE.md | 全体構造            |
+| Document        | Purpose           |
+| --------------- | ----------------- |
+| ARCHITECTURE.md | 全体構造          |
 | CLI.md          | Generator CLI仕様 |
 | REQUIREMENTS.md | 要件              |
-| SCHEMA.md       | Generator入力仕様   |
+| SCHEMA.md       | Generator入力仕様 |
 | PROVIDER.md     | Provider仕様      |
 | MIGRATION.md    | Migration仕様     |
-| DEVELOPER.md    | Generator内部実装   |
-| ROADMAP.md      | Generator拡張計画   |
+| DEVELOPER.md    | Generator内部実装 |
+| ROADMAP.md      | Generator拡張計画 |

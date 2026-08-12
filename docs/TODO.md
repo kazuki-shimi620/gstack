@@ -45,7 +45,7 @@
 
 ## Generator Engine実装前の設計判断
 
-- [ ] Generated Artifact Manifestのversion、checksum、path正規化、stale artifact削除手順を確定する。
+- [x] Generated Artifact Manifestのversion、checksum、path正規化、stale artifact削除手順を確定する（`DECISIONS.md` D-026）。
 - [ ] MVP Generator Config、標準Templateの選択・override規則、生成対象の有効化単位を確定する。
 - [ ] TypeScriptのModel／Field命名規則と型mappingを確定する。
 

@@ -14,6 +14,7 @@ const packages = {
   '@gstack/core': 'packages/core',
   '@gstack/mcp': 'packages/mcp',
   '@gstack/migration': 'packages/migration',
+  '@gstack/generator': 'packages/generator',
   '@gstack/cli': 'cli',
 };
 const allowedInternalDependencies = {
@@ -36,6 +37,7 @@ const allowedInternalDependencies = {
   ],
   '@gstack/mcp': ['@gstack/core'],
   '@gstack/migration': ['@gstack/application'],
+  '@gstack/generator': ['@gstack/application'],
   '@gstack/cli': ['@gstack/core'],
 };
 
