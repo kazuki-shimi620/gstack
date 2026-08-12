@@ -270,6 +270,8 @@ MVPのModel reference documentは`DECISIONS.md` D-030を規範とし、Applicati
 
 AI向けドキュメントを生成する。
 
+MVPではGenerator所有領域の`PROJECT_CONTEXT.md`と限定scopeの`AGENTS.md`だけを生成する。手動Agent ruleを上書きせず、secretやruntime stateを含めない契約は`DECISIONS.md` D-031を規範とする。
+
 例
 
 - AGENTS.md

@@ -45,7 +45,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - `schema validate --json`
 - Application Model Resourceを含む読取専用local stdio MCP Tool／Resource
 - Provider非依存のMigration Diff／Plan／File／Historyと注入可能なCore／MCP Read API
-- Generated Artifact／Manifest／再生成Plan基盤とTypeScript Type／Validation／OpenAPI／Documentation Generator
+- Generated Artifact／Manifest／再生成Plan基盤とTypeScript Type／Validation／OpenAPI／Model・AI Documentation Generator
 
 Migration Apply／Rollback、Generator、Provider実装、Deployは今後のPhaseです。
 

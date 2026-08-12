@@ -23,3 +23,4 @@ export { generateTypeArtifacts, typescriptTypeName } from './typescript.js';
 export { generateValidationArtifacts } from './validation.js';
 export { generateOpenApiArtifact } from './openapi.js';
 export { generateDocumentationArtifact } from './documentation.js';
+export { generateAiDocumentationArtifacts } from './ai-documentation.js';
