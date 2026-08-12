@@ -15,6 +15,9 @@ export default defineConfig({
       '@gstack/config': workspacePackage('./packages/config/src/index.ts'),
       '@gstack/core': workspacePackage('./packages/core/src/index.ts'),
       '@gstack/mcp': workspacePackage('./packages/mcp/src/index.ts'),
+      '@gstack/migration': workspacePackage(
+        './packages/migration/src/index.ts',
+      ),
       '@gstack/parser': workspacePackage('./packages/parser/src/index.ts'),
       '@gstack/schema': workspacePackage('./packages/schema/src/index.ts'),
     },

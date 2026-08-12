@@ -6,6 +6,7 @@
     { "path": "./packages/config" },
     { "path": "./packages/parser" },
     { "path": "./packages/analyzer" },
+    { "path": "./packages/migration" },
     { "path": "./packages/core" },
     { "path": "./packages/mcp" },
     { "path": "./cli" }

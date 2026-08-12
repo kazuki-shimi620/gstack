@@ -1040,6 +1040,10 @@ Operations
 * drop_column
 * alter_column
 * rename_column
+* add_index
+* drop_index
+* add_relation
+* drop_relation
 
 Commands
 
@@ -1095,6 +1099,8 @@ Commands
 ## Accepted MVP Contract
 
 `DECISIONS.md` D-007とD-008により、適用済みApplication Model snapshotを正式なDiff baselineとし、Provider stateはdrift／capability入力だけに使用する。Migration Planはstable Operation ID、aggregate risk、destructive／reversible情報、warning、capability resultを持つ構造化データとする。Renameには常に明示的なintentが必要である。
+
+Operation scope、stable ID、alter risk、初回baseline、rename intent、capability評価時点の詳細は`DECISIONS.md` D-015からD-020を規範とする。
 
 | Document        | Purpose                   |
 | --------------- | ------------------------- |

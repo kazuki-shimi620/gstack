@@ -33,12 +33,12 @@
 
 ## Migration Engine実装前の設計判断
 
-- [ ] MVP Operation範囲を統一する。`MIGRATION.md`第9章はIndex／Relationを含むが、第39章はModel／Column Operationだけを列挙している。
-- [ ] stable Operation IDのcanonical生成規則を決める。順序変更でもIDが変わらず、同一plan内で一意になる必要がある。
-- [ ] `alter_column`で扱うpropertyと、propertyごとの`safe | caution | destructive`、reversible判定を確定する。
-- [ ] 初回Migrationで「last applied snapshotが存在しない」状態をどう表現し、空Application Modelとの差をどう扱うか決める。
-- [ ] explicit rename intentの入力形式と、`drop_column`＋`add_column`を`rename_column`へ置き換える検証規則を決める。
-- [ ] capability resultをProvider interface導入前のpure planへ含めるか、Provider capability check段階で付加するか決める。
+- [x] MVP Operation範囲を統一する（`DECISIONS.md` D-015）。
+- [x] stable Operation IDのcanonical生成規則を決める（`DECISIONS.md` D-016）。
+- [x] `alter_column`のproperty、risk、reversible判定を確定する（`DECISIONS.md` D-017）。
+- [x] 初回Migrationのbaseline表現を確定する（`DECISIONS.md` D-018）。
+- [x] explicit rename intentの形式と検証規則を確定する（`DECISIONS.md` D-019）。
+- [x] capability resultの付与段階を確定する（`DECISIONS.md` D-020）。
 
 ## Core Foundationの残判断
 

@@ -11,6 +11,7 @@
       "@gstack/config": ["./packages/config/src/index.ts"],
       "@gstack/core": ["./packages/core/src/index.ts"],
       "@gstack/mcp": ["./packages/mcp/src/index.ts"],
+      "@gstack/migration": ["./packages/migration/src/index.ts"],
       "@gstack/parser": ["./packages/parser/src/index.ts"],
       "@gstack/schema": ["./packages/schema/src/index.ts"]
     }
