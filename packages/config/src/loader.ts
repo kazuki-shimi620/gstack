@@ -16,6 +16,7 @@ const ROOT_KEYS = new Set([
   'schemaVersion',
   'schema',
   'generator',
+  'providers',
 ]);
 const SCHEMA_KEYS = new Set(['directory']);
 const GENERATOR_KEYS = new Set([
@@ -28,6 +29,7 @@ const GENERATOR_KEYS = new Set([
   'documentation',
   'aiDocumentation',
 ]);
+const PROVIDER_KEYS = new Set(['enabled', 'configuration']);
 
 export async function loadProjectConfig(
   projectRoot: string,
@@ -88,12 +90,80 @@ export async function loadProjectConfig(
   );
   const schema = readSchema(value.schema, issues);
   const generator = readGenerator(value.generator, issues);
+  const providers = readProviders(value.providers, issues);
 
   if (issues.length > 0 || !version || !name || !schemaVersion || !schema) {
     throw new ConfigLoadError(issues);
   }
 
-  return { version, name, schemaVersion, schema, generator };
+  return { version, name, schemaVersion, schema, generator, providers };
+}
+
+function readProviders(
+  value: unknown,
+  issues: ConfigIssue[],
+): GstackConfig['providers'] {
+  if (value === undefined) return Object.freeze([]);
+  if (!isRecord(value)) {
+    issues.push({
+      code: 'CONFIG_VALUE_INVALID',
+      message: 'providers must be a mapping.',
+      path: 'providers',
+    });
+    return Object.freeze([]);
+  }
+  const providers = Object.keys(value)
+    .sort()
+    .flatMap((name) => {
+      const providerPath = `providers.${name}`;
+      if (!/^[a-z][a-z0-9-]*$/u.test(name)) {
+        issues.push({
+          code: 'CONFIG_VALUE_INVALID',
+          message: `${providerPath} has an invalid Provider name.`,
+          path: providerPath,
+        });
+      }
+      const entry = value[name];
+      if (!isRecord(entry)) {
+        issues.push({
+          code: 'CONFIG_VALUE_INVALID',
+          message: `${providerPath} must be a mapping.`,
+          path: providerPath,
+        });
+        return [];
+      }
+      reportUnknownKeys(entry, PROVIDER_KEYS, providerPath, issues);
+      const enabled = readBoolean(
+        entry.enabled,
+        `${providerPath}.enabled`,
+        issues,
+      );
+      if (!isRecord(entry.configuration)) {
+        issues.push({
+          code: 'CONFIG_REQUIRED',
+          message: `${providerPath}.configuration must be a mapping.`,
+          path: `${providerPath}.configuration`,
+        });
+        return [];
+      }
+      if (!isJsonCompatible(entry.configuration)) {
+        issues.push({
+          code: 'CONFIG_VALUE_INVALID',
+          message: `${providerPath}.configuration must contain JSON-compatible values.`,
+          path: `${providerPath}.configuration`,
+        });
+        return [];
+      }
+      if (enabled === null) return [];
+      return [
+        Object.freeze({
+          name,
+          enabled,
+          configuration: deepFreeze(structuredClone(entry.configuration)),
+        }),
+      ];
+    });
+  return Object.freeze(providers);
 }
 
 function readGenerator(
@@ -277,4 +347,31 @@ function resolvesOutsideProject(directory: string): boolean {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isJsonCompatible(value: unknown, seen = new Set<object>()): boolean {
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'boolean'
+  ) {
+    return true;
+  }
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value !== 'object') return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  const valid = Array.isArray(value)
+    ? value.every((item) => isJsonCompatible(item, seen))
+    : Object.values(value).every((item) => isJsonCompatible(item, seen));
+  seen.delete(value);
+  return valid;
+}
+
+function deepFreeze<Value>(value: Value): Value {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value)) deepFreeze(child);
+  }
+  return value;
 }

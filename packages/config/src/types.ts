@@ -6,6 +6,13 @@ export interface GstackConfig {
     readonly directory: string;
   };
   readonly generator: GeneratorProjectConfig | null;
+  readonly providers: readonly ProviderProjectConfig[];
+}
+
+export interface ProviderProjectConfig {
+  readonly name: string;
+  readonly enabled: boolean;
+  readonly configuration: Readonly<Record<string, unknown>>;
 }
 
 export interface GeneratorProjectConfig {

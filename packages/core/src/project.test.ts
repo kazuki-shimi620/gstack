@@ -21,6 +21,7 @@ const TEST_CONFIG: GstackConfig = {
   schemaVersion: 1,
   schema: { directory: 'schema' },
   generator: null,
+  providers: [],
 };
 
 function source(name: string, content: string): SchemaSource {

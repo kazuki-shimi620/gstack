@@ -32,6 +32,64 @@ schema:
       schemaVersion: 1,
       schema: { directory: 'schemas' },
       generator: null,
+      providers: [],
+    });
+  });
+
+  it('Provider非依存の設定をname順で読み込みfreezeする', async () => {
+    const root = await projectWithConfig(`
+version: 1
+name: sample-app
+schemaVersion: 1
+schema: { directory: schema }
+providers:
+  zeta:
+    enabled: false
+    configuration: {}
+  google:
+    enabled: true
+    configuration:
+      spreadsheetId: spreadsheet-id
+      authentication:
+        mode: user_oauth
+        credentialSecret: GOOGLE_CREDENTIALS
+`);
+    const result = await loadProjectConfig(root);
+    expect(result.providers).toEqual([
+      {
+        name: 'google',
+        enabled: true,
+        configuration: {
+          spreadsheetId: 'spreadsheet-id',
+          authentication: {
+            mode: 'user_oauth',
+            credentialSecret: 'GOOGLE_CREDENTIALS',
+          },
+        },
+      },
+      { name: 'zeta', enabled: false, configuration: {} },
+    ]);
+    expect(Object.isFrozen(result.providers)).toBe(true);
+    expect(Object.isFrozen(result.providers[0]?.configuration)).toBe(true);
+  });
+
+  it('Provider entryの不正name、未知key、欠落設定を拒否する', async () => {
+    const root = await projectWithConfig(`
+version: 1
+name: sample-app
+schemaVersion: 1
+schema: { directory: schema }
+providers:
+  Google:
+    enabled: yes
+    package: '@gstack/provider-google'
+`);
+    await expect(loadProjectConfig(root)).rejects.toMatchObject({
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: 'providers.Google' }),
+        expect.objectContaining({ path: 'providers.Google.package' }),
+        expect.objectContaining({ path: 'providers.Google.configuration' }),
+      ]),
     });
   });
 

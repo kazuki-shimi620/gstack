@@ -23,6 +23,7 @@
 - [x] Provider capabilityの粒度を定義する（`DECISIONS.md` D-012）。
 - [x] machine-readable envelopeを定義する（`DECISIONS.md` D-013）。
 - [x] Google Providerの初期configuration／Gateway境界を定義する（`DECISIONS.md` D-039）。
+- [x] Project Provider ConfigurationのProvider非依存契約を定義する（`DECISIONS.md` D-048）。
 - [ ] Google認証方式とoperation別最小scopeは`DECISIONS.md` D-039、credential payload／refresh境界はD-041で確定。local／CIの具体Secret Resolver構成を確定する。credential値やtokenをProject Configへ保存しない。
 - [ ] Google Sheets metadata read、Migration Operation mapping、quota／retry／idempotency契約を確定してからDatabase capabilityとApplyを実装する。
 

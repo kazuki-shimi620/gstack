@@ -5,4 +5,5 @@ export type {
   ConfigIssue,
   GeneratorProjectConfig,
   GstackConfig,
+  ProviderProjectConfig,
 } from './types.js';

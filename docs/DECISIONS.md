@@ -293,3 +293,9 @@ REST adapterは公式`projects.get` endpointを`script.projects.readonly` scope�
 標準Provider healthはSheets、Drive、Apps Scriptのconfigured resourceをこの順にread-only metadata checkし、3件全て成功した場合だけ`healthy / GOOGLE_WORKSPACE_READY`を返す。各checkは必要なoperation別scopeだけで別々に短命access tokenを取得する。1件目の失敗で停止し、未確認resourceを成功扱いしない。
 
 Not Foundはresource別のsafe code、credential／authentication／permission／rate limit／一時障害／不正responseはD-044と同じ分類にする。Aggregate resultにresource metadata、HTTP status、外部error、token、credentialを含めない。Healthは各resourceを変更せず、Migration supportやDeploy readinessを意味しない。
+
+## D-048 Project Provider Configuration
+
+`gstack.yaml`のoptionalな`providers`はProvider nameをkeyとするmappingとし、各entryは必須の`enabled: boolean`と`configuration: mapping`だけを持つ。Provider nameはlowercase kebab-case、読込結果はname順のimmutable arrayとする。Config packageはconfigurationをJSON互換のopaque dataとして保持し、Googleその他の具体Provider keyを解釈しない。Provider固有packageが自身のconfigurationをstrictに検証する。
+
+Provider package名、Factory、credential値、access／refresh tokenはProject Configへ保存しない。SecretはProvider configuration内の参照名だけを許可する責任を具体Providerが持つ。未知Providerの解決、package install／dynamic import、複数Providerのcapability routingは標準composition／Plugin Loaderの責務とし、Config LoaderやCoreへ実装しない。
