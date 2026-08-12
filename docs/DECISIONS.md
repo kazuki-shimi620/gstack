@@ -241,3 +241,9 @@ Providerのvalidation／healthは、明示的なProvider名と、Project Root、
 初期configurationは`spreadsheetId`、`appsScriptProjectId`、`driveFolderId`、`authentication`の4つを必須とし、未知keyを拒否する。MVPのauthentication modeはApps Script API実行とも互換性がある`user_oauth`だけとし、service accountを暗黙fallbackにしない。`authentication.credentialSecret`はSecret Resolverへ渡す参照名でありcredential値ではない。offline validationはGatewayやSecret Resolverを呼ばない。外部接続は注入可能な`GoogleWorkspaceGateway`だけが担当し、Provider Sessionのhealth操作から有効なconfiguration、Secret Resolver、operation別のcredential requestを受ける。Google SDK、OAuth token保存、Migration Apply、Deployはこのsliceに含めない。
 
 OAuth scopeはoperationごとの最小集合としてProvider内で固定する。health／Database readは`spreadsheets.readonly`、Database writeは`spreadsheets`、Storage readは`drive.metadata.readonly`、Storage writeは`drive.file`、Script read／writeは`script.projects.readonly`／`script.projects`、Deployは`script.deployments`を要求する。広いDrive scopeや複数Capabilityのscopeを常時一括要求しない。Refresh tokenを含むcredential materialはSecret Resolverの実装が安全な外部storageから供給し、gstack config、Schema、Migration、History、logへ保存しない。
+
+## D-040 Google Sheets Metadata Read Boundary
+
+Google Database capabilityの最初の外部Read境界は、configurationで指定された1つのSpreadsheetのmetadata取得だけとする。結果はSpreadsheet ID、title、optional locale／time zone、およびSheet ID、title、row／column countを持つimmutableなread modelへ正規化し、Sheet title／ID順で決定的に返す。Cell value、record、formula、format、permission、credentialは含めない。
+
+Google SDK／HTTPは注入可能なGatewayが所有し、Serviceは`database_read`のcredential requestとSecret Resolverを渡す。Gateway resultはSpreadsheet ID一致、型、正のgrid size、Sheet ID／title一意性を検証する。Gateway errorと不正resultはそれぞれstable codeとsafe messageへ変換し、生errorを公開しない。このRead境界はSchemaとのdiffやMigration baselineを作らず、Google Sheetsへのwriteも行わない。
