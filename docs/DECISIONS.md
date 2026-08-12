@@ -287,3 +287,9 @@ REST adapterは`GET https://www.googleapis.com/drive/v3/files/{folderId}`を`dri
 API／Deploy capabilityの最初のRead境界は、configurationで指定された1つのApps Script projectのmetadata取得だけとする。結果はscript ID、title、optional parent ID、create／update UTC timestampだけを持つimmutable read modelとし、source file、manifest content、deployment、version、metric、execution result、creator／last modifier profileを含めない。ID一致、型、timestampをstrictに検証する。
 
 REST adapterは公式`projects.get` endpointを`script.projects.readonly` scopeと短命Bearer tokenでretryable GETし、fields maskを`scriptId,title,parentId,createTime,updateTime`へ限定する。Script IDはpath encodeし、tokenをqueryへ置かない。このsliceはproject作成、source取得／更新、version／deployment操作、script実行を行わない。
+
+## D-047 Google Workspace Aggregate Health
+
+標準Provider healthはSheets、Drive、Apps Scriptのconfigured resourceをこの順にread-only metadata checkし、3件全て成功した場合だけ`healthy / GOOGLE_WORKSPACE_READY`を返す。各checkは必要なoperation別scopeだけで別々に短命access tokenを取得する。1件目の失敗で停止し、未確認resourceを成功扱いしない。
+
+Not Foundはresource別のsafe code、credential／authentication／permission／rate limit／一時障害／不正responseはD-044と同じ分類にする。Aggregate resultにresource metadata、HTTP status、外部error、token、credentialを含めない。Healthは各resourceを変更せず、Migration supportやDeploy readinessを意味しない。

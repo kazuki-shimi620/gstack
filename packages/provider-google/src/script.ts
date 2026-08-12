@@ -59,12 +59,13 @@ export class GoogleScriptReadService {
         { cause: error },
       );
     }
+    const parentId = isRecord(value) ? (value.parentId ?? null) : null;
     if (
       !isRecord(value) ||
       value.scriptId !== this.config.appsScriptProjectId ||
       typeof value.title !== 'string' ||
       value.title.length === 0 ||
-      !(value.parentId === null || isNonEmptyString(value.parentId)) ||
+      !(parentId === null || isNonEmptyString(parentId)) ||
       !isTimestamp(value.createTime) ||
       !isTimestamp(value.updateTime)
     ) {
@@ -76,7 +77,7 @@ export class GoogleScriptReadService {
     return Object.freeze({
       scriptId: value.scriptId,
       title: value.title,
-      parentId: value.parentId,
+      parentId,
       createTime: new Date(value.createTime).toISOString(),
       updateTime: new Date(value.updateTime).toISOString(),
     });

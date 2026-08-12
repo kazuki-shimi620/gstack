@@ -20,7 +20,10 @@ export type {
   GoogleSpreadsheetMetadata,
   GoogleSpreadsheetMetadataGateway,
 } from './database.js';
-export { createDefaultGoogleProvider } from './default.js';
+export {
+  createDefaultGoogleProvider,
+  DefaultGoogleWorkspaceGateway,
+} from './default.js';
 export type { DefaultGoogleProviderOptions } from './default.js';
 export {
   FetchGoogleHttpTransport,

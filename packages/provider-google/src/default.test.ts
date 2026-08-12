@@ -47,13 +47,47 @@ describe('Default Google Provider', () => {
             },
           ],
         }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: 'access-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+          scope: 'https://www.googleapis.com/auth/drive.metadata.readonly',
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: 'folder-id',
+          name: 'Files',
+          mimeType: 'application/vnd.google-apps.folder',
+          parents: [],
+          trashed: false,
+          capabilities: { canAddChildren: true, canListChildren: true },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          access_token: 'access-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+          scope: 'https://www.googleapis.com/auth/script.projects.readonly',
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          scriptId: 'script-id',
+          title: 'API',
+          createTime: '2026-08-11T00:00:00Z',
+          updateTime: '2026-08-12T00:00:00Z',
+        }),
       );
 
     await expect(health(fetchImplementation)).resolves.toEqual({
       status: 'healthy',
-      code: 'GOOGLE_SHEETS_READY',
+      code: 'GOOGLE_WORKSPACE_READY',
     });
-    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+    expect(fetchImplementation).toHaveBeenCalledTimes(6);
     const sheetsRequest = fetchImplementation.mock.calls[1];
     expect(sheetsRequest?.[0]).toContain('sheets.googleapis.com');
     expect(sheetsRequest?.[1]?.headers).toMatchObject({
