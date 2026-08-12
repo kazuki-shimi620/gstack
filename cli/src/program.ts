@@ -29,6 +29,11 @@ export function createProgram(
     .version('0.0.0');
 
   const schema = program.command('schema').description('Manage Schema files');
+  program
+    .command('version')
+    .description('Show the gstack CLI version')
+    .action(() => io.stdout('0.0.0'));
+
   schema
     .command('validate')
     .description('Validate project Schema files')

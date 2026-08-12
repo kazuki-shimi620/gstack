@@ -19,6 +19,7 @@
     "lint": "eslint .",
     "mcp": "node packages/mcp/dist/main.js",
     "test": "vitest run",
+    "test:cli": "npm run build && node --test tests/cli-contract.test.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false && tsc -p tsconfig.test.json --noEmit --pretty false"
   },

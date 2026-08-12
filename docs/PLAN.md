@@ -148,7 +148,7 @@ Status: 完了。pure ruleによる意味検証に加え、公開`analyzeSchemas
 
 CLI contract testで成功、syntax／semantic／configuration error、help／version、stdout／stderr、working directory、exit codeを検証し、Provider／Migration／Generator／Deploy codeをloadしなければ完了とする。
 
-Status: 実装中。CoreはParserとAnalyzerを統合し、syntax／semantic levelを区別するValidationとApplication Model Read APIを提供する。CLI adapterは同じValidation APIを利用する。built CLIのprocess-level contract testと公開表示の最終確認が残っている。
+Status: 完了。CoreはParserとAnalyzerを統合し、syntax／semantic levelを区別するValidationとApplication Model Read APIを提供する。CLI adapterは同じValidation APIを利用する。built CLIのprocess-level contract testでhelp／version、Project Root探索、human／JSON output、syntax／semantic／configuration error、stdout／stderr、exit codeを検証済み。
 
 ### 初期AI Integration Slice: Core Read APIとMCP
 

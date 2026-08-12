@@ -167,7 +167,7 @@ Machine-readable output:
 gstack schema validate --json
 ```
 
-初期実装ではYAML syntax validationのみを行い、Resultの`level`へ`syntax`を設定する。Semantic Analyzer実装後にsemantic validationを同じCore Resultへ統合する。
+Parserで失敗した場合はResultの`level`を`syntax`、構文通過後は`semantic`として、同じCore Resultでsemantic validationまで実行する。
 
 Project rootが明示されていない場合、CLIは現在Directoryから親方向へ最も近い`gstack.yaml`を探索する。見つからない場合はConfiguration Error（Exit Code 3）を返す。
 
