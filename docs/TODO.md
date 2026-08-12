@@ -49,6 +49,7 @@
 - [ ] MVP Generator Configと生成対象の有効化単位を確定する。built-in producerと`gstack.yaml`接続は`DECISIONS.md` D-001／D-032で完了。標準Templateの選択・override規則はAPI／UI Generator着手前に確定する。
 - [x] TypeScriptのModel／Field命名規則と型mappingを確定する（`DECISIONS.md` D-027）。
 - [ ] API Generatorのruntime transport、routing framework、handler／business logic境界、Template契約を確定する。OpenAPI生成だけを先行し、特定frameworkを暗黙選択しない。
+- [ ] UI Generatorのframework、標準Template、生成するList／Form／Detail component境界、styling方針を確定する。Application Modelの`ui`設定にないUXやbusiness ruleを推測しない。
 
 ## Core Foundationの残判断
 
