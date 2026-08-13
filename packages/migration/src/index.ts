@@ -67,6 +67,11 @@ export {
 } from './history.js';
 export type { MigrationHistoryEntry, MigrationStatus } from './history.js';
 export {
+  MigrationHistoryJsonError,
+  parseMigrationHistory,
+  serializeMigrationHistory,
+} from './history-json.js';
+export {
   createApplicationModelSnapshot,
   parseApplicationModelSnapshot,
   serializeApplicationModelSnapshot,
