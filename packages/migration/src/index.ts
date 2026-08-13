@@ -56,6 +56,11 @@ export {
 } from './file.js';
 export type { MigrationFile, MigrationFilePayload } from './file.js';
 export {
+  loadMigrationFile,
+  MIGRATION_FILE_MAX_BYTES,
+  MigrationFileSystemError,
+} from './file-system.js';
+export {
   completeMigration,
   createPendingHistory,
   failMigration,
