@@ -236,13 +236,19 @@ MVP実装では標準RuntimeのMigration HistoryをbaselineとしてProvider非�
 Migrationを適用する。
 
 ```bash
-gstack migration apply
+gstack migration apply --file migrations/20260813_000001_initial.yaml --dry-run
+
+gstack migration apply \
+  --file migrations/20260813_000001_initial.yaml \
+  --approval <plan-fingerprint>
 ```
 
 副作用
 
 - Database更新
 - Provider更新
+
+MVPではFileを明示し、最初に`--dry-run`でchecksum、現在Schemaとの一致、History、Provider capability、Plan fingerprintを確認する。実行時は同じfingerprintを`--approval`へ渡す。破壊的Planは`--allow-destructive`、failed Migrationの再開は`--resume`も必要とする。暗黙の最新File選択、`--yes`、複数File一括適用、MCP Applyは提供しない。規範は`DECISIONS.md` D-055とする。
 
 ---
 

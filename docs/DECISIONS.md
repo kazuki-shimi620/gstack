@@ -347,3 +347,11 @@ History adapterは`drive.file` scopeを使い、自身が作成した管理file�
 排他lockはSpreadsheet上のdeterministicなNamed Range IDを使う。取得は`addNamedRange`を単独のatomic batchUpdateとして実行し、既存ID errorをlock unavailableへ変換する。rangeはmetadata readで得た最小Sheet IDのA1に固定し、業務cell値を変更しない。解放は同じIDの`deleteNamedRange`とし、取得・解放writeはresponse喪失時の状態が曖昧なため自動retryしない。lock IDはProvider contextとMigration versionから決定的に導出し、表示名にchecksumやsecretを含めない。
 
 Sheets RESTにはcompare-and-set付きlease更新がないため、MVPは期限切れlockの自動stealを禁止する。process異常終了でlockが残った場合は、HistoryとProvider stateをread-only診断した後にだけ、将来の明示`migration unlock`操作で解除する。通常Applyやresumeが既存lockを暗黙削除してはならない。Apps Script LockServiceは実行中script内の排他には使えるが、CLI processの終了後も検査可能なMigration lockの代替とはしない。
+
+## D-055 Migration Apply CLI Approval
+
+CLI Applyは`gstack migration apply --file <path>`でProject Root配下`migrations/`の単一YAML fileを明示指定する。絶対path、`..`、symlinkによるdirectory外参照、暗黙の最新file選択、複数fileの一括適用を禁止する。fileはstrict parserとchecksum検証を通し、Historyの直前applied snapshotから現在のApplication ModelへのDiffを再生成する。Migration FileのOperationはcapabilityを除く全canonical内容が再生成Planと一致しなければならず、一致した場合だけ現在Application Model snapshotをtargetとして使う。これにより古いFileへ新しいSchema snapshotを誤って記録しない。
+
+`--dry-run`はFile、Schema、History、capabilityを検証し、評価済みPlan、Migration checksum、Plan fingerprintを表示するが、approval、lock、History write、Provider writeを行わない。実Applyは同じcommandへ`--approval <64-hex-fingerprint>`を明示し、対話promptや`--yes`による省略をMVPでは提供しない。破壊的Planはさらに`--allow-destructive`、failed Historyの再開は`--resume`を要求する。`--json`でも同じ明示引数を必要とし、environment variableやconfigからapprovalを暗黙取得しない。
+
+Apply前にCLIが再計算したfingerprintと入力approvalを共通Migration preflightが照合する。Plan、File、Schema、Provider capabilityのいずれかが変わればfingerprintも変わり、再度dry-runが必要になる。approval tokenはsecretではないが、History、Schema、Migration Fileへ保存しない。MCPにはApplyを追加しない。
