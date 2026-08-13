@@ -12,6 +12,9 @@ import {
   formatErrorHuman,
   formatGenerationHuman,
   formatJson,
+  formatMigrationHistoryHuman,
+  formatMigrationPlanHuman,
+  formatMigrationStatusHuman,
   formatProviderHealthHuman,
   formatProviderInfoHuman,
   formatProviderListHuman,
@@ -39,6 +42,9 @@ export function createProgram(
   const provider = program
     .command('provider')
     .description('Inspect configured Providers');
+  const migration = program
+    .command('migration')
+    .description('Inspect Migration state and plans');
   program
     .command('version')
     .description('Show the gstack CLI version')
@@ -54,6 +60,48 @@ export function createProgram(
         return {
           data: { providers },
           human: formatProviderListHuman(providers),
+        };
+      });
+    });
+
+  migration
+    .command('status')
+    .description('Show read-only Migration status')
+    .option('--json', 'output structured JSON')
+    .action(async (options: { json?: boolean }) => {
+      await withProjectOutput(io, options.json, async (project) => {
+        const status = await project.getMigrationStatus();
+        return {
+          data: { migrationStatus: status },
+          human: formatMigrationStatusHuman(status),
+        };
+      });
+    });
+
+  migration
+    .command('history')
+    .description('List Migration History without changing it')
+    .option('--json', 'output structured JSON')
+    .action(async (options: { json?: boolean }) => {
+      await withProjectOutput(io, options.json, async (project) => {
+        const history = await project.listMigrationHistory();
+        return {
+          data: { migrationHistory: history },
+          human: formatMigrationHistoryHuman(history),
+        };
+      });
+    });
+
+  migration
+    .command('plan')
+    .description('Preview a Provider-independent Migration Plan')
+    .option('--json', 'output structured JSON')
+    .action(async (options: { json?: boolean }) => {
+      await withProjectOutput(io, options.json, async (project) => {
+        const preview = await project.previewMigrationPlan();
+        return {
+          data: { migrationPlan: preview },
+          human: formatMigrationPlanHuman(preview),
         };
       });
     });
@@ -173,6 +221,18 @@ export function createProgram(
 }
 
 async function withProviderOutput(
+  io: ProgramIO,
+  json: boolean | undefined,
+  operation: (project: GstackProject) => Promise<{
+    readonly data: Record<string, unknown>;
+    readonly human: string;
+    readonly failed?: boolean;
+  }>,
+): Promise<void> {
+  return withProjectOutput(io, json, operation);
+}
+
+async function withProjectOutput(
   io: ProgramIO,
   json: boolean | undefined,
   operation: (project: GstackProject) => Promise<{

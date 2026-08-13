@@ -227,6 +227,8 @@ Remove column temp
 
 なし
 
+MVP実装では標準RuntimeのMigration HistoryをbaselineとしてProvider非依存Planを生成し、設定済みProvider ManifestのOperation capability評価を反映する。Google ProviderではHistory参照のためDrive APIへread-only requestを行うが、Sheets／Driveを変更しない。`--json`でmachine-readable envelopeを返す。
+
 ---
 
 ### apply
@@ -262,6 +264,8 @@ Migration履歴を表示する。
 gstack migration history
 ```
 
+version順のHistoryをread-onlyで表示する。`--json`を利用できる。
+
 ---
 
 ### status
@@ -271,6 +275,8 @@ Migration状態を表示する。
 ```bash
 gstack migration status
 ```
+
+状態別件数、最新attempt、最新applied Migrationをread-onlyで表示する。`--json`を利用できる。
 
 ---
 

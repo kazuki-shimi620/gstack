@@ -43,6 +43,7 @@ providers:
       capabilities: {
         providerStatus: 'available',
         providerInspection: 'available',
+        migrationPlan: 'available',
       },
     });
   });

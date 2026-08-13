@@ -4,6 +4,9 @@ import {
   formatErrorHuman,
   formatGenerationHuman,
   formatJson,
+  formatMigrationHistoryHuman,
+  formatMigrationPlanHuman,
+  formatMigrationStatusHuman,
   formatProviderHealthHuman,
   formatProviderInfoHuman,
   formatProviderListHuman,
@@ -77,7 +80,7 @@ describe('CLI formatters', () => {
         deploy: true,
       },
       migrationSupport: {
-        create_model: 'unsupported' as const,
+        create_model: 'native' as const,
         drop_model: 'unsupported' as const,
         add_column: 'unsupported' as const,
         drop_column: 'unsupported' as const,
@@ -104,5 +107,57 @@ describe('CLI formatters', () => {
         code: 'GOOGLE_WORKSPACE_READY',
       }),
     ).toBe('Provider google: healthy (GOOGLE_WORKSPACE_READY)');
+  });
+
+  it('Migration status／history／planを安全なread modelから表示する', () => {
+    const history = {
+      version: '20260813_000001',
+      name: 'initial',
+      checksum: 'a'.repeat(64),
+      status: 'pending' as const,
+      operationCount: 1,
+      completedOperationCount: 0,
+      startedAt: null,
+      completedAt: null,
+      rolledBackAt: null,
+      failedOperationId: null,
+      errorCode: null,
+      appliedSnapshot: null,
+    };
+    expect(
+      formatMigrationStatusHuman({
+        totalCount: 1,
+        pendingCount: 1,
+        applyingCount: 0,
+        appliedCount: 0,
+        failedCount: 0,
+        rolledBackCount: 0,
+        latestAttempt: history,
+        latestApplied: null,
+      }),
+    ).toContain('Latest: 20260813_000001');
+    expect(formatMigrationHistoryHuman([history])).toBe(
+      '20260813_000001 initial pending 0/1',
+    );
+    expect(
+      formatMigrationPlanHuman({
+        baselineVersion: null,
+        plan: {
+          operations: [
+            {
+              id: 'create_model:users:users',
+              risk: 'safe',
+              capability: 'not_evaluated',
+            } as never,
+          ],
+          risk: 'safe',
+          destructive: false,
+          reversible: true,
+          capabilityStatus: 'not_evaluated',
+          applicable: false,
+          warnings: [],
+        },
+      }),
+    ).toContain('SAFE create_model:users:users [not_evaluated]');
   });
 });

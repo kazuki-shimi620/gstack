@@ -6,6 +6,11 @@ import type {
   ProviderSummary,
   ValidationResult,
 } from '@gstack/core';
+import type {
+  MigrationHistoryEntry,
+  MigrationPlanPreview,
+  MigrationStatusSummary,
+} from '@gstack/core';
 
 export function formatJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
@@ -93,6 +98,55 @@ export function formatProviderHealthHuman(
   health: ProviderHealth,
 ): string {
   return `Provider ${name}: ${health.status} (${health.code})`;
+}
+
+export function formatMigrationStatusHuman(
+  status: MigrationStatusSummary,
+): string {
+  return [
+    `Migration History: ${status.totalCount} total`,
+    `Pending: ${status.pendingCount}`,
+    `Applying: ${status.applyingCount}`,
+    `Applied: ${status.appliedCount}`,
+    `Failed: ${status.failedCount}`,
+    `Rolled back: ${status.rolledBackCount}`,
+    `Latest: ${status.latestAttempt?.version ?? 'none'}`,
+  ].join('\n');
+}
+
+export function formatMigrationHistoryHuman(
+  entries: readonly MigrationHistoryEntry[],
+): string {
+  return entries.length === 0
+    ? 'No Migration History exists.'
+    : entries
+        .map(
+          ({
+            version,
+            name,
+            status,
+            completedOperationCount,
+            operationCount,
+          }) =>
+            `${version} ${name} ${status} ${completedOperationCount}/${operationCount}`,
+        )
+        .join('\n');
+}
+
+export function formatMigrationPlanHuman(
+  preview: MigrationPlanPreview,
+): string {
+  const { plan } = preview;
+  return [
+    `Migration Plan (baseline: ${preview.baselineVersion ?? 'none'}):`,
+    ...(plan.operations.length === 0
+      ? ['No changes.']
+      : plan.operations.map(
+          ({ id, risk, capability }) =>
+            `${risk.toUpperCase()} ${id} [${capability}]`,
+        )),
+    `Summary: ${plan.operations.length} operation(s), risk=${plan.risk}, applicable=${String(plan.applicable)}.`,
+  ].join('\n');
 }
 
 function enabledCapabilities(

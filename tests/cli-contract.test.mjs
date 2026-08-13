@@ -42,6 +42,7 @@ test('helpとversionを表示する', () => {
   const help = run(['--help']);
   assert.equal(help.status, 0);
   assert.match(help.stdout, /schema/);
+  assert.match(help.stdout, /migration/);
   assert.match(help.stdout, /version/);
   assert.equal(help.stderr, '');
 

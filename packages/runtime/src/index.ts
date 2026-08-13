@@ -6,7 +6,11 @@ import {
   type GstackConfig,
 } from '@gstack/config';
 import { GstackError, loadProject, type GstackProject } from '@gstack/core';
-import { applyCapabilityResults, type MigrationPlan } from '@gstack/migration';
+import {
+  applyCapabilityResults,
+  MigrationReadService,
+  type MigrationPlan,
+} from '@gstack/migration';
 import {
   ProviderCatalog,
   ProviderInspectionService,
@@ -87,15 +91,25 @@ export async function loadStandardProject(
   }
   const catalog = new ProviderCatalog(registry);
   const google = enabled.find(({ name }) => name === 'google');
+  const secrets = new EnvironmentSecretResolver(
+    options.environment ?? process.env,
+  );
   const inspection = google
     ? new ProviderInspectionService(new ProviderRuntime(registry), {
         projectRoot: root,
         configuration: google.configuration,
-        secrets: new EnvironmentSecretResolver(
-          options.environment ?? process.env,
-        ),
+        secrets,
       })
     : undefined;
+  const googleConfig = google
+    ? parseGoogleProviderConfig(google.configuration).config
+    : null;
+  const migration = googleConfig
+    ? createDefaultGoogleMigrationComponents(googleConfig, secrets)
+    : null;
+  const migrationReadService = migration
+    ? new MigrationReadService(migration.history)
+    : null;
   return loadProject({
     root,
     loadConfig: async (): Promise<GstackConfig> => config,
@@ -103,6 +117,26 @@ export async function loadStandardProject(
       listProviders: async () => catalog.listProviders(),
       getProvider: async (name) => catalog.getProvider(name),
     },
+    ...(migrationReadService === null
+      ? {}
+      : {
+          migrationReader: {
+            getStatus: () => migrationReadService.getStatus(),
+            listHistory: () => migrationReadService.listHistory(),
+            previewPlan: async (
+              ...args: Parameters<MigrationReadService['previewPlan']>
+            ) => {
+              const preview = await migrationReadService.previewPlan(...args);
+              return Object.freeze({
+                ...preview,
+                plan: applyCapabilityResults(
+                  preview.plan,
+                  evaluateGoogleMigrationCapabilities(preview.plan.operations),
+                ),
+              });
+            },
+          },
+        }),
     ...(inspection === undefined ? {} : { providerInspector: inspection }),
   });
 }
