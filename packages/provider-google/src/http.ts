@@ -1,5 +1,5 @@
 export interface GoogleHttpRequest {
-  readonly method: 'GET' | 'POST';
+  readonly method: 'GET' | 'POST' | 'PATCH';
   readonly url: string;
   readonly headers: Readonly<Record<string, string>>;
   readonly body: string | null;

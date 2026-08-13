@@ -50,6 +50,7 @@ export {
   GoogleMigrationHistoryError,
   historyFileName,
 } from './migration-history.js';
+export { GoogleMigrationHistoryHttpGateway } from './migration-history-http.js';
 export type {
   GoogleMigrationHistoryFile,
   GoogleMigrationHistoryGateway,
