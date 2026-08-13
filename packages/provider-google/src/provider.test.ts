@@ -51,9 +51,10 @@ describe('Google Provider foundation', () => {
       },
     });
     expect(
-      Object.values(googleProviderManifest.migrationSupport).every(
-        (support) => support === 'unsupported',
-      ),
+      googleProviderManifest.migrationSupport.create_model === 'native' &&
+        Object.entries(googleProviderManifest.migrationSupport)
+          .filter(([operation]) => operation !== 'create_model')
+          .every(([, support]) => support === 'unsupported'),
     ).toBe(true);
   });
 

@@ -28,7 +28,7 @@ export const googleProviderManifest: ProviderManifest = Object.freeze({
     deploy: true,
   }),
   migrationSupport: Object.freeze({
-    create_model: 'unsupported',
+    create_model: 'native',
     drop_model: 'unsupported',
     add_column: 'unsupported',
     drop_column: 'unsupported',

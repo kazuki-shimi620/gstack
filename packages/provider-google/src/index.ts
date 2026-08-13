@@ -31,7 +31,11 @@ export {
   GoogleHttpExecutor,
 } from './http.js';
 export { GoogleOAuthHttpGateway } from './oauth-http.js';
-export { evaluateGoogleMigrationCapabilities } from './migration.js';
+export {
+  evaluateGoogleMigrationCapabilities,
+  GoogleMigrationOperationError,
+  GoogleMigrationOperationExecutor,
+} from './migration.js';
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
 export { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
 export {
