@@ -1,7 +1,13 @@
 import { createHash } from 'node:crypto';
 
+import type { ApplicationModel } from '@gstack/application';
+
 import type { MigrationFile } from './file.js';
 import { verifyMigrationChecksum } from './file.js';
+import {
+  createApplicationModelSnapshot,
+  type ApplicationModelSnapshot,
+} from './snapshot.js';
 import type { MigrationOperation, MigrationPlan } from './types.js';
 
 export interface MigrationApplyApproval {
@@ -15,6 +21,14 @@ export interface MigrationApplyPreflight {
   readonly planFingerprint: string;
   readonly lockKey: string;
   readonly operationIds: readonly string[];
+}
+
+export interface PreparedMigrationApply {
+  readonly file: MigrationFile;
+  readonly plan: MigrationPlan;
+  readonly targetSnapshot: ApplicationModelSnapshot;
+  readonly providerContext: string;
+  readonly planFingerprint: string;
 }
 
 export interface MigrationLockLease {
@@ -93,6 +107,26 @@ export function migrationPlanFingerprint(
       'utf8',
     )
     .digest('hex');
+}
+
+export function prepareMigrationApply(
+  file: MigrationFile,
+  plan: MigrationPlan,
+  target: ApplicationModel,
+  providerContext: string,
+): PreparedMigrationApply {
+  const planFingerprint = migrationPlanFingerprint(file, plan);
+  validateMigrationApply(file, plan, providerContext, {
+    token: planFingerprint,
+    allowDestructive: plan.destructive,
+  });
+  return Object.freeze({
+    file,
+    plan,
+    targetSnapshot: createApplicationModelSnapshot(target),
+    providerContext,
+    planFingerprint,
+  });
 }
 
 export function validateMigrationApply(

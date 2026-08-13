@@ -3,12 +3,14 @@ export {
   MigrationApplyError,
   MigrationLockError,
   migrationPlanFingerprint,
+  prepareMigrationApply,
   validateMigrationApply,
   withMigrationLock,
 } from './apply.js';
 export type {
   MigrationApplyApproval,
   MigrationApplyPreflight,
+  PreparedMigrationApply,
   MigrationLock,
   MigrationLockLease,
 } from './apply.js';

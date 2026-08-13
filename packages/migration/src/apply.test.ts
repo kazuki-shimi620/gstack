@@ -5,6 +5,7 @@ import { createMigrationFile } from './file.js';
 import { createMigrationPlan } from './plan.js';
 import {
   migrationPlanFingerprint,
+  prepareMigrationApply,
   validateMigrationApply,
   withMigrationLock,
 } from './apply.js';
@@ -46,6 +47,28 @@ describe('Migration Apply preflight', () => {
       lockKey: 'google:spreadsheet-1:20260812_000001',
       operationIds: [operation.id],
     });
+  });
+
+  it('dry-runと実Applyで共有するsnapshotとfingerprintを準備する', () => {
+    const file = createMigrationFile('20260812_000001', 'initial', [operation]);
+    const plan = applyCapabilityResults(createMigrationPlan(file.operations), [
+      { operationId: operation.id, capability: 'native' },
+    ]);
+    const application = {
+      schemaVersion: 1,
+      name: 'app',
+      models: [operation.definition],
+      metadata: {},
+    } as never;
+    const prepared = prepareMigrationApply(
+      file,
+      plan,
+      application,
+      'google:spreadsheet-1',
+    );
+    expect(prepared.planFingerprint).toBe(migrationPlanFingerprint(file, plan));
+    expect(prepared.targetSnapshot.application).toBe(application);
+    expect(Object.isFrozen(prepared)).toBe(true);
   });
 
   it('未評価Planと古いapprovalを拒否する', () => {
