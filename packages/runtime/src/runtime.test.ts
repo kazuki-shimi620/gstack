@@ -4,7 +4,13 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { EnvironmentSecretResolver, loadStandardProject } from './index.js';
+import { createMigrationPlan } from '@gstack/migration';
+
+import {
+  createStandardGoogleMigrationRuntime,
+  EnvironmentSecretResolver,
+  loadStandardProject,
+} from './index.js';
 
 const roots: string[] = [];
 
@@ -74,6 +80,40 @@ providers:
       'credential',
     );
     await expect(resolver.get('unsafe')).resolves.toBeNull();
+  });
+
+  it('Google Migration componentsとManifest capability評価を構成する', () => {
+    const runtime = createStandardGoogleMigrationRuntime({
+      configuration: {
+        spreadsheetId: 'spreadsheet-id',
+        appsScriptProjectId: 'script-id',
+        driveFolderId: 'folder-id',
+        authentication: {
+          mode: 'user_oauth',
+          credentialSecret: 'GOOGLE_CREDENTIALS',
+        },
+      },
+      secrets: new EnvironmentSecretResolver({}),
+    });
+    const plan = runtime.evaluate(
+      createMigrationPlan([
+        {
+          id: 'create_model:users:users',
+          type: 'create_model',
+          model: 'users',
+          risk: 'safe',
+          destructive: false,
+          reversible: true,
+          capability: 'not_evaluated',
+        } as never,
+      ]),
+    );
+    expect(runtime.providerContext).toBe('google:spreadsheet-id');
+    expect(plan).toMatchObject({
+      capabilityStatus: 'supported',
+      applicable: true,
+      operations: [{ capability: 'native' }],
+    });
   });
 });
 

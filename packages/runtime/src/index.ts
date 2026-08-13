@@ -6,6 +6,7 @@ import {
   type GstackConfig,
 } from '@gstack/config';
 import { GstackError, loadProject, type GstackProject } from '@gstack/core';
+import { applyCapabilityResults, type MigrationPlan } from '@gstack/migration';
 import {
   ProviderCatalog,
   ProviderInspectionService,
@@ -13,12 +14,50 @@ import {
   ProviderRuntime,
   type ProviderSecretResolver,
 } from '@gstack/provider';
-import { createDefaultGoogleProvider } from '@gstack/provider-google';
+import {
+  createDefaultGoogleMigrationComponents,
+  createDefaultGoogleProvider,
+  evaluateGoogleMigrationCapabilities,
+  parseGoogleProviderConfig,
+  type DefaultGoogleMigrationComponents,
+} from '@gstack/provider-google';
 
 export interface LoadStandardProjectOptions {
   readonly root?: string;
   readonly startDirectory?: string;
   readonly environment?: Readonly<Record<string, string | undefined>>;
+}
+
+export interface StandardGoogleMigrationRuntime extends DefaultGoogleMigrationComponents {
+  evaluate(plan: MigrationPlan): MigrationPlan;
+  readonly providerContext: string;
+}
+
+export function createStandardGoogleMigrationRuntime(input: {
+  readonly configuration: Readonly<Record<string, unknown>>;
+  readonly secrets: ProviderSecretResolver;
+}): StandardGoogleMigrationRuntime {
+  const parsed = parseGoogleProviderConfig(input.configuration);
+  if (!parsed.config) {
+    throw new GstackError({
+      code: 'CONFIG_INVALID',
+      category: 'provider',
+      message: 'Google Provider configuration is invalid.',
+    });
+  }
+  const components = createDefaultGoogleMigrationComponents(
+    parsed.config,
+    input.secrets,
+  );
+  return Object.freeze({
+    ...components,
+    providerContext: `google:${parsed.config.spreadsheetId}`,
+    evaluate: (plan: MigrationPlan) =>
+      applyCapabilityResults(
+        plan,
+        evaluateGoogleMigrationCapabilities(plan.operations),
+      ),
+  });
 }
 
 export async function loadStandardProject(

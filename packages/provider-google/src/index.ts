@@ -51,6 +51,8 @@ export {
   historyFileName,
 } from './migration-history.js';
 export { GoogleMigrationHistoryHttpGateway } from './migration-history-http.js';
+export { createDefaultGoogleMigrationComponents } from './migration-default.js';
+export type { DefaultGoogleMigrationComponents } from './migration-default.js';
 export type {
   GoogleMigrationHistoryFile,
   GoogleMigrationHistoryGateway,

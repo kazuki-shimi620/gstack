@@ -48,6 +48,7 @@ const allowedInternalDependencies = {
   '@gstack/runtime': [
     '@gstack/config',
     '@gstack/core',
+    '@gstack/migration',
     '@gstack/provider',
     '@gstack/provider-google',
   ],
