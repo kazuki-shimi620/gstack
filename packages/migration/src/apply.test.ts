@@ -64,6 +64,27 @@ describe('Migration Apply preflight', () => {
     );
   });
 
+  it('同じIDでもOperation内容が異なるFileとPlanを拒否する', () => {
+    const file = createMigrationFile('20260812_000001', 'initial', [operation]);
+    const changed = {
+      ...operation,
+      definition: { ...operation.definition, displayName: 'Changed' },
+    };
+    const plan = applyCapabilityResults(createMigrationPlan([changed]), [
+      { operationId: operation.id, capability: 'native' },
+    ]);
+    expect(() =>
+      validateMigrationApply(file, plan, 'google:spreadsheet-1', {
+        token: migrationPlanFingerprint(file, plan),
+        allowDestructive: false,
+      }),
+    ).toThrowError(
+      expect.objectContaining<Partial<MigrationApplyError>>({
+        code: 'MIGRATION_PLAN_MISMATCH',
+      }),
+    );
+  });
+
   it('破壊的Planに追加承認を要求する', () => {
     const destructive = {
       id: 'drop_model:users:users',

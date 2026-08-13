@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import type { MigrationFile } from './file.js';
 import { verifyMigrationChecksum } from './file.js';
-import type { MigrationPlan } from './types.js';
+import type { MigrationOperation, MigrationPlan } from './types.js';
 
 export interface MigrationApplyApproval {
   readonly token: string;
@@ -111,7 +111,12 @@ export function validateMigrationApply(
   const planOperations = plan.operations.map(({ id }) => id);
   if (
     fileOperations.length !== planOperations.length ||
-    fileOperations.some((id, index) => id !== planOperations[index])
+    fileOperations.some((id, index) => id !== planOperations[index]) ||
+    file.operations.some(
+      (operation, index) =>
+        canonicalOperation(operation) !==
+        canonicalOperation(plan.operations[index]),
+    )
   ) {
     throw new MigrationApplyError(
       'MIGRATION_PLAN_MISMATCH',
@@ -150,4 +155,21 @@ export function validateMigrationApply(
     lockKey: `${providerContext}:${file.version}`,
     operationIds: Object.freeze(planOperations),
   });
+}
+
+function canonicalOperation(operation: MigrationOperation | undefined): string {
+  if (!operation) return '';
+  return canonicalJson({ ...operation, capability: 'not_evaluated' });
+}
+
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .filter(([, child]) => child !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => `${JSON.stringify(key)}:${canonicalJson(child)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
 }
