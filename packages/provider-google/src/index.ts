@@ -36,6 +36,13 @@ export {
   GoogleMigrationOperationError,
   GoogleMigrationOperationExecutor,
 } from './migration.js';
+export { GoogleMigrationLockHttpGateway } from './migration-lock-http.js';
+export {
+  googleMigrationLockId,
+  GoogleMigrationLockError,
+  GoogleSheetsMigrationLock,
+} from './migration-lock.js';
+export type { GoogleMigrationLockGateway } from './migration-lock.js';
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
 export { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
 export {
