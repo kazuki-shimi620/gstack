@@ -1,0 +1,90 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
+
+const credentialSource = JSON.stringify({
+  formatVersion: 1,
+  type: 'authorized_user',
+  clientId: 'client-id',
+  clientSecret: 'client-secret',
+  refreshToken: 'refresh-token',
+});
+
+describe('Google Sheets Migration HTTP gateway', () => {
+  it('write scopeでatomic batchを自動retryせず送信する', async () => {
+    const execute = vi.fn().mockResolvedValue({
+      status: 200,
+      headers: {},
+      body: JSON.stringify({ spreadsheetId: 'spreadsheet/id', replies: [] }),
+    });
+    const refresh = vi.fn().mockResolvedValue({
+      accessToken: 'access-token',
+      expiresAt: '2026-08-13T01:00:00.000Z',
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const requests = [{ addSheet: { properties: { title: 'users' } } }];
+    const gateway = new GoogleSheetsMigrationHttpGateway(
+      { execute },
+      { refresh },
+      () => new Date('2026-08-13T00:00:00.000Z'),
+    );
+
+    await expect(
+      gateway.batchUpdate({
+        spreadsheetId: 'spreadsheet/id',
+        credential: {
+          credentialSecret: 'GOOGLE_CREDENTIALS',
+          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+        requests,
+      }),
+    ).resolves.toEqual({ spreadsheetId: 'spreadsheet/id', replies: [] });
+    const request = execute.mock.calls[0]?.[0];
+    expect(request).toMatchObject({
+      method: 'POST',
+      retryable: false,
+      headers: {
+        accept: 'application/json',
+        authorization: 'Bearer access-token',
+        'content-type': 'application/json',
+      },
+    });
+    expect(new URL(request.url).pathname).toBe(
+      '/v4/spreadsheets/spreadsheet%2Fid:batchUpdate',
+    );
+    expect(JSON.parse(request.body)).toEqual({
+      requests,
+      includeSpreadsheetInResponse: false,
+      responseIncludeGridData: false,
+    });
+  });
+
+  it('不正JSON responseを拒否する', async () => {
+    const gateway = new GoogleSheetsMigrationHttpGateway(
+      {
+        execute: vi.fn().mockResolvedValue({
+          status: 200,
+          headers: {},
+          body: 'not-json',
+        }),
+      },
+      {
+        refresh: vi.fn().mockResolvedValue({
+          accessToken: 'token',
+          expiresAt: '2026-08-13T01:00:00.000Z',
+          scopes: ['scope'],
+        }),
+      },
+      () => new Date('2026-08-13T00:00:00.000Z'),
+    );
+    await expect(
+      gateway.batchUpdate({
+        spreadsheetId: 'id',
+        credential: { credentialSecret: 'SECRET', scopes: ['scope'] },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+        requests: [],
+      }),
+    ).rejects.toThrow('Google Sheets batch response is invalid.');
+  });
+});

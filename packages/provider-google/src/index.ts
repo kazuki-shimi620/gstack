@@ -33,6 +33,15 @@ export {
 export { GoogleOAuthHttpGateway } from './oauth-http.js';
 export { evaluateGoogleMigrationCapabilities } from './migration.js';
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
+export { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
+export {
+  createModelBatchRequests,
+  GSTACK_MODEL_METADATA_KEY,
+  GoogleSheetsCreateModelService,
+  GoogleSheetsMigrationError,
+  stableSheetId,
+} from './sheets-migration.js';
+export type { GoogleSheetsBatchUpdateGateway } from './sheets-migration.js';
 export { GoogleScriptHttpGateway } from './script-http.js';
 export { GoogleScriptError, GoogleScriptReadService } from './script.js';
 export type {
