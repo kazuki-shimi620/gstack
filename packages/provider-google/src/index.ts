@@ -43,6 +43,17 @@ export {
   GoogleSheetsMigrationLock,
 } from './migration-lock.js';
 export type { GoogleMigrationLockGateway } from './migration-lock.js';
+export {
+  GOOGLE_MIGRATION_HISTORY_MARKER,
+  GOOGLE_MIGRATION_HISTORY_MAX_BYTES,
+  GoogleDriveMigrationHistoryStorage,
+  GoogleMigrationHistoryError,
+  historyFileName,
+} from './migration-history.js';
+export type {
+  GoogleMigrationHistoryFile,
+  GoogleMigrationHistoryGateway,
+} from './migration-history.js';
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
 export { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
 export {
