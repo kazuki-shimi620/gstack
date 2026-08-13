@@ -60,6 +60,54 @@ describe('Google Sheets Migration HTTP gateway', () => {
     });
   });
 
+  it('Sheetと管理markerだけを取得して正規化する', async () => {
+    const execute = vi.fn().mockResolvedValue({
+      status: 200,
+      headers: {},
+      body: JSON.stringify({
+        sheets: [
+          {
+            properties: { sheetId: 10, title: 'users' },
+            developerMetadata: [
+              { metadataKey: 'gstack_model', metadataValue: 'marker' },
+            ],
+          },
+        ],
+      }),
+    });
+    const gateway = new GoogleSheetsMigrationHttpGateway(
+      { execute },
+      {
+        refresh: vi.fn().mockResolvedValue({
+          accessToken: 'token',
+          expiresAt: '2026-08-13T01:00:00.000Z',
+          scopes: ['scope'],
+        }),
+      },
+      () => new Date('2026-08-13T00:00:00.000Z'),
+    );
+    await expect(
+      gateway.inspectCreateModel({
+        spreadsheetId: 'id',
+        credential: { credentialSecret: 'SECRET', scopes: ['scope'] },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+      }),
+    ).resolves.toEqual({
+      sheets: [
+        {
+          sheetId: 10,
+          title: 'users',
+          metadata: [{ key: 'gstack_model', value: 'marker' }],
+        },
+      ],
+    });
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({
+      method: 'GET',
+      retryable: true,
+      body: null,
+    });
+  });
+
   it('不正JSON responseを拒否する', async () => {
     const gateway = new GoogleSheetsMigrationHttpGateway(
       {

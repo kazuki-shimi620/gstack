@@ -39,6 +39,7 @@ export {
   GSTACK_MODEL_METADATA_KEY,
   GoogleSheetsCreateModelService,
   GoogleSheetsMigrationError,
+  inspectCreateModelState,
   stableSheetId,
 } from './sheets-migration.js';
 export type { GoogleSheetsBatchUpdateGateway } from './sheets-migration.js';

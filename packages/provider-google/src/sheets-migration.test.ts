@@ -6,6 +6,7 @@ import type { GoogleProviderConfig } from './config.js';
 import {
   createModelBatchRequests,
   GoogleSheetsCreateModelService,
+  inspectCreateModelState,
   stableSheetId,
 } from './sheets-migration.js';
 
@@ -73,7 +74,10 @@ describe('Google Sheets create_model service', () => {
     const batchUpdate = vi.fn().mockResolvedValue({ spreadsheetId: 'sheet-1' });
     const get = vi.fn();
     const service = new GoogleSheetsCreateModelService(
-      { batchUpdate },
+      {
+        inspectCreateModel: vi.fn().mockResolvedValue({ sheets: [] }),
+        batchUpdate,
+      },
       config,
       { get },
     );
@@ -92,7 +96,10 @@ describe('Google Sheets create_model service', () => {
 
   it('外部errorと不正responseをsafe errorへ変換する', async () => {
     const failed = new GoogleSheetsCreateModelService(
-      { batchUpdate: vi.fn().mockRejectedValue(new Error('secret')) },
+      {
+        inspectCreateModel: vi.fn().mockResolvedValue({ sheets: [] }),
+        batchUpdate: vi.fn().mockRejectedValue(new Error('secret')),
+      },
       config,
       { get: vi.fn() },
     );
@@ -101,13 +108,74 @@ describe('Google Sheets create_model service', () => {
       message: 'Google Sheets Migration Operation failed.',
     });
     const invalid = new GoogleSheetsCreateModelService(
-      { batchUpdate: vi.fn().mockResolvedValue({ spreadsheetId: 'other' }) },
+      {
+        inspectCreateModel: vi.fn().mockResolvedValue({ sheets: [] }),
+        batchUpdate: vi.fn().mockResolvedValue({ spreadsheetId: 'other' }),
+      },
       config,
       { get: vi.fn() },
     );
     await expect(invalid.execute(operation, checksum)).rejects.toMatchObject({
       code: 'GOOGLE_SHEETS_WRITE_RESPONSE_INVALID',
     });
+  });
+
+  it('一致markerを適用済みとしてskipし競合状態を拒否する', async () => {
+    const sheetId = stableSheetId('users');
+    expect(
+      inspectCreateModelState(
+        {
+          sheets: [
+            {
+              sheetId,
+              title: 'users',
+              metadata: [
+                {
+                  key: 'gstack_model',
+                  value: `${checksum}:${operation.id}`,
+                },
+              ],
+            },
+          ],
+        },
+        operation,
+        checksum,
+      ),
+    ).toBe('applied');
+    expect(() =>
+      inspectCreateModelState(
+        { sheets: [{ sheetId, title: 'users', metadata: [] }] },
+        operation,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+
+    const batchUpdate = vi.fn();
+    const service = new GoogleSheetsCreateModelService(
+      {
+        inspectCreateModel: vi.fn().mockResolvedValue({
+          sheets: [
+            {
+              sheetId,
+              title: 'users',
+              metadata: [
+                {
+                  key: 'gstack_model',
+                  value: `${checksum}:${operation.id}`,
+                },
+              ],
+            },
+          ],
+        }),
+        batchUpdate,
+      },
+      config,
+      { get: vi.fn() },
+    );
+    await service.execute(operation, checksum);
+    expect(batchUpdate).not.toHaveBeenCalled();
   });
 });
 
