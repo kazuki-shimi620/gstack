@@ -337,3 +337,13 @@ Google Databaseの最初のwrite sliceは`create_model`だけとし、1 Modelを
 write requestはresponse喪失後に同じ`addSheet`を安全に自動再送できないため、HTTP層では`retryable: false`とする。429／5xx／network failureはsafe errorとしてHistoryへ記録し、lock取得と最新metadata再読込を伴う明示resumeでmarkerを確認してから続行する。公式上のatomic batch、推奨2 MB以下、write quota 300／分／project・60／分／user／projectを上限として扱うが、MVPは1 spreadsheetにつき直列実行し、1 Operationを1 batchに制限する。quota値をアプリケーション側の並列化許可として解釈しない。
 
 `create_model`をManifestで`native`へ変更する条件は、strict request／response adapter、OAuth `database_write` scope、markerによる再開時idempotency、競合拒否、safe error変換のtestが揃うことである。他Operationは各々のデータ保持・rollback意味論が確定するまで`unsupported`を維持する。
+
+## D-054 Google Migration History Storage and Lock
+
+Google ProviderのMigration Historyはconfigured Drive folder配下のgstack管理JSON fileへversionごとに1件保存する。file名は`.gstack-migration-<version>.json`、MIME typeは`application/json`とし、`appProperties`にformat markerとversionを持たせる。内容はMigration packageのstrictなHistory entryだけで、credential、token、Google error payloadを含めない。検索はfolder parent、trashed=false、gstack markerをすべて指定し、同一versionの重複、folder外file、marker／内容version不一致をconflictとして拒否する。更新は既存file IDへのmedia update、新規作成はconfigured folderをparentとするcreateで行う。
+
+History adapterは`drive.file` scopeを使い、自身が作成した管理fileだけを読み書きする。list response、metadata、JSON bodyをstrictに検証し、unknown fieldを捨てる。History writeはMigration lock内で直列化されるが、response喪失時のcreate重複を避けるため自動retryしない。明示resume時は再検索し、同じversion／checksumの単一fileだけを継続する。
+
+排他lockはSpreadsheet上のdeterministicなNamed Range IDを使う。取得は`addNamedRange`を単独のatomic batchUpdateとして実行し、既存ID errorをlock unavailableへ変換する。rangeはmetadata readで得た最小Sheet IDのA1に固定し、業務cell値を変更しない。解放は同じIDの`deleteNamedRange`とし、取得・解放writeはresponse喪失時の状態が曖昧なため自動retryしない。lock IDはProvider contextとMigration versionから決定的に導出し、表示名にchecksumやsecretを含めない。
+
+Sheets RESTにはcompare-and-set付きlease更新がないため、MVPは期限切れlockの自動stealを禁止する。process異常終了でlockが残った場合は、HistoryとProvider stateをread-only診断した後にだけ、将来の明示`migration unlock`操作で解除する。通常Applyやresumeが既存lockを暗黙削除してはならない。Apps Script LockServiceは実行中script内の排他には使えるが、CLI processの終了後も検査可能なMigration lockの代替とはしない。

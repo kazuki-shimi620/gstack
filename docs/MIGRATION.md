@@ -1082,6 +1082,8 @@ Rollback PlanとApply safety protocolの規範は`DECISIONS.md` D-051、D-052と
 
 Provider非依存のApply Orchestratorはlock内でHistoryを再確認し、Operationをcanonical順に1件ずつ実行して各成功後に進捗を保存する。ExecutorにはMigration version、checksum、Operation IDから導出したstable idempotency keyを渡す。未知のProvider errorはsafeな`PROVIDER_OPERATION_FAILED`へ変換し、生messageをHistoryへ保存しない。適用済みの同一version／checksumはProviderを再実行せずskipする。failed Historyは明示的なresume指定がない限り拒否する。
 
+Google ProviderのHistory Storageとlockは`DECISIONS.md` D-054を規範とする。Historyはconfigured Drive folder内の管理JSON、lockはSpreadsheetのdeterministic Named Range IDに分離する。期限切れlockを時間だけで自動解除せず、異常終了後はread-only診断と明示unlockを必要とする。
+
 Operation scope、stable ID、alter risk、初回baseline、rename intent、capability評価時点の詳細は`DECISIONS.md` D-015からD-020を規範とする。
 
 Capability評価結果の完全性、Planの集約状態、適用可否は`DECISIONS.md` D-025を規範とする。Migration packageは評価結果を反映するpure functionだけを所有し、具体的Providerの呼出しはProvider／Core側のOrchestrationが担当する。
