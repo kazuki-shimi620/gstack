@@ -355,3 +355,17 @@ CLI Applyは`gstack migration apply --file <path>`でProject Root配下`migratio
 `--dry-run`はFile、Schema、History、capabilityを検証し、評価済みPlan、Migration checksum、Plan fingerprintを表示するが、approval、lock、History write、Provider writeを行わない。実Applyは同じcommandへ`--approval <64-hex-fingerprint>`を明示し、対話promptや`--yes`による省略をMVPでは提供しない。破壊的Planはさらに`--allow-destructive`、failed Historyの再開は`--resume`を要求する。`--json`でも同じ明示引数を必要とし、environment variableやconfigからapprovalを暗黙取得しない。
 
 Apply前にCLIが再計算したfingerprintと入力approvalを共通Migration preflightが照合する。Plan、File、Schema、Provider capabilityのいずれかが変わればfingerprintも変わり、再度dry-runが必要になる。approval tokenはsecretではないが、History、Schema、Migration Fileへ保存しない。MCPにはApplyを追加しない。
+
+## D-056 Google Sheets Add Column Migration
+
+Google Sheetsの`add_column`は、gstack管理対象Sheetの既存header末尾へ1列を追加する。既存列をApplication Model順へ並べ替えず、既存rowのcell値を変更・削除しない。新規列の既存rowは空値のままとし、`required`、`unique`、型、defaultなどのApplication semanticsをSheetsのvalidation ruleやbackfillとして暗黙実装しない。backfillが必要な変更は別の明示的なdata migration契約が確定するまで扱わない。
+
+実行前に対象SheetのID、title、grid column count、先頭rowのheader、gstack Developer Metadataをreadする。対象Modelと一致する単一の`gstack_model` marker、空文字やgapを含まない一意なheader列を必須とする。追加対象名が既存headerに存在する、Model markerがない、同名／同ID Sheetが競合する、headerが不正、Operation markerがheader位置と一致しない場合はdrift／conflictとしてwrite前に拒否する。
+
+冪等性markerはkeyを`gstack_operation`、valueを`<migration-checksum>:<operation-id>`とし、追加列だけを指す`COLUMNS` DimensionRangeへ保存する。同じmarkerが1件だけ存在し、そのrangeのheaderが追加対象名なら適用済みとしてskipする。markerだけ、headerだけ、重複marker、異なる位置／値は競合とする。
+
+追加位置は現在の連続header数とする。位置がgrid column count未満なら`insertDimension`で既存の未管理列を右へ移動し、位置が末尾なら`appendDimension`でgridを1列拡張する。その後、headerの`updateCells`とDeveloper Metadata作成を同じ`spreadsheets.batchUpdate`へ順番に含める。Google Sheets APIが保証するbatch全体の事前検証とatomic適用を前提とし、response喪失時に安全な再送を判断できないためwrite requestを自動retryしない。明示resumeでは最新状態を再readしてmarkerを照合する。
+
+strict mapper／state parser、header／marker conflict、atomic request、response検証、OAuth `database_write` scope、response喪失後のskipをtestした後にだけ、Google Providerの`add_column` capabilityを`native`へ変更する。`add_column`のrollbackは、追加後の業務dataを削除し得るため、別途明示的なrollback確認とmarker照合契約が確定するまでProviderへ公開しない。
+
+参考: [Google Sheets `spreadsheets.batchUpdate`](https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate)、[Requests / InsertDimensionRequest](https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request)
