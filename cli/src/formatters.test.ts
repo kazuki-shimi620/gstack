@@ -5,6 +5,7 @@ import {
   formatGenerationHuman,
   formatJson,
   formatMigrationHistoryHuman,
+  formatMigrationApplyDryRunHuman,
   formatMigrationPlanHuman,
   formatMigrationStatusHuman,
   formatProviderHealthHuman,
@@ -159,5 +160,32 @@ describe('CLI formatters', () => {
         },
       }),
     ).toContain('SAFE create_model:users:users [not_evaluated]');
+  });
+
+  it('Migration Apply dry-runにchecksumとfingerprintを表示する', () => {
+    const fingerprint = 'b'.repeat(64);
+    expect(
+      formatMigrationApplyDryRunHuman({
+        version: '20260813_000001',
+        name: 'initial',
+        checksum: 'a'.repeat(64),
+        planFingerprint: fingerprint,
+        plan: {
+          operations: [
+            {
+              id: 'create_model:users:users',
+              risk: 'safe',
+              capability: 'native',
+            } as never,
+          ],
+          risk: 'safe',
+          destructive: false,
+          reversible: true,
+          capabilityStatus: 'supported',
+          applicable: true,
+          warnings: [],
+        },
+      }),
+    ).toContain(`Plan fingerprint: ${fingerprint}`);
   });
 });

@@ -149,6 +149,31 @@ export function formatMigrationPlanHuman(
   ].join('\n');
 }
 
+export interface MigrationApplyDryRunView {
+  readonly version: string;
+  readonly name: string;
+  readonly checksum: string;
+  readonly planFingerprint: string;
+  readonly plan: MigrationPlanPreview['plan'];
+}
+
+export function formatMigrationApplyDryRunHuman(
+  preview: MigrationApplyDryRunView,
+): string {
+  return [
+    'Migration Apply Dry Run:',
+    `Version: ${preview.version}`,
+    `Name: ${preview.name}`,
+    `Checksum: ${preview.checksum}`,
+    `Plan fingerprint: ${preview.planFingerprint}`,
+    ...preview.plan.operations.map(
+      ({ id, risk, capability }) =>
+        `${risk.toUpperCase()} ${id} [${capability}]`,
+    ),
+    `Summary: ${preview.plan.operations.length} operation(s), risk=${preview.plan.risk}, applicable=${String(preview.plan.applicable)}.`,
+  ].join('\n');
+}
+
 function enabledCapabilities(
   capabilities: ProviderSummary['capabilities'],
 ): string {

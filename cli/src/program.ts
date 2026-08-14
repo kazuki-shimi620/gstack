@@ -5,7 +5,10 @@ import {
   successResult,
   type GstackProject,
 } from '@gstack/core';
-import { loadStandardProject } from '@gstack/runtime';
+import {
+  loadStandardProject,
+  prepareStandardGoogleMigrationApplyFile,
+} from '@gstack/runtime';
 import { Command } from 'commander';
 
 import {
@@ -13,6 +16,7 @@ import {
   formatGenerationHuman,
   formatJson,
   formatMigrationHistoryHuman,
+  formatMigrationApplyDryRunHuman,
   formatMigrationPlanHuman,
   formatMigrationStatusHuman,
   formatProviderHealthHuman,
@@ -27,11 +31,26 @@ export interface ProgramIO {
   readonly stderr: (message: string) => void;
 }
 
+export interface ProgramServices {
+  readonly loadProject: () => Promise<GstackProject>;
+  readonly prepareMigrationApplyFile: (
+    project: GstackProject,
+    filePath: string,
+  ) => ReturnType<typeof prepareStandardGoogleMigrationApplyFile>;
+}
+
+const defaultServices: ProgramServices = {
+  loadProject: loadStandardProject,
+  prepareMigrationApplyFile: (project, filePath) =>
+    prepareStandardGoogleMigrationApplyFile({ project, filePath }),
+};
+
 export function createProgram(
   io: ProgramIO = {
     stdout: (message) => process.stdout.write(`${message}\n`),
     stderr: (message) => process.stderr.write(`${message}\n`),
   },
+  services: ProgramServices = defaultServices,
 ): Command {
   const program = new Command()
     .name('gstack')
@@ -77,6 +96,47 @@ export function createProgram(
         };
       });
     });
+
+  migration
+    .command('apply')
+    .description('Validate one Migration File before explicit Apply')
+    .requiredOption('--file <path>', 'Migration YAML inside migrations/')
+    .option('--dry-run', 'validate and preview without changing Provider state')
+    .option('--json', 'output structured JSON')
+    .action(
+      async (options: { file: string; dryRun?: boolean; json?: boolean }) => {
+        await withProjectOutput(
+          io,
+          options.json,
+          async (project) => {
+            if (!options.dryRun) {
+              throw new GstackError({
+                code: 'MIGRATION_DRY_RUN_REQUIRED',
+                category: 'migration',
+                message: 'Migration Apply requires --dry-run in this build.',
+                hint: 'Review the dry-run fingerprint before explicit Apply.',
+              });
+            }
+            const prepared = await services.prepareMigrationApplyFile(
+              project,
+              options.file,
+            );
+            const migrationApply = {
+              version: prepared.file.version,
+              name: prepared.file.name,
+              checksum: prepared.file.checksum,
+              planFingerprint: prepared.planFingerprint,
+              plan: prepared.plan,
+            };
+            return {
+              data: { dryRun: true, migrationApply },
+              human: formatMigrationApplyDryRunHuman(migrationApply),
+            };
+          },
+          services.loadProject,
+        );
+      },
+    );
 
   migration
     .command('history')
@@ -240,9 +300,10 @@ async function withProjectOutput(
     readonly human: string;
     readonly failed?: boolean;
   }>,
+  loadProject: () => Promise<GstackProject> = loadStandardProject,
 ): Promise<void> {
   try {
-    const result = await operation(await loadStandardProject());
+    const result = await operation(await loadProject());
     io.stdout(json ? formatJson(successResult(result.data)) : result.human);
     if (result.failed) process.exitCode = 2;
   } catch (error: unknown) {

@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -8,6 +8,7 @@ import {
   applyCapabilityResults,
   createMigrationFile,
   createMigrationPlan,
+  serializeMigrationFile,
   type CreateModelOperation,
 } from '@gstack/migration';
 
@@ -16,6 +17,7 @@ import {
   EnvironmentSecretResolver,
   loadStandardProject,
   prepareStandardGoogleMigrationApply,
+  prepareStandardGoogleMigrationApplyFile,
 } from './index.js';
 
 const roots: string[] = [];
@@ -157,6 +159,65 @@ providers:
       plan,
       providerContext: 'google:sheet',
       planFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
+  });
+
+  it('Project設定と安全なMigration Fileから標準Apply準備を構成する', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'gstack-runtime-apply-'));
+    roots.push(root);
+    await mkdir(path.join(root, 'migrations'));
+    const operation = {
+      id: 'create_model:users:users',
+      type: 'create_model',
+      model: 'users',
+      risk: 'safe',
+      destructive: false,
+      reversible: true,
+      capability: 'not_evaluated',
+      definition: { name: 'users' },
+    } as unknown as CreateModelOperation;
+    const file = createMigrationFile('20260813_000001', 'initial', [operation]);
+    await writeFile(
+      path.join(root, 'migrations', '20260813_000001_initial.yaml'),
+      serializeMigrationFile(file),
+    );
+    const plan = applyCapabilityResults(createMigrationPlan(file.operations), [
+      { operationId: operation.id, capability: 'native' },
+    ]);
+    const prepared = await prepareStandardGoogleMigrationApplyFile({
+      filePath: 'migrations/20260813_000001_initial.yaml',
+      environment: {},
+      project: {
+        root,
+        getConfig: async () => ({
+          providers: [
+            {
+              name: 'google',
+              enabled: true,
+              configuration: {
+                spreadsheetId: 'spreadsheet-id',
+                appsScriptProjectId: 'script-id',
+                driveFolderId: 'folder-id',
+                authentication: {
+                  mode: 'user_oauth',
+                  credentialSecret: 'GOOGLE_CREDENTIALS',
+                },
+              },
+            },
+          ],
+        }),
+        getApplicationModel: async () => ({
+          schemaVersion: 1,
+          name: 'app',
+          models: [operation.definition],
+          metadata: {},
+        }),
+        previewMigrationPlan: async () => ({ baselineVersion: null, plan }),
+      } as never,
+    });
+    expect(prepared).toMatchObject({
+      file,
+      providerContext: 'google:spreadsheet-id',
     });
   });
 });

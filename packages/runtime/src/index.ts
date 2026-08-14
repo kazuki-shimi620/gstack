@@ -8,6 +8,10 @@ import {
 import { GstackError, loadProject, type GstackProject } from '@gstack/core';
 import {
   applyCapabilityResults,
+  loadMigrationFile,
+  MigrationApplyError,
+  MigrationFileError,
+  MigrationFileSystemError,
   MigrationReadService,
   prepareMigrationApply,
   type MigrationFile,
@@ -89,6 +93,45 @@ export async function prepareStandardGoogleMigrationApply(input: {
     application,
     input.runtime.providerContext,
   );
+}
+
+export async function prepareStandardGoogleMigrationApplyFile(input: {
+  readonly project: GstackProject;
+  readonly filePath: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+}): Promise<PreparedMigrationApply> {
+  const config = await input.project.getConfig();
+  const google = config.providers.find(
+    ({ name, enabled }) => name === 'google' && enabled,
+  );
+  if (!google) {
+    throw new GstackError({
+      code: 'MIGRATION_NOT_AVAILABLE',
+      category: 'migration',
+      message: 'Google Migration is not configured for this project.',
+      hint: 'Enable and configure the Google Provider in gstack.yaml.',
+    });
+  }
+  try {
+    const [file, runtime] = await Promise.all([
+      loadMigrationFile(input.project.root, input.filePath),
+      Promise.resolve(
+        createStandardGoogleMigrationRuntime({
+          configuration: google.configuration,
+          secrets: new EnvironmentSecretResolver(
+            input.environment ?? process.env,
+          ),
+        }),
+      ),
+    ]);
+    return await prepareStandardGoogleMigrationApply({
+      project: input.project,
+      file,
+      runtime,
+    });
+  } catch (error: unknown) {
+    throw normalizeMigrationPreparationError(error);
+  }
 }
 
 export async function loadStandardProject(
@@ -179,4 +222,23 @@ export class EnvironmentSecretResolver implements ProviderSecretResolver {
     if (!/^[A-Z][A-Z0-9_]*$/u.test(name)) return null;
     return this.environment[name] ?? null;
   }
+}
+
+function normalizeMigrationPreparationError(error: unknown): unknown {
+  if (error instanceof GstackError) return error;
+  if (
+    error instanceof MigrationFileSystemError ||
+    error instanceof MigrationFileError ||
+    error instanceof MigrationApplyError
+  ) {
+    return new GstackError(
+      {
+        code: error.code,
+        category: 'migration',
+        message: error.message,
+      },
+      { cause: error },
+    );
+  }
+  return error;
 }

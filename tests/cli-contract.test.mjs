@@ -199,3 +199,28 @@ test('Provider list／info／validateを標準Runtime経由で実行する', (t)
   assert.equal(missing.status, 1);
   assert.equal(JSON.parse(missing.stderr).error.code, 'PROVIDER_NOT_FOUND');
 });
+
+test('Migration Applyはdry-runなしのProvider変更を拒否する', (t) => {
+  const root = project(
+    'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+    'providers:\n  google:\n    enabled: true\n    configuration:\n      spreadsheetId: spreadsheet-id\n      appsScriptProjectId: script-id\n      driveFolderId: folder-id\n      authentication:\n        mode: user_oauth\n        credentialSecret: GOOGLE_CREDENTIALS\n',
+  );
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const result = run(
+    [
+      'migration',
+      'apply',
+      '--file',
+      'migrations/20260813_000001_initial.yaml',
+      '--json',
+    ],
+    root,
+  );
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, '');
+  assert.equal(
+    JSON.parse(result.stderr).error.code,
+    'MIGRATION_DRY_RUN_REQUIRED',
+  );
+});
