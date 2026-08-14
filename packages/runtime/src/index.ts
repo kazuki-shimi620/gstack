@@ -8,15 +8,19 @@ import {
 import { GstackError, loadProject, type GstackProject } from '@gstack/core';
 import {
   applyCapabilityResults,
+  applyMigration,
   loadMigrationFile,
   MigrationApplyError,
+  MigrationExecutionError,
   MigrationFileError,
   MigrationFileSystemError,
+  MigrationLockError,
   MigrationReadService,
   prepareMigrationApply,
   type MigrationFile,
   type MigrationPlan,
   type PreparedMigrationApply,
+  type MigrationApplyResult,
 } from '@gstack/migration';
 import {
   ProviderCatalog,
@@ -100,6 +104,72 @@ export async function prepareStandardGoogleMigrationApplyFile(input: {
   readonly filePath: string;
   readonly environment?: Readonly<Record<string, string | undefined>>;
 }): Promise<PreparedMigrationApply> {
+  return (await resolveStandardGoogleMigrationApply(input)).prepared;
+}
+
+export async function applyStandardGoogleMigrationFile(input: {
+  readonly project: GstackProject;
+  readonly filePath: string;
+  readonly approval: string;
+  readonly allowDestructive: boolean;
+  readonly resume: boolean;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly now?: () => string;
+}): Promise<MigrationApplyResult> {
+  try {
+    const { prepared, runtime } =
+      await resolveStandardGoogleMigrationApply(input);
+    return await applyStandardGoogleMigration({
+      prepared,
+      runtime,
+      approval: input.approval,
+      allowDestructive: input.allowDestructive,
+      resume: input.resume,
+      ...(input.now === undefined ? {} : { now: input.now }),
+    });
+  } catch (error: unknown) {
+    throw normalizeMigrationError(error);
+  }
+}
+
+export async function applyStandardGoogleMigration(input: {
+  readonly prepared: PreparedMigrationApply;
+  readonly runtime: StandardGoogleMigrationRuntime;
+  readonly approval: string;
+  readonly allowDestructive: boolean;
+  readonly resume: boolean;
+  readonly now?: () => string;
+}): Promise<MigrationApplyResult> {
+  try {
+    return await applyMigration(
+      {
+        ...input.prepared,
+        approval: {
+          token: input.approval,
+          allowDestructive: input.allowDestructive,
+        },
+        resume: input.resume,
+      },
+      {
+        history: input.runtime.history,
+        lock: input.runtime.lock,
+        executor: input.runtime.executor,
+        now: input.now ?? (() => new Date().toISOString()),
+      },
+    );
+  } catch (error: unknown) {
+    throw normalizeMigrationError(error);
+  }
+}
+
+async function resolveStandardGoogleMigrationApply(input: {
+  readonly project: GstackProject;
+  readonly filePath: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+}): Promise<{
+  readonly prepared: PreparedMigrationApply;
+  readonly runtime: StandardGoogleMigrationRuntime;
+}> {
   const config = await input.project.getConfig();
   const google = config.providers.find(
     ({ name, enabled }) => name === 'google' && enabled,
@@ -124,13 +194,14 @@ export async function prepareStandardGoogleMigrationApplyFile(input: {
         }),
       ),
     ]);
-    return await prepareStandardGoogleMigrationApply({
+    const prepared = await prepareStandardGoogleMigrationApply({
       project: input.project,
       file,
       runtime,
     });
+    return Object.freeze({ prepared, runtime });
   } catch (error: unknown) {
-    throw normalizeMigrationPreparationError(error);
+    throw normalizeMigrationError(error);
   }
 }
 
@@ -224,12 +295,14 @@ export class EnvironmentSecretResolver implements ProviderSecretResolver {
   }
 }
 
-function normalizeMigrationPreparationError(error: unknown): unknown {
+function normalizeMigrationError(error: unknown): unknown {
   if (error instanceof GstackError) return error;
   if (
     error instanceof MigrationFileSystemError ||
     error instanceof MigrationFileError ||
-    error instanceof MigrationApplyError
+    error instanceof MigrationApplyError ||
+    error instanceof MigrationLockError ||
+    error instanceof MigrationExecutionError
   ) {
     return new GstackError(
       {

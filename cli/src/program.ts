@@ -6,6 +6,7 @@ import {
   type GstackProject,
 } from '@gstack/core';
 import {
+  applyStandardGoogleMigrationFile,
   loadStandardProject,
   prepareStandardGoogleMigrationApplyFile,
 } from '@gstack/runtime';
@@ -17,6 +18,7 @@ import {
   formatJson,
   formatMigrationHistoryHuman,
   formatMigrationApplyDryRunHuman,
+  formatMigrationApplyHuman,
   formatMigrationPlanHuman,
   formatMigrationStatusHuman,
   formatProviderHealthHuman,
@@ -37,12 +39,23 @@ export interface ProgramServices {
     project: GstackProject,
     filePath: string,
   ) => ReturnType<typeof prepareStandardGoogleMigrationApplyFile>;
+  readonly applyMigrationFile: (
+    project: GstackProject,
+    input: {
+      readonly filePath: string;
+      readonly approval: string;
+      readonly allowDestructive: boolean;
+      readonly resume: boolean;
+    },
+  ) => ReturnType<typeof applyStandardGoogleMigrationFile>;
 }
 
 const defaultServices: ProgramServices = {
   loadProject: loadStandardProject,
   prepareMigrationApplyFile: (project, filePath) =>
     prepareStandardGoogleMigrationApplyFile({ project, filePath }),
+  applyMigrationFile: (project, input) =>
+    applyStandardGoogleMigrationFile({ project, ...input }),
 };
 
 export function createProgram(
@@ -102,35 +115,69 @@ export function createProgram(
     .description('Validate one Migration File before explicit Apply')
     .requiredOption('--file <path>', 'Migration YAML inside migrations/')
     .option('--dry-run', 'validate and preview without changing Provider state')
+    .option('--approval <fingerprint>', 'approve the exact evaluated Plan')
+    .option('--allow-destructive', 'allow an approved destructive Plan')
+    .option('--resume', 'resume an explicitly approved failed Migration')
     .option('--json', 'output structured JSON')
     .action(
-      async (options: { file: string; dryRun?: boolean; json?: boolean }) => {
+      async (options: {
+        file: string;
+        dryRun?: boolean;
+        approval?: string;
+        allowDestructive?: boolean;
+        resume?: boolean;
+        json?: boolean;
+      }) => {
         await withProjectOutput(
           io,
           options.json,
           async (project) => {
-            if (!options.dryRun) {
+            if (
+              options.dryRun &&
+              (options.approval || options.allowDestructive || options.resume)
+            ) {
+              throw new GstackError({
+                code: 'MIGRATION_OPTIONS_INVALID',
+                category: 'migration',
+                message: 'Migration dry-run cannot include Apply options.',
+                hint: 'Run dry-run alone, then pass its fingerprint to --approval.',
+              });
+            }
+            if (!options.dryRun && !options.approval) {
               throw new GstackError({
                 code: 'MIGRATION_DRY_RUN_REQUIRED',
                 category: 'migration',
-                message: 'Migration Apply requires --dry-run in this build.',
-                hint: 'Review the dry-run fingerprint before explicit Apply.',
+                message:
+                  'Migration Apply requires an explicit approval fingerprint.',
+                hint: 'Run with --dry-run, then pass its fingerprint to --approval.',
               });
             }
-            const prepared = await services.prepareMigrationApplyFile(
-              project,
-              options.file,
-            );
-            const migrationApply = {
-              version: prepared.file.version,
-              name: prepared.file.name,
-              checksum: prepared.file.checksum,
-              planFingerprint: prepared.planFingerprint,
-              plan: prepared.plan,
-            };
+            if (options.dryRun) {
+              const prepared = await services.prepareMigrationApplyFile(
+                project,
+                options.file,
+              );
+              const migrationApply = {
+                version: prepared.file.version,
+                name: prepared.file.name,
+                checksum: prepared.file.checksum,
+                planFingerprint: prepared.planFingerprint,
+                plan: prepared.plan,
+              };
+              return {
+                data: { dryRun: true, migrationApply },
+                human: formatMigrationApplyDryRunHuman(migrationApply),
+              };
+            }
+            const result = await services.applyMigrationFile(project, {
+              filePath: options.file,
+              approval: options.approval as string,
+              allowDestructive: Boolean(options.allowDestructive),
+              resume: Boolean(options.resume),
+            });
             return {
-              data: { dryRun: true, migrationApply },
-              human: formatMigrationApplyDryRunHuman(migrationApply),
+              data: { dryRun: false, migrationApply: result },
+              human: formatMigrationApplyHuman(result),
             };
           },
           services.loadProject,

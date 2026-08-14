@@ -174,6 +174,20 @@ export function formatMigrationApplyDryRunHuman(
   ].join('\n');
 }
 
+export function formatMigrationApplyHuman(result: {
+  readonly outcome: 'applied' | 'skipped';
+  readonly history: MigrationHistoryEntry;
+}): string {
+  return [
+    result.outcome === 'applied'
+      ? 'Migration applied.'
+      : 'Migration already applied; no operations executed.',
+    `Version: ${result.history.version}`,
+    `Status: ${result.history.status}`,
+    `Operations: ${result.history.completedOperationCount}/${result.history.operationCount}`,
+  ].join('\n');
+}
+
 function enabledCapabilities(
   capabilities: ProviderSummary['capabilities'],
 ): string {

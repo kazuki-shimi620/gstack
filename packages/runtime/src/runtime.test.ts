@@ -8,13 +8,19 @@ import {
   applyCapabilityResults,
   createMigrationFile,
   createMigrationPlan,
+  migrationPlanFingerprint,
+  MigrationHistoryRepository,
   serializeMigrationFile,
   type CreateModelOperation,
+  type MigrationHistoryEntry,
+  type MigrationHistoryStorage,
+  type MigrationOperationExecutor,
 } from '@gstack/migration';
 
 import {
   createStandardGoogleMigrationRuntime,
   EnvironmentSecretResolver,
+  applyStandardGoogleMigration,
   loadStandardProject,
   prepareStandardGoogleMigrationApply,
   prepareStandardGoogleMigrationApplyFile,
@@ -219,6 +225,70 @@ providers:
       file,
       providerContext: 'google:spreadsheet-id',
     });
+  });
+
+  it('明示承認された準備結果を標準Migration componentsへ渡す', async () => {
+    const operation = {
+      id: 'create_model:users:users',
+      type: 'create_model',
+      model: 'users',
+      risk: 'safe',
+      destructive: false,
+      reversible: true,
+      capability: 'not_evaluated',
+      definition: { name: 'users' },
+    } as unknown as CreateModelOperation;
+    const file = createMigrationFile('20260813_000002', 'apply_users', [
+      operation,
+    ]);
+    const plan = applyCapabilityResults(createMigrationPlan(file.operations), [
+      { operationId: operation.id, capability: 'native' },
+    ]);
+    const application = {
+      schemaVersion: 1,
+      name: 'app',
+      models: [operation.definition],
+      metadata: {},
+    } as never;
+    const prepared = await prepareStandardGoogleMigrationApply({
+      file,
+      runtime: { providerContext: 'google:sheet' } as never,
+      project: {
+        getApplicationModel: async () => application,
+        previewMigrationPlan: async () => ({ baselineVersion: null, plan }),
+      } as never,
+    });
+    const entries = new Map<string, MigrationHistoryEntry>();
+    const storage: MigrationHistoryStorage = {
+      get: async (version) => entries.get(version) ?? null,
+      list: async () => [...entries.values()],
+      save: async (entry) => void entries.set(entry.version, entry),
+    };
+    const executed: string[] = [];
+    const executor: MigrationOperationExecutor = {
+      execute: async (_operation, context) =>
+        void executed.push(context.operationId),
+    };
+    const timestamps = ['2026-08-13T00:00:00Z', '2026-08-13T00:00:01Z'];
+    const result = await applyStandardGoogleMigration({
+      prepared,
+      runtime: {
+        history: new MigrationHistoryRepository(storage),
+        lock: {
+          acquire: async () => ({ release: async () => undefined }),
+        },
+        executor,
+      } as never,
+      approval: migrationPlanFingerprint(file, plan),
+      allowDestructive: false,
+      resume: false,
+      now: () => timestamps.shift() ?? '2026-08-13T00:00:02Z',
+    });
+    expect(result).toMatchObject({
+      outcome: 'applied',
+      history: { status: 'applied', completedOperationCount: 1 },
+    });
+    expect(executed).toEqual([operation.id]);
   });
 });
 

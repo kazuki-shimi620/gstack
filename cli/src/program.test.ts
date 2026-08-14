@@ -43,11 +43,13 @@ describe('migration apply CLI', () => {
       providerContext: 'google:spreadsheet-id',
       planFingerprint: 'b'.repeat(64),
     }));
+    const applyMigrationFile = vi.fn();
     await createProgram(
       { stdout, stderr },
       {
         loadProject: async () => ({ root: '/project' }) as never,
         prepareMigrationApplyFile,
+        applyMigrationFile,
       },
     ).parseAsync([
       'node',
@@ -81,11 +83,13 @@ describe('migration apply CLI', () => {
     const stdout = vi.fn();
     const stderr = vi.fn();
     const prepareMigrationApplyFile = vi.fn();
+    const applyMigrationFile = vi.fn();
     await createProgram(
       { stdout, stderr },
       {
         loadProject: async () => ({ root: '/project' }) as never,
         prepareMigrationApplyFile,
+        applyMigrationFile,
       },
     ).parseAsync([
       'node',
@@ -97,11 +101,66 @@ describe('migration apply CLI', () => {
       '--json',
     ]);
     expect(prepareMigrationApplyFile).not.toHaveBeenCalled();
+    expect(applyMigrationFile).not.toHaveBeenCalled();
     expect(stdout).not.toHaveBeenCalled();
     expect(JSON.parse(stderr.mock.calls[0]?.[0] as string)).toMatchObject({
       ok: false,
       error: { code: 'MIGRATION_DRY_RUN_REQUIRED' },
     });
     expect(process.exitCode).toBe(1);
+  });
+
+  it('fingerprintと安全flagを実Apply serviceへ明示的に渡す', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const history = {
+      version: '20260813_000001',
+      name: 'initial',
+      checksum: 'a'.repeat(64),
+      status: 'applied',
+      operationCount: 1,
+      completedOperationCount: 1,
+    } as never;
+    const applyMigrationFile = vi.fn(async () => ({
+      outcome: 'applied' as const,
+      history,
+    }));
+    await createProgram(
+      { stdout, stderr },
+      {
+        loadProject: async () => ({ root: '/project' }) as never,
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile,
+      },
+    ).parseAsync([
+      'node',
+      'gstack',
+      'migration',
+      'apply',
+      '--file',
+      'migrations/change.yaml',
+      '--approval',
+      'b'.repeat(64),
+      '--allow-destructive',
+      '--resume',
+      '--json',
+    ]);
+    expect(applyMigrationFile).toHaveBeenCalledWith(
+      expect.objectContaining({ root: '/project' }),
+      {
+        filePath: 'migrations/change.yaml',
+        approval: 'b'.repeat(64),
+        allowDestructive: true,
+        resume: true,
+      },
+    );
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        dryRun: false,
+        migrationApply: { outcome: 'applied' },
+      },
+    });
   });
 });
