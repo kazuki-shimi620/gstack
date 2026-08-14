@@ -4,12 +4,18 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createMigrationPlan } from '@gstack/migration';
+import {
+  applyCapabilityResults,
+  createMigrationFile,
+  createMigrationPlan,
+  type CreateModelOperation,
+} from '@gstack/migration';
 
 import {
   createStandardGoogleMigrationRuntime,
   EnvironmentSecretResolver,
   loadStandardProject,
+  prepareStandardGoogleMigrationApply,
 } from './index.js';
 
 const roots: string[] = [];
@@ -114,6 +120,43 @@ providers:
       capabilityStatus: 'supported',
       applicable: true,
       operations: [{ capability: 'native' }],
+    });
+  });
+
+  it('Project previewとFileから副作用なしのApply準備結果を作る', async () => {
+    const operation = {
+      id: 'create_model:users:users',
+      type: 'create_model',
+      model: 'users',
+      risk: 'safe',
+      destructive: false,
+      reversible: true,
+      capability: 'not_evaluated',
+      definition: { name: 'users' },
+    } as unknown as CreateModelOperation;
+    const file = createMigrationFile('20260813_000001', 'initial', [operation]);
+    const plan = applyCapabilityResults(createMigrationPlan(file.operations), [
+      { operationId: operation.id, capability: 'native' },
+    ]);
+    const application = {
+      schemaVersion: 1,
+      name: 'app',
+      models: [operation.definition],
+      metadata: {},
+    } as never;
+    const prepared = await prepareStandardGoogleMigrationApply({
+      file,
+      runtime: { providerContext: 'google:sheet' } as never,
+      project: {
+        getApplicationModel: async () => application,
+        previewMigrationPlan: async () => ({ baselineVersion: null, plan }),
+      } as never,
+    });
+    expect(prepared).toMatchObject({
+      file,
+      plan,
+      providerContext: 'google:sheet',
+      planFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u),
     });
   });
 });

@@ -9,7 +9,10 @@ import { GstackError, loadProject, type GstackProject } from '@gstack/core';
 import {
   applyCapabilityResults,
   MigrationReadService,
+  prepareMigrationApply,
+  type MigrationFile,
   type MigrationPlan,
+  type PreparedMigrationApply,
 } from '@gstack/migration';
 import {
   ProviderCatalog,
@@ -62,6 +65,30 @@ export function createStandardGoogleMigrationRuntime(input: {
         evaluateGoogleMigrationCapabilities(plan.operations),
       ),
   });
+}
+
+export async function prepareStandardGoogleMigrationApply(input: {
+  readonly project: GstackProject;
+  readonly file: MigrationFile;
+  readonly runtime: StandardGoogleMigrationRuntime;
+}): Promise<PreparedMigrationApply> {
+  const [application, preview] = await Promise.all([
+    input.project.getApplicationModel(),
+    input.project.previewMigrationPlan(),
+  ]);
+  if (!application) {
+    throw new GstackError({
+      code: 'MIGRATION_SCHEMA_INVALID',
+      category: 'migration',
+      message: 'Migration Apply cannot use an invalid Schema.',
+    });
+  }
+  return prepareMigrationApply(
+    input.file,
+    preview.plan,
+    application,
+    input.runtime.providerContext,
+  );
 }
 
 export async function loadStandardProject(
