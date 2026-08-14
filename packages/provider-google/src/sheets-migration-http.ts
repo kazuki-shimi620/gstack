@@ -66,6 +66,32 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
     };
   }
 
+  async inspectAddColumn(
+    input: Parameters<GoogleSheetsBatchUpdateGateway['inspectAddColumn']>[0],
+  ): Promise<unknown> {
+    const credential = await this.authorize(input);
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(input.spreadsheetId)}`,
+    );
+    url.searchParams.set('includeGridData', 'true');
+    url.searchParams.set('ranges', quoteSheetTitle(input.sheetTitle) + '!1:1');
+    url.searchParams.set(
+      'fields',
+      'sheets(properties(sheetId,title,gridProperties(columnCount)),data(rowData(values(userEnteredValue))),developerMetadata(metadataKey,metadataValue,location(sheetId,dimensionRange(sheetId,dimension,startIndex,endIndex))))',
+    );
+    const response = await this.http.execute({
+      method: 'GET',
+      url: url.href,
+      headers: {
+        accept: 'application/json',
+        authorization: `Bearer ${credential.accessToken}`,
+      },
+      body: null,
+      retryable: true,
+    });
+    return normalizeAddColumnState(parseJson(response.body));
+  }
+
   async batchUpdate(
     input: Parameters<GoogleSheetsBatchUpdateGateway['batchUpdate']>[0],
   ): Promise<unknown> {
@@ -119,4 +145,71 @@ function parseJson(source: string): unknown {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function quoteSheetTitle(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
+function normalizeAddColumnState(value: unknown): unknown {
+  if (!isRecord(value) || !Array.isArray(value.sheets)) invalidStateResponse();
+  return {
+    sheets: value.sheets.map((sheet) => {
+      if (
+        !isRecord(sheet) ||
+        !isRecord(sheet.properties) ||
+        !isRecord(sheet.properties.gridProperties)
+      ) {
+        invalidStateResponse();
+      }
+      const data = sheet.data === undefined ? [] : sheet.data;
+      if (!Array.isArray(data) || data.length > 1) invalidStateResponse();
+      const grid = data[0];
+      if (grid !== undefined && !isRecord(grid)) invalidStateResponse();
+      const rows = grid?.rowData === undefined ? [] : grid.rowData;
+      if (!Array.isArray(rows) || rows.length > 1) invalidStateResponse();
+      const row = rows[0];
+      if (row !== undefined && !isRecord(row)) invalidStateResponse();
+      const values = row?.values === undefined ? [] : row.values;
+      if (!Array.isArray(values)) invalidStateResponse();
+      return {
+        sheetId: sheet.properties.sheetId,
+        title: sheet.properties.title,
+        columnCount: sheet.properties.gridProperties.columnCount,
+        headers: values.map(headerValue),
+        metadata: Array.isArray(sheet.developerMetadata)
+          ? sheet.developerMetadata.map(normalizeMetadata)
+          : [],
+      };
+    }),
+  };
+}
+
+function headerValue(value: unknown): unknown {
+  if (!isRecord(value) || !isRecord(value.userEnteredValue)) return null;
+  return value.userEnteredValue.stringValue;
+}
+
+function normalizeMetadata(value: unknown): unknown {
+  if (!isRecord(value) || !isRecord(value.location)) invalidStateResponse();
+  const dimensionRange = value.location.dimensionRange;
+  if (dimensionRange !== undefined && !isRecord(dimensionRange)) {
+    invalidStateResponse();
+  }
+  return {
+    key: value.metadataKey,
+    value: value.metadataValue,
+    location: dimensionRange
+      ? {
+          sheetId: dimensionRange.sheetId,
+          dimension: dimensionRange.dimension,
+          startIndex: dimensionRange.startIndex,
+          endIndex: dimensionRange.endIndex,
+        }
+      : { sheetId: value.location.sheetId },
+  };
+}
+
+function invalidStateResponse(): never {
+  throw new TypeError('Google Sheets Migration state response is invalid.');
 }

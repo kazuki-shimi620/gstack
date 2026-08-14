@@ -310,7 +310,7 @@ MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知
 
 Google ProviderのMigration capability結果はManifestのoperation type別supportを唯一のsourceとして、入力Planの全Operation IDへ順序を保持して射影する。結果をMigration packageの共通`applyCapabilityResults`へ渡し、欠落／重複／未知IDの検証とPlan集約を再利用する。Google Provider側で独自Planや独自applicability規則を実装しない。
 
-初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の条件を満たした`create_model`だけは`native`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
+初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の条件を満たした`create_model`とD-056の条件を満たした`add_column`は`native`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
 
 ## D-051 Migration Rollback Plan
 
@@ -336,7 +336,7 @@ Google Databaseの最初のwrite sliceは`create_model`だけとし、1 Modelを
 
 write requestはresponse喪失後に同じ`addSheet`を安全に自動再送できないため、HTTP層では`retryable: false`とする。429／5xx／network failureはsafe errorとしてHistoryへ記録し、lock取得と最新metadata再読込を伴う明示resumeでmarkerを確認してから続行する。公式上のatomic batch、推奨2 MB以下、write quota 300／分／project・60／分／user／projectを上限として扱うが、MVPは1 spreadsheetにつき直列実行し、1 Operationを1 batchに制限する。quota値をアプリケーション側の並列化許可として解釈しない。
 
-`create_model`をManifestで`native`へ変更する条件は、strict request／response adapter、OAuth `database_write` scope、markerによる再開時idempotency、競合拒否、safe error変換のtestが揃うことである。他Operationは各々のデータ保持・rollback意味論が確定するまで`unsupported`を維持する。
+`create_model`をManifestで`native`へ変更する条件は、strict request／response adapter、OAuth `database_write` scope、markerによる再開時idempotency、競合拒否、safe error変換のtestが揃うことである。D-056で別途昇格条件を満たした`add_column`を除き、他Operationは各々のデータ保持・rollback意味論が確定するまで`unsupported`を維持する。
 
 ## D-054 Google Migration History Storage and Lock
 

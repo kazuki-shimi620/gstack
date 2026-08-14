@@ -7,11 +7,15 @@ import type {
 } from '@gstack/migration';
 
 import { googleProviderManifest } from './provider.js';
-import type { GoogleSheetsCreateModelService } from './sheets-migration.js';
+import type {
+  GoogleSheetsAddColumnService,
+  GoogleSheetsCreateModelService,
+} from './sheets-migration.js';
 
 export class GoogleMigrationOperationExecutor implements MigrationOperationExecutor {
   public constructor(
     private readonly createModel: GoogleSheetsCreateModelService,
+    private readonly addColumn: GoogleSheetsAddColumnService,
   ) {}
 
   async execute(
@@ -21,6 +25,9 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
     switch (operation.type) {
       case 'create_model':
         await this.createModel.execute(operation, context.migrationChecksum);
+        return;
+      case 'add_column':
+        await this.addColumn.execute(operation, context.migrationChecksum);
         return;
       default:
         throw new GoogleMigrationOperationError(

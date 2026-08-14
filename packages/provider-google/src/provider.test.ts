@@ -38,7 +38,7 @@ describe('Google Provider foundation', () => {
     });
   });
 
-  it('5つのGoogle Workspace capabilityと未実装Migration supportを宣言する', () => {
+  it('5つのGoogle Workspace capabilityと実装済みMigration supportを宣言する', () => {
     expect(googleProviderManifest).toMatchObject({
       name: 'google',
       packageName: '@gstack/provider-google',
@@ -52,8 +52,12 @@ describe('Google Provider foundation', () => {
     });
     expect(
       googleProviderManifest.migrationSupport.create_model === 'native' &&
+        googleProviderManifest.migrationSupport.add_column === 'native' &&
         Object.entries(googleProviderManifest.migrationSupport)
-          .filter(([operation]) => operation !== 'create_model')
+          .filter(
+            ([operation]) =>
+              operation !== 'create_model' && operation !== 'add_column',
+          )
           .every(([, support]) => support === 'unsupported'),
     ).toBe(true);
   });

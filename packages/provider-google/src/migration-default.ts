@@ -10,7 +10,10 @@ import { GoogleMigrationLockHttpGateway } from './migration-lock-http.js';
 import { GoogleSheetsMigrationLock } from './migration-lock.js';
 import { GoogleMigrationOperationExecutor } from './migration.js';
 import { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
-import { GoogleSheetsCreateModelService } from './sheets-migration.js';
+import {
+  GoogleSheetsAddColumnService,
+  GoogleSheetsCreateModelService,
+} from './sheets-migration.js';
 import type { DefaultGoogleProviderOptions } from './default.js';
 
 export interface DefaultGoogleMigrationComponents {
@@ -59,6 +62,7 @@ export function createDefaultGoogleMigrationComponents(
     lock: new GoogleSheetsMigrationLock(lockGateway, config, secrets),
     executor: new GoogleMigrationOperationExecutor(
       new GoogleSheetsCreateModelService(sheets, config, secrets),
+      new GoogleSheetsAddColumnService(sheets, config, secrets),
     ),
   });
 }

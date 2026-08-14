@@ -108,6 +108,109 @@ describe('Google Sheets Migration HTTP gateway', () => {
     });
   });
 
+  it('add_column用のheaderとmetadata位置をread-only取得する', async () => {
+    const execute = vi.fn().mockResolvedValue({
+      status: 200,
+      headers: {},
+      body: JSON.stringify({
+        sheets: [
+          {
+            properties: {
+              sheetId: 10,
+              title: 'users',
+              gridProperties: { columnCount: 20 },
+            },
+            data: [
+              {
+                rowData: [
+                  {
+                    values: [
+                      { userEnteredValue: { stringValue: 'id' } },
+                      { userEnteredValue: { stringValue: 'email' } },
+                    ],
+                  },
+                ],
+              },
+            ],
+            developerMetadata: [
+              {
+                metadataKey: 'gstack_model',
+                metadataValue: 'model-marker',
+                location: { sheetId: 10 },
+              },
+              {
+                metadataKey: 'gstack_operation',
+                metadataValue: 'operation-marker',
+                location: {
+                  dimensionRange: {
+                    sheetId: 10,
+                    dimension: 'COLUMNS',
+                    startIndex: 1,
+                    endIndex: 2,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const gateway = new GoogleSheetsMigrationHttpGateway(
+      { execute },
+      {
+        refresh: vi.fn().mockResolvedValue({
+          accessToken: 'token',
+          expiresAt: '2026-08-13T01:00:00.000Z',
+          scopes: ['scope'],
+        }),
+      },
+      () => new Date('2026-08-13T00:00:00.000Z'),
+    );
+    await expect(
+      gateway.inspectAddColumn({
+        spreadsheetId: 'id',
+        sheetTitle: "users'archive",
+        credential: { credentialSecret: 'SECRET', scopes: ['scope'] },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+      }),
+    ).resolves.toEqual({
+      sheets: [
+        {
+          sheetId: 10,
+          title: 'users',
+          columnCount: 20,
+          headers: ['id', 'email'],
+          metadata: [
+            {
+              key: 'gstack_model',
+              value: 'model-marker',
+              location: { sheetId: 10 },
+            },
+            {
+              key: 'gstack_operation',
+              value: 'operation-marker',
+              location: {
+                sheetId: 10,
+                dimension: 'COLUMNS',
+                startIndex: 1,
+                endIndex: 2,
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const request = execute.mock.calls[0]?.[0];
+    const url = new URL(request.url);
+    expect(url.searchParams.get('includeGridData')).toBe('true');
+    expect(url.searchParams.get('ranges')).toBe("'users''archive'!1:1");
+    expect(request).toMatchObject({
+      method: 'GET',
+      retryable: true,
+      body: null,
+    });
+  });
+
   it('不正JSON responseを拒否する', async () => {
     const gateway = new GoogleSheetsMigrationHttpGateway(
       {

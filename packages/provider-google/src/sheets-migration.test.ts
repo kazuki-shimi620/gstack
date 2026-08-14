@@ -1,11 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { CreateModelOperation } from '@gstack/migration';
+import type {
+  AddColumnOperation,
+  CreateModelOperation,
+} from '@gstack/migration';
 
 import type { GoogleProviderConfig } from './config.js';
 import {
+  addColumnBatchRequests,
   createModelBatchRequests,
+  GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
+  inspectAddColumnState,
   inspectCreateModelState,
   stableSheetId,
 } from './sheets-migration.js';
@@ -19,6 +25,12 @@ const operation = {
     fields: [{ name: 'id' }, { name: 'email' }],
   },
 } as unknown as CreateModelOperation;
+const addColumn = {
+  id: 'add_column:users:email',
+  type: 'add_column',
+  model: 'users',
+  column: { name: 'email' },
+} as unknown as AddColumnOperation;
 
 describe('Google Sheets create_model mapper', () => {
   it('決定的なSheet、header、管理markerを1 batchへ変換する', () => {
@@ -178,6 +190,203 @@ describe('Google Sheets create_model service', () => {
     expect(batchUpdate).not.toHaveBeenCalled();
   });
 });
+
+describe('Google Sheets add_column mapper', () => {
+  it('空きgrid位置では列挿入、header、列markerを1 batchへ変換する', () => {
+    const sheetId = stableSheetId('users');
+    expect(
+      addColumnBatchRequests(addColumn, checksum, {
+        status: 'absent',
+        sheetId,
+        columnIndex: 1,
+        columnCount: 10,
+      }),
+    ).toEqual([
+      {
+        insertDimension: {
+          range: {
+            sheetId,
+            dimension: 'COLUMNS',
+            startIndex: 1,
+            endIndex: 2,
+          },
+          inheritFromBefore: false,
+        },
+      },
+      {
+        updateCells: {
+          start: { sheetId, rowIndex: 0, columnIndex: 1 },
+          rows: [
+            {
+              values: [{ userEnteredValue: { stringValue: 'email' } }],
+            },
+          ],
+          fields: 'userEnteredValue',
+        },
+      },
+      {
+        createDeveloperMetadata: {
+          developerMetadata: {
+            metadataKey: 'gstack_operation',
+            metadataValue: `${checksum}:${addColumn.id}`,
+            location: {
+              dimensionRange: {
+                sheetId,
+                dimension: 'COLUMNS',
+                startIndex: 1,
+                endIndex: 2,
+              },
+            },
+            visibility: 'DOCUMENT',
+          },
+        },
+      },
+    ]);
+  });
+
+  it('grid末尾では1列appendする', () => {
+    expect(
+      addColumnBatchRequests(addColumn, checksum, {
+        status: 'absent',
+        sheetId: stableSheetId('users'),
+        columnIndex: 1,
+        columnCount: 1,
+      })[0],
+    ).toEqual({
+      appendDimension: {
+        sheetId: stableSheetId('users'),
+        dimension: 'COLUMNS',
+        length: 1,
+      },
+    });
+  });
+
+  it('管理Modelと連続headerから追加位置を決定する', () => {
+    expect(
+      inspectAddColumnState(addColumnState(), addColumn, checksum),
+    ).toEqual({
+      status: 'absent',
+      sheetId: stableSheetId('users'),
+      columnIndex: 1,
+      columnCount: 10,
+    });
+  });
+
+  it('一致する列markerを適用済みとしてskipし競合を拒否する', () => {
+    const applied = addColumnState({
+      headers: ['id', 'email'],
+      metadata: [operationMarker(1)],
+    });
+    expect(inspectAddColumnState(applied, addColumn, checksum)).toEqual({
+      status: 'applied',
+    });
+    expect(() =>
+      inspectAddColumnState(
+        addColumnState({ headers: ['id', 'email'] }),
+        addColumn,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+    expect(() =>
+      inspectAddColumnState(
+        addColumnState({ headers: ['id', null] }),
+        addColumn,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'GOOGLE_SHEETS_MIGRATION_STATE_INVALID',
+      }),
+    );
+  });
+});
+
+describe('Google Sheets add_column service', () => {
+  it('state read後にdatabase_write credentialでatomic batchを実行する', async () => {
+    const batchUpdate = vi.fn().mockResolvedValue({ spreadsheetId: 'sheet-1' });
+    const service = new GoogleSheetsAddColumnService(
+      {
+        inspectAddColumn: vi.fn().mockResolvedValue(addColumnState()),
+        batchUpdate,
+      },
+      config,
+      { get: vi.fn() },
+    );
+    await service.execute(addColumn, checksum);
+    expect(batchUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        spreadsheetId: 'sheet-1',
+        credential: {
+          credentialSecret: 'GOOGLE_CREDENTIALS',
+          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        },
+        requests: expect.arrayContaining([
+          expect.objectContaining({ updateCells: expect.any(Object) }),
+        ]),
+      }),
+    );
+  });
+
+  it('一致markerがあればresponse喪失後の再開でwriteをskipする', async () => {
+    const batchUpdate = vi.fn();
+    const service = new GoogleSheetsAddColumnService(
+      {
+        inspectAddColumn: vi.fn().mockResolvedValue(
+          addColumnState({
+            headers: ['id', 'email'],
+            metadata: [operationMarker(1)],
+          }),
+        ),
+        batchUpdate,
+      },
+      config,
+      { get: vi.fn() },
+    );
+    await service.execute(addColumn, checksum);
+    expect(batchUpdate).not.toHaveBeenCalled();
+  });
+});
+
+function addColumnState(
+  overrides: {
+    headers?: readonly unknown[];
+    metadata?: readonly unknown[];
+  } = {},
+): unknown {
+  return {
+    sheets: [
+      {
+        sheetId: stableSheetId('users'),
+        title: 'users',
+        columnCount: 10,
+        headers: overrides.headers ?? ['id'],
+        metadata: [
+          {
+            key: 'gstack_model',
+            value: `${'c'.repeat(64)}:create_model:users:users`,
+            location: { sheetId: stableSheetId('users') },
+          },
+          ...(overrides.metadata ?? []),
+        ],
+      },
+    ],
+  };
+}
+
+function operationMarker(columnIndex: number): unknown {
+  return {
+    key: 'gstack_operation',
+    value: `${checksum}:${addColumn.id}`,
+    location: {
+      sheetId: stableSheetId('users'),
+      dimension: 'COLUMNS',
+      startIndex: columnIndex,
+      endIndex: columnIndex + 1,
+    },
+  };
+}
 
 const config: GoogleProviderConfig = {
   spreadsheetId: 'sheet-1',

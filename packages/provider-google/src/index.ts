@@ -60,14 +60,25 @@ export type {
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
 export { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
 export {
+  addColumnBatchRequests,
   createModelBatchRequests,
+  GSTACK_OPERATION_METADATA_KEY,
   GSTACK_MODEL_METADATA_KEY,
+  GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
   GoogleSheetsMigrationError,
+  inspectAddColumnState,
   inspectCreateModelState,
   stableSheetId,
 } from './sheets-migration.js';
-export type { GoogleSheetsBatchUpdateGateway } from './sheets-migration.js';
+export type {
+  AddColumnAbsentState,
+  AddColumnAppliedState,
+  AddColumnState,
+  GoogleSheetsAddColumnGateway,
+  GoogleSheetsBatchUpdateGateway,
+  GoogleSheetsCreateModelGateway,
+} from './sheets-migration.js';
 export { GoogleScriptHttpGateway } from './script-http.js';
 export { GoogleScriptError, GoogleScriptReadService } from './script.js';
 export type {
