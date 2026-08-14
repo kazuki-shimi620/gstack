@@ -190,7 +190,7 @@ Core Foundation完了後はRoadmap 0.2へ進む。実装順序は次のとおり
 6. Provider capability contractが利用可能になってからcapability checkを統合する。
 7. Apply／Rollbackは明示的な安全設計とProvider境界が完成するまで実装しない。
 
-Status: Provider非依存のOperation／Plan、pure Diff、Migration File／checksum／strict YAML、History状態遷移、checksum付きApplication Model snapshot、History Storage port／Repository、Operation単位のcapability評価、Migration Read Service、注入可能なCore Read API、MCPのMigration Read Tool／Resourceを実装済み。D-052／D-055の安全契約に従うApply Engine、Google ProviderのHistory／Lock／`create_model` Executor、CLIのdry-run／明示承認Applyまで実装済み。RollbackはProvider固有の安全な逆操作契約が完成するまで未公開とする。
+Status: Provider非依存のOperation／Plan、pure Diff、Migration File／checksum／strict YAML、History状態遷移、checksum付きApplication Model snapshot、History Storage port／Repository、Operation単位のcapability評価、Migration Read Service、注入可能なCore Read API、MCPのMigration Read Tool／Resourceを実装済み。D-051の完了Operation逆順Rollback Plan、D-052／D-055の安全契約に従うApply Engine、Google ProviderのHistory／Lock／`create_model`／`add_column` Executor、CLIのdry-run／明示承認Applyまで実装済み。Rollback実行はProvider固有の安全な逆操作契約が完成するまで未公開とする。
 
 ## 10. 次Phase: Generator Engine
 

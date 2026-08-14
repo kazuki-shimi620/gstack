@@ -17,6 +17,14 @@ export function createMigrationPlan(
   const ordered = [...operations].sort((left, right) =>
     left.id.localeCompare(right.id),
   );
+  return createMigrationPlanPreservingOrder(ordered, warnings);
+}
+
+export function createMigrationPlanPreservingOrder(
+  operations: readonly MigrationOperation[],
+  warnings: readonly string[] = [],
+): MigrationPlan {
+  const ordered = [...operations];
   const ids = new Set<string>();
   for (const operation of ordered) {
     if (ids.has(operation.id)) {

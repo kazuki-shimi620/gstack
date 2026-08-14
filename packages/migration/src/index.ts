@@ -1,5 +1,10 @@
 export { createMigrationPlan, operationId } from './plan.js';
 export {
+  createMigrationRollbackPlan,
+  MigrationRollbackError,
+} from './rollback.js';
+export type { MigrationRollbackPlan } from './rollback.js';
+export {
   MigrationApplyError,
   MigrationLockError,
   migrationPlanFingerprint,

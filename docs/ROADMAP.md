@@ -112,6 +112,8 @@ Migration Plan
 Migration File
 ```
 
+Status: Provider非依存のDiff／Plan、Migration File／checksum、History／snapshot、risk、capability、Apply Engine、完了Operationを逆順変換するRollback Planを実装済み。Provider rollback実行とCLI公開は、具体Providerの逆操作・drift照合・破壊承認が確定するまで未実装。
+
 ---
 
 # 6. Version 0.3 - Generator Engine
