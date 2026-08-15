@@ -403,3 +403,13 @@ MVPのCore Loggingは注入可能な同期`GstackLogSink`とLoggerだけを定�
 任意message、error object、stack、path、subject、metadata、context map、Provider response、Schema値、environment、credential、tokenをLog Event入力に含めない。これによりredaction対象を後追い推測せず、secretや利用者dataが構造上混入できない最小契約とする。不正level／category／code、無効clockはeventを破棄する。
 
 Loggingは観測専用であり、clock／sinkのthrowによってDomain操作の成否を変えてはいけない。公式Runtimeのdefaultはno-op Loggerとし、CLI stdoutのmachine-readable envelopeやMCP protocol contentへLog Eventを混在させない。stderr sink、event code catalog、sampling、永続化、相関ID、duration／metricは、安全なfieldとAdapter境界を別途確定してから追加する。
+
+## D-061 Google Apps Script Managed Content Write
+
+Apps Script APIの`projects.updateContent`は指定projectの既存fileを全置換し、requestに含まれないfileを削除する。そのためGoogle Providerの最初のwrite境界は、configurationで指定された既存projectのcontentをreadした後、gstack管理markerが完全一致する場合だけ、strictに検証済みの完全なsource bundleへ置換する操作とする。未管理projectの暗黙採用、既存manual fileのmerge、project作成は行わない。
+
+source bundleは重複しない非空file名、`SERVER_JS | HTML | JSON` type、string sourceを持ち、JSON manifestをちょうど1件とgstack管理markerを含む。markerは`gstack_managed` SERVER_JS fileと固定sourceの組であり、secret、credential、project ID、filesystem pathを含めない。入力とGoogle responseは同じstrict parserを通し、responseの完全なfile集合が要求と一致しなければ成功扱いしない。
+
+ownership確認のcontent GETは`script.projects.readonly` scopeでretry可能とする。全置換PUTは`script.projects` scopeを使い、response喪失時に適用結果を断定できないため自動retryしない。Apps Script APIにはcontent更新用のcompare-and-set／ETag前提を置けないため、readとwriteの間の外部編集を完全には防げない。CLI Deployへ接続する前に、Generator成果物からProvider固有bundleを組み立てる境界、未管理projectを明示採用する初期化手順、preview fingerprint、version／deploymentの再開・冪等性を別途確定する。
+
+参考: [Apps Script API: Manage projects](https://developers.google.com/apps-script/api/how-tos/manage-projects)、[projects.updateContent](https://developers.google.com/apps-script/api/reference/rest/v1/projects/updateContent)

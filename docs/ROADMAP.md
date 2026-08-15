@@ -164,7 +164,7 @@ ai/
 
 Google Workspaceを実行基盤として利用可能にする。
 
-Status: Provider package、Manifest、strict configuration、offline validation、OAuth／HTTP safety、Google Sheets、Drive folder、Apps Script projectのread-only metadata REST adapter、統合health、Project Config、標準RuntimeからCLI／MCPへの接続まで実装済み。Google Sheets Migrationは`create_model`と`add_column`のatomic batch、管理markerによるidempotency、競合拒否、Operation Executor接続まで実装しManifestで`native`を宣言する。CLI Applyは明示Fileの安全な読込、無副作用の`--dry-run`、fingerprintによる明示承認、破壊操作承認、failed Migration再開まで実装済み。他Migration Operation、その他Capabilityのwrite、Deployは未実装。
+Status: Provider package、Manifest、strict configuration、offline validation、OAuth／HTTP safety、Google Sheets、Drive folder、Apps Script projectのread-only metadata REST adapter、統合health、Project Config、標準RuntimeからCLI／MCPへの接続まで実装済み。Google Sheets Migrationは`create_model`と`add_column`のatomic batch、管理markerによるidempotency、競合拒否、Operation Executor接続まで実装しManifestで`native`を宣言する。CLI Applyは明示Fileの安全な読込、無副作用の`--dry-run`、fingerprintによる明示承認、破壊操作承認、failed Migration再開まで実装済み。Apps Scriptは管理markerを確認して完全なsource bundleだけを非retry PUTするProvider write境界まで実装済み。bundle生成、project初期採用、version／deployment、他Migration Operation、Deploy CLIは未実装。
 
 ## Tasks
 

@@ -101,6 +101,67 @@ describe('Google Apps Script metadata', () => {
   });
 });
 
+describe('Google Apps Script content HTTP', () => {
+  it('reads content with a retryable GET', async () => {
+    const http = {
+      execute: vi.fn().mockResolvedValue({ body: '{"files":[]}' }),
+    };
+    const tokens = {
+      refresh: vi.fn().mockResolvedValue({
+        accessToken: 'token',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        scopes: ['scope'],
+      }),
+    };
+    const gateway = new GoogleScriptHttpGateway(http, tokens);
+    await gateway.getProjectContent({
+      scriptId: 'script/id',
+      credential: { credentialSecret: 'GOOGLE_CREDENTIALS', scopes: ['scope'] },
+      secrets: { get: vi.fn().mockResolvedValue(credentialSource()) },
+    });
+    expect(http.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: 'https://script.googleapis.com/v1/projects/script%2Fid/content',
+        body: null,
+        retryable: true,
+      }),
+    );
+  });
+
+  it('updates complete content with a non-retryable PUT', async () => {
+    const http = {
+      execute: vi.fn().mockResolvedValue({ body: '{"files":[]}' }),
+    };
+    const tokens = {
+      refresh: vi.fn().mockResolvedValue({
+        accessToken: 'token',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        scopes: ['scope'],
+      }),
+    };
+    const gateway = new GoogleScriptHttpGateway(http, tokens);
+    const files = [{ name: 'appsscript', type: 'JSON' as const, source: '{}' }];
+    await gateway.updateProjectContent({
+      scriptId: 'script/id',
+      files,
+      credential: { credentialSecret: 'GOOGLE_CREDENTIALS', scopes: ['scope'] },
+      secrets: { get: vi.fn().mockResolvedValue(credentialSource()) },
+    });
+    expect(http.execute).toHaveBeenCalledWith({
+      method: 'PUT',
+      url: 'https://script.googleapis.com/v1/projects/script%2Fid/content',
+      headers: {
+        accept: 'application/json',
+        authorization: 'Bearer token',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ files }),
+      retryable: false,
+    });
+  });
+});
+
 function credentialSource(): string {
   return JSON.stringify({
     formatVersion: 1,

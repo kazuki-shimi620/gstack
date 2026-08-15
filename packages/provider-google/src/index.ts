@@ -80,8 +80,17 @@ export type {
   GoogleSheetsCreateModelGateway,
 } from './sheets-migration.js';
 export { GoogleScriptHttpGateway } from './script-http.js';
-export { GoogleScriptError, GoogleScriptReadService } from './script.js';
+export {
+  GSTACK_SCRIPT_MARKER_FILE,
+  GSTACK_SCRIPT_MARKER_SOURCE,
+  GoogleScriptError,
+  GoogleScriptReadService,
+  GoogleScriptWriteService,
+} from './script.js';
 export type {
+  GoogleScriptContentGateway,
+  GoogleScriptFile,
+  GoogleScriptFileType,
   GoogleScriptMetadataGateway,
   GoogleScriptProjectMetadata,
 } from './script.js';
