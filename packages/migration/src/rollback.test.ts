@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { createMigrationFile } from './file.js';
-import { createMigrationRollbackPlan } from './rollback.js';
+import {
+  completeMigration,
+  createPendingHistory,
+  failMigration,
+  recordOperationCompleted,
+  startMigration,
+} from './history.js';
+import {
+  createMigrationRollbackPlan,
+  previewMigrationRollback,
+} from './rollback.js';
 import { createApplicationModelSnapshot } from './snapshot.js';
 import type { MigrationOperation } from './types.js';
 
@@ -183,6 +193,95 @@ describe('Migration Rollback Plan', () => {
     ).toThrowError(
       expect.objectContaining({
         code: 'MIGRATION_ROLLBACK_SNAPSHOT_INVALID',
+      }),
+    );
+  });
+
+  it('latest applied Historyと直前のapplied snapshotからpreviewする', () => {
+    const previousFile = createMigrationFile('20260814_000001', 'previous', []);
+    const previousSnapshot = createApplicationModelSnapshot({
+      schemaVersion: 1,
+      name: 'previous',
+      models: [],
+      metadata: {},
+    });
+    const previous = completeMigration(
+      startMigration(
+        createPendingHistory(previousFile),
+        '2026-08-14T00:00:00Z',
+      ),
+      '2026-08-14T00:00:01Z',
+      previousSnapshot,
+    );
+    const file = createMigrationFile('20260815_000005', 'add_email', [
+      operation({
+        id: 'add_column:users:email',
+        type: 'add_column',
+        column: field,
+      }),
+    ]);
+    const current = completeMigration(
+      recordOperationCompleted(
+        startMigration(createPendingHistory(file), '2026-08-15T00:00:00Z'),
+      ),
+      '2026-08-15T00:00:01Z',
+      createApplicationModelSnapshot({
+        schemaVersion: 1,
+        name: 'current',
+        models: [],
+        metadata: {},
+      }),
+    );
+    const preview = previewMigrationRollback({
+      file,
+      history: [current, previous],
+    });
+    expect(preview).toMatchObject({
+      sourceVersion: file.version,
+      targetVersion: previousFile.version,
+      targetSnapshot: previousSnapshot,
+      plan: { operations: [{ type: 'drop_column' }] },
+    });
+  });
+
+  it('後続attemptと不整合なsource Historyを拒否する', () => {
+    const file = createMigrationFile('20260815_000006', 'empty', []);
+    const current = completeMigration(
+      startMigration(createPendingHistory(file), '2026-08-15T00:00:00Z'),
+      '2026-08-15T00:00:01Z',
+      createApplicationModelSnapshot({
+        schemaVersion: 1,
+        name: 'current',
+        models: [],
+        metadata: {},
+      }),
+    );
+    const laterFile = createMigrationFile('20260815_000007', 'later', [
+      operation({
+        id: 'add_column:users:email',
+        type: 'add_column',
+        column: field,
+      }),
+    ]);
+    const later = failMigration(
+      startMigration(createPendingHistory(laterFile), '2026-08-15T01:00:00Z'),
+      '2026-08-15T01:00:01Z',
+      laterFile.operations[0]!.id,
+      'PROVIDER_OPERATION_FAILED',
+    );
+    expect(() =>
+      previewMigrationRollback({ file, history: [current, later] }),
+    ).toThrowError(
+      expect.objectContaining({ code: 'MIGRATION_ROLLBACK_NOT_LATEST' }),
+    );
+    expect(() =>
+      previewMigrationRollback({
+        file,
+        history: [{ ...current, checksum: '0'.repeat(64) }],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'MIGRATION_ROLLBACK_HISTORY_CONFLICT',
       }),
     );
   });

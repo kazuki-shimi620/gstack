@@ -9,6 +9,7 @@ import {
   applyStandardGoogleMigrationFile,
   loadStandardProject,
   prepareStandardGoogleMigrationApplyFile,
+  prepareStandardGoogleMigrationRollbackFile,
 } from '@gstack/runtime';
 import { Command } from 'commander';
 
@@ -20,6 +21,7 @@ import {
   formatMigrationApplyDryRunHuman,
   formatMigrationApplyHuman,
   formatMigrationPlanHuman,
+  formatMigrationRollbackDryRunHuman,
   formatMigrationStatusHuman,
   formatProviderHealthHuman,
   formatProviderInfoHuman,
@@ -48,6 +50,10 @@ export interface ProgramServices {
       readonly resume: boolean;
     },
   ) => ReturnType<typeof applyStandardGoogleMigrationFile>;
+  readonly prepareMigrationRollbackFile: (
+    project: GstackProject,
+    filePath: string,
+  ) => ReturnType<typeof prepareStandardGoogleMigrationRollbackFile>;
 }
 
 const defaultServices: ProgramServices = {
@@ -56,6 +62,8 @@ const defaultServices: ProgramServices = {
     prepareStandardGoogleMigrationApplyFile({ project, filePath }),
   applyMigrationFile: (project, input) =>
     applyStandardGoogleMigrationFile({ project, ...input }),
+  prepareMigrationRollbackFile: (project, filePath) =>
+    prepareStandardGoogleMigrationRollbackFile({ project, filePath }),
 };
 
 export function createProgram(
@@ -198,6 +206,50 @@ export function createProgram(
         };
       });
     });
+
+  migration
+    .command('rollback')
+    .description('Preview rollback of the latest applied Migration')
+    .requiredOption(
+      '--file <path>',
+      'applied Migration YAML inside migrations/',
+    )
+    .option('--dry-run', 'validate and preview without changing Provider state')
+    .option('--json', 'output structured JSON')
+    .action(
+      async (options: { file: string; dryRun?: boolean; json?: boolean }) => {
+        await withProjectOutput(
+          io,
+          options.json,
+          async (project) => {
+            if (!options.dryRun) {
+              throw new GstackError({
+                code: 'MIGRATION_ROLLBACK_DRY_RUN_REQUIRED',
+                category: 'migration',
+                message: 'Migration Rollback is available as dry-run only.',
+                hint: 'Pass --dry-run to inspect the rollback Plan.',
+              });
+            }
+            const preview = await services.prepareMigrationRollbackFile(
+              project,
+              options.file,
+            );
+            const migrationRollback = {
+              sourceVersion: preview.sourceVersion,
+              sourceChecksum: preview.sourceChecksum,
+              targetVersion: preview.targetVersion,
+              planFingerprint: preview.planFingerprint,
+              plan: preview.plan,
+            };
+            return {
+              data: { dryRun: true, migrationRollback },
+              human: formatMigrationRollbackDryRunHuman(migrationRollback),
+            };
+          },
+          services.loadProject,
+        );
+      },
+    );
 
   migration
     .command('plan')

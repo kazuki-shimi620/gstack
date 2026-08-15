@@ -15,6 +15,7 @@ import {
   type MigrationHistoryEntry,
   type MigrationHistoryStorage,
   type MigrationOperationExecutor,
+  type MigrationPlan,
 } from '@gstack/migration';
 
 import {
@@ -24,6 +25,7 @@ import {
   loadStandardProject,
   prepareStandardGoogleMigrationApply,
   prepareStandardGoogleMigrationApplyFile,
+  prepareStandardGoogleMigrationRollback,
 } from './index.js';
 
 const roots: string[] = [];
@@ -289,6 +291,61 @@ providers:
       history: { status: 'applied', completedOperationCount: 1 },
     });
     expect(executed).toEqual([operation.id]);
+  });
+
+  it('Rollback PlanへProvider capabilityとfingerprintを反映する', () => {
+    const operation = {
+      id: 'add_column:users:email',
+      type: 'add_column',
+      model: 'users',
+      risk: 'safe',
+      destructive: false,
+      reversible: true,
+      capability: 'not_evaluated',
+      column: { name: 'email' },
+    } as never;
+    const file = createMigrationFile('20260815_000010', 'add_email', [
+      operation,
+    ]);
+    const appliedSnapshot = {
+      formatVersion: 1,
+      application: {
+        schemaVersion: 1,
+        name: 'app',
+        models: [],
+        metadata: {},
+      },
+      checksum: 'a'.repeat(64),
+    } as never;
+    const preview = prepareStandardGoogleMigrationRollback({
+      file,
+      history: [
+        {
+          version: file.version,
+          name: file.name,
+          checksum: file.checksum,
+          status: 'applied',
+          operationCount: 1,
+          completedOperationCount: 1,
+          appliedSnapshot,
+        } as never,
+      ],
+      runtime: {
+        evaluate: (plan: MigrationPlan) =>
+          applyCapabilityResults(plan, [
+            {
+              operationId: plan.operations[0]!.id,
+              capability: 'unsupported',
+            },
+          ]),
+      } as never,
+    });
+    expect(preview).toMatchObject({
+      sourceVersion: file.version,
+      targetVersion: null,
+      plan: { capabilityStatus: 'unsupported', applicable: false },
+      planFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
   });
 });
 

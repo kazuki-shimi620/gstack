@@ -224,3 +224,27 @@ test('Migration Applyはdry-runなしのProvider変更を拒否する', (t) => {
     'MIGRATION_DRY_RUN_REQUIRED',
   );
 });
+
+test('Migration Rollbackはdry-run以外を公開しない', (t) => {
+  const root = project(
+    'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+  );
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const result = run(
+    [
+      'migration',
+      'rollback',
+      '--file',
+      'migrations/20260813_000001_initial.yaml',
+      '--json',
+    ],
+    root,
+  );
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, '');
+  assert.equal(
+    JSON.parse(result.stderr).error.code,
+    'MIGRATION_ROLLBACK_DRY_RUN_REQUIRED',
+  );
+});

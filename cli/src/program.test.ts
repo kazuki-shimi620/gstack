@@ -44,12 +44,14 @@ describe('migration apply CLI', () => {
       planFingerprint: 'b'.repeat(64),
     }));
     const applyMigrationFile = vi.fn();
+    const prepareMigrationRollbackFile = vi.fn();
     await createProgram(
       { stdout, stderr },
       {
         loadProject: async () => ({ root: '/project' }) as never,
         prepareMigrationApplyFile,
         applyMigrationFile,
+        prepareMigrationRollbackFile,
       },
     ).parseAsync([
       'node',
@@ -84,12 +86,14 @@ describe('migration apply CLI', () => {
     const stderr = vi.fn();
     const prepareMigrationApplyFile = vi.fn();
     const applyMigrationFile = vi.fn();
+    const prepareMigrationRollbackFile = vi.fn();
     await createProgram(
       { stdout, stderr },
       {
         loadProject: async () => ({ root: '/project' }) as never,
         prepareMigrationApplyFile,
         applyMigrationFile,
+        prepareMigrationRollbackFile,
       },
     ).parseAsync([
       'node',
@@ -131,6 +135,7 @@ describe('migration apply CLI', () => {
         loadProject: async () => ({ root: '/project' }) as never,
         prepareMigrationApplyFile: vi.fn(),
         applyMigrationFile,
+        prepareMigrationRollbackFile: vi.fn(),
       },
     ).parseAsync([
       'node',
@@ -160,6 +165,69 @@ describe('migration apply CLI', () => {
       data: {
         dryRun: false,
         migrationApply: { outcome: 'applied' },
+      },
+    });
+  });
+
+  it('Rollback dry-runの評価済みPlanを表示する', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const plan = {
+      operations: [
+        {
+          id: 'drop_column:users:email',
+          risk: 'destructive',
+          capability: 'unsupported',
+        },
+      ],
+      risk: 'destructive',
+      destructive: true,
+      reversible: false,
+      capabilityStatus: 'unsupported',
+      applicable: false,
+      warnings: [],
+    } as never;
+    const prepareMigrationRollbackFile = vi.fn(async () => ({
+      sourceVersion: '20260815_000001',
+      sourceChecksum: 'a'.repeat(64),
+      completedOperationCount: 1,
+      targetVersion: null,
+      targetSnapshot: null,
+      plan,
+      planFingerprint: 'b'.repeat(64),
+    }));
+    await createProgram(
+      { stdout, stderr },
+      {
+        loadProject: async () => ({ root: '/project' }) as never,
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile: vi.fn(),
+        prepareMigrationRollbackFile,
+      },
+    ).parseAsync([
+      'node',
+      'gstack',
+      'migration',
+      'rollback',
+      '--file',
+      'migrations/add_email.yaml',
+      '--dry-run',
+      '--json',
+    ]);
+    expect(prepareMigrationRollbackFile).toHaveBeenCalledWith(
+      expect.objectContaining({ root: '/project' }),
+      'migrations/add_email.yaml',
+    );
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        dryRun: true,
+        migrationRollback: {
+          sourceVersion: '20260815_000001',
+          targetVersion: null,
+          planFingerprint: 'b'.repeat(64),
+        },
       },
     });
   });

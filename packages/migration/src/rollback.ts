@@ -3,6 +3,7 @@ import { verifyMigrationChecksum } from './file.js';
 import { createMigrationPlanPreservingOrder, operationId } from './plan.js';
 import { snapshotChecksum, type ApplicationModelSnapshot } from './snapshot.js';
 import type { MigrationOperation, MigrationPlan } from './types.js';
+import type { MigrationHistoryEntry } from './history.js';
 
 export interface MigrationRollbackPlan {
   readonly sourceVersion: string;
@@ -12,12 +13,18 @@ export interface MigrationRollbackPlan {
   readonly plan: MigrationPlan;
 }
 
+export interface MigrationRollbackPreview extends MigrationRollbackPlan {
+  readonly targetVersion: string | null;
+}
+
 export class MigrationRollbackError extends Error {
   public constructor(
     public readonly code:
       | 'MIGRATION_CHECKSUM_INVALID'
       | 'MIGRATION_ROLLBACK_PROGRESS_INVALID'
       | 'MIGRATION_ROLLBACK_SNAPSHOT_INVALID'
+      | 'MIGRATION_ROLLBACK_HISTORY_CONFLICT'
+      | 'MIGRATION_ROLLBACK_NOT_LATEST'
       | 'MIGRATION_IRREVERSIBLE',
     message: string,
     public readonly operationId: string | null = null,
@@ -25,6 +32,63 @@ export class MigrationRollbackError extends Error {
     super(message);
     this.name = 'MigrationRollbackError';
   }
+}
+
+export function previewMigrationRollback(input: {
+  readonly file: MigrationFile;
+  readonly history: readonly MigrationHistoryEntry[];
+}): MigrationRollbackPreview {
+  const ordered = [...input.history].sort((left, right) =>
+    left.version.localeCompare(right.version),
+  );
+  const sourceIndex = ordered.findIndex(
+    ({ version }) => version === input.file.version,
+  );
+  const source = ordered[sourceIndex];
+  if (!source) {
+    throw new MigrationRollbackError(
+      'MIGRATION_ROLLBACK_HISTORY_CONFLICT',
+      'Rollback source Migration does not exist in History.',
+    );
+  }
+  if (sourceIndex !== ordered.length - 1) {
+    throw new MigrationRollbackError(
+      'MIGRATION_ROLLBACK_NOT_LATEST',
+      'Rollback source must be the latest Migration History attempt.',
+    );
+  }
+  if (
+    source.status !== 'applied' ||
+    source.version !== input.file.version ||
+    source.name !== input.file.name ||
+    source.checksum !== input.file.checksum ||
+    source.operationCount !== input.file.operations.length ||
+    source.completedOperationCount !== source.operationCount ||
+    source.appliedSnapshot === null
+  ) {
+    throw new MigrationRollbackError(
+      'MIGRATION_ROLLBACK_HISTORY_CONFLICT',
+      'Rollback source does not match an applied Migration File.',
+    );
+  }
+  const previous = ordered
+    .slice(0, sourceIndex)
+    .reverse()
+    .find(({ status }) => status === 'applied');
+  if (previous && previous.appliedSnapshot === null) {
+    throw new MigrationRollbackError(
+      'MIGRATION_ROLLBACK_HISTORY_CONFLICT',
+      'Previous applied Migration snapshot is missing.',
+    );
+  }
+  return deepFreeze({
+    ...createMigrationRollbackPlan({
+      file: input.file,
+      completedOperationCount: source.completedOperationCount,
+      previousSnapshot: previous?.appliedSnapshot ?? null,
+    }),
+    targetVersion: previous?.version ?? null,
+  });
 }
 
 export function createMigrationRollbackPlan(input: {

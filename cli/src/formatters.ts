@@ -188,6 +188,31 @@ export function formatMigrationApplyHuman(result: {
   ].join('\n');
 }
 
+export interface MigrationRollbackDryRunView {
+  readonly sourceVersion: string;
+  readonly sourceChecksum: string;
+  readonly targetVersion: string | null;
+  readonly planFingerprint: string;
+  readonly plan: MigrationPlanPreview['plan'];
+}
+
+export function formatMigrationRollbackDryRunHuman(
+  preview: MigrationRollbackDryRunView,
+): string {
+  return [
+    'Migration Rollback Dry Run:',
+    `Source version: ${preview.sourceVersion}`,
+    `Source checksum: ${preview.sourceChecksum}`,
+    `Target version: ${preview.targetVersion ?? 'initial (none)'}`,
+    `Plan fingerprint: ${preview.planFingerprint}`,
+    ...preview.plan.operations.map(
+      ({ id, risk, capability }) =>
+        `${risk.toUpperCase()} ${id} [${capability}]`,
+    ),
+    `Summary: ${preview.plan.operations.length} operation(s), risk=${preview.plan.risk}, destructive=${String(preview.plan.destructive)}, applicable=${String(preview.plan.applicable)}.`,
+  ].join('\n');
+}
+
 function enabledCapabilities(
   capabilities: ProviderSummary['capabilities'],
 ): string {

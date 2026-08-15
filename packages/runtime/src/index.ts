@@ -15,10 +15,15 @@ import {
   MigrationFileError,
   MigrationFileSystemError,
   MigrationLockError,
+  MigrationRollbackError,
   MigrationReadService,
+  migrationPlanFingerprint,
   prepareMigrationApply,
+  previewMigrationRollback,
   type MigrationFile,
+  type MigrationHistoryEntry,
   type MigrationPlan,
+  type MigrationRollbackPreview,
   type PreparedMigrationApply,
   type MigrationApplyResult,
 } from '@gstack/migration';
@@ -46,6 +51,14 @@ export interface LoadStandardProjectOptions {
 export interface StandardGoogleMigrationRuntime extends DefaultGoogleMigrationComponents {
   evaluate(plan: MigrationPlan): MigrationPlan;
   readonly providerContext: string;
+}
+
+export interface StandardGoogleMigrationRollbackPreview extends Omit<
+  MigrationRollbackPreview,
+  'plan'
+> {
+  readonly plan: MigrationPlan;
+  readonly planFingerprint: string;
 }
 
 export function createStandardGoogleMigrationRuntime(input: {
@@ -162,6 +175,43 @@ export async function applyStandardGoogleMigration(input: {
   }
 }
 
+export function prepareStandardGoogleMigrationRollback(input: {
+  readonly file: MigrationFile;
+  readonly history: readonly MigrationHistoryEntry[];
+  readonly runtime: StandardGoogleMigrationRuntime;
+}): StandardGoogleMigrationRollbackPreview {
+  const preview = previewMigrationRollback({
+    file: input.file,
+    history: input.history,
+  });
+  const plan = input.runtime.evaluate(preview.plan);
+  return Object.freeze({
+    ...preview,
+    plan,
+    planFingerprint: migrationPlanFingerprint(input.file, plan),
+  });
+}
+
+export async function prepareStandardGoogleMigrationRollbackFile(input: {
+  readonly project: GstackProject;
+  readonly filePath: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+}): Promise<StandardGoogleMigrationRollbackPreview> {
+  try {
+    const runtime = await resolveStandardGoogleMigrationRuntime(
+      input.project,
+      input.environment,
+    );
+    const [file, history] = await Promise.all([
+      loadMigrationFile(input.project.root, input.filePath),
+      runtime.history.list(),
+    ]);
+    return prepareStandardGoogleMigrationRollback({ file, history, runtime });
+  } catch (error: unknown) {
+    throw normalizeMigrationError(error);
+  }
+}
+
 async function resolveStandardGoogleMigrationApply(input: {
   readonly project: GstackProject;
   readonly filePath: string;
@@ -170,7 +220,27 @@ async function resolveStandardGoogleMigrationApply(input: {
   readonly prepared: PreparedMigrationApply;
   readonly runtime: StandardGoogleMigrationRuntime;
 }> {
-  const config = await input.project.getConfig();
+  try {
+    const [file, runtime] = await Promise.all([
+      loadMigrationFile(input.project.root, input.filePath),
+      resolveStandardGoogleMigrationRuntime(input.project, input.environment),
+    ]);
+    const prepared = await prepareStandardGoogleMigrationApply({
+      project: input.project,
+      file,
+      runtime,
+    });
+    return Object.freeze({ prepared, runtime });
+  } catch (error: unknown) {
+    throw normalizeMigrationError(error);
+  }
+}
+
+async function resolveStandardGoogleMigrationRuntime(
+  project: GstackProject,
+  environment?: Readonly<Record<string, string | undefined>>,
+): Promise<StandardGoogleMigrationRuntime> {
+  const config = await project.getConfig();
   const google = config.providers.find(
     ({ name, enabled }) => name === 'google' && enabled,
   );
@@ -182,27 +252,10 @@ async function resolveStandardGoogleMigrationApply(input: {
       hint: 'Enable and configure the Google Provider in gstack.yaml.',
     });
   }
-  try {
-    const [file, runtime] = await Promise.all([
-      loadMigrationFile(input.project.root, input.filePath),
-      Promise.resolve(
-        createStandardGoogleMigrationRuntime({
-          configuration: google.configuration,
-          secrets: new EnvironmentSecretResolver(
-            input.environment ?? process.env,
-          ),
-        }),
-      ),
-    ]);
-    const prepared = await prepareStandardGoogleMigrationApply({
-      project: input.project,
-      file,
-      runtime,
-    });
-    return Object.freeze({ prepared, runtime });
-  } catch (error: unknown) {
-    throw normalizeMigrationError(error);
-  }
+  return createStandardGoogleMigrationRuntime({
+    configuration: google.configuration,
+    secrets: new EnvironmentSecretResolver(environment ?? process.env),
+  });
 }
 
 export async function loadStandardProject(
@@ -302,7 +355,8 @@ function normalizeMigrationError(error: unknown): unknown {
     error instanceof MigrationFileError ||
     error instanceof MigrationApplyError ||
     error instanceof MigrationLockError ||
-    error instanceof MigrationExecutionError
+    error instanceof MigrationExecutionError ||
+    error instanceof MigrationRollbackError
   ) {
     return new GstackError(
       {

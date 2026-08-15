@@ -7,6 +7,7 @@ import {
   formatMigrationHistoryHuman,
   formatMigrationApplyDryRunHuman,
   formatMigrationPlanHuman,
+  formatMigrationRollbackDryRunHuman,
   formatMigrationStatusHuman,
   formatProviderHealthHuman,
   formatProviderInfoHuman,
@@ -187,5 +188,33 @@ describe('CLI formatters', () => {
         },
       }),
     ).toContain(`Plan fingerprint: ${fingerprint}`);
+  });
+
+  it('Migration Rollback dry-runにtargetと破壊性を表示する', () => {
+    expect(
+      formatMigrationRollbackDryRunHuman({
+        sourceVersion: '20260815_000001',
+        sourceChecksum: 'a'.repeat(64),
+        targetVersion: null,
+        planFingerprint: 'b'.repeat(64),
+        plan: {
+          operations: [
+            {
+              id: 'drop_column:users:email',
+              risk: 'destructive',
+              capability: 'unsupported',
+            } as never,
+          ],
+          risk: 'destructive',
+          destructive: true,
+          reversible: false,
+          capabilityStatus: 'unsupported',
+          applicable: false,
+          warnings: [],
+        },
+      }),
+    ).toContain(
+      'Target version: initial (none)\nPlan fingerprint: ' + 'b'.repeat(64),
+    );
   });
 });

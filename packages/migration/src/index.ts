@@ -2,8 +2,12 @@ export { createMigrationPlan, operationId } from './plan.js';
 export {
   createMigrationRollbackPlan,
   MigrationRollbackError,
+  previewMigrationRollback,
 } from './rollback.js';
-export type { MigrationRollbackPlan } from './rollback.js';
+export type {
+  MigrationRollbackPlan,
+  MigrationRollbackPreview,
+} from './rollback.js';
 export {
   MigrationApplyError,
   MigrationLockError,
