@@ -13,6 +13,7 @@ import { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
 import {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
+  GoogleSheetsDropColumnService,
   GoogleSheetsRenameColumnService,
 } from './sheets-migration.js';
 import type { DefaultGoogleProviderOptions } from './default.js';
@@ -65,6 +66,7 @@ export function createDefaultGoogleMigrationComponents(
       new GoogleSheetsCreateModelService(sheets, config, secrets),
       new GoogleSheetsAddColumnService(sheets, config, secrets),
       new GoogleSheetsRenameColumnService(sheets, config, secrets),
+      new GoogleSheetsDropColumnService(sheets, config, secrets),
     ),
   });
 }

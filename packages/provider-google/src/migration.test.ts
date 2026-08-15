@@ -16,6 +16,7 @@ describe('Google Migration capability mapping', () => {
       operation('create:user', 'create_model'),
       operation('add:user:name', 'add_column'),
       operation('rename:user:name:display_name', 'rename_column'),
+      operation('drop:user:legacy', 'drop_column'),
       operation('index:user:name', 'add_index'),
     ];
     const results = evaluateGoogleMigrationCapabilities(operations);
@@ -26,6 +27,7 @@ describe('Google Migration capability mapping', () => {
         operationId: 'rename:user:name:display_name',
         capability: 'native',
       },
+      { operationId: 'drop:user:legacy', capability: 'native' },
       { operationId: 'index:user:name', capability: 'unsupported' },
     ]);
     expect(Object.isFrozen(results)).toBe(true);
@@ -41,10 +43,12 @@ describe('Google Migration capability mapping', () => {
     const createModel = vi.fn();
     const addColumn = vi.fn();
     const renameColumn = vi.fn();
+    const dropColumn = vi.fn();
     const executor = new GoogleMigrationOperationExecutor(
       { execute: createModel } as never,
       { execute: addColumn } as never,
       { execute: renameColumn } as never,
+      { execute: dropColumn } as never,
     );
     const create = operation('create:user', 'create_model');
     await executor.execute(create, {
@@ -72,6 +76,15 @@ describe('Google Migration capability mapping', () => {
       idempotencyKey: `key:${rename.id}`,
     });
     expect(renameColumn).toHaveBeenCalledWith(rename, 'a'.repeat(64));
+
+    const drop = operation('drop:user:legacy', 'drop_column');
+    await executor.execute(drop, {
+      migrationVersion: '20260813_000001',
+      migrationChecksum: 'a'.repeat(64),
+      operationId: drop.id,
+      idempotencyKey: `key:${drop.id}`,
+    });
+    expect(dropColumn).toHaveBeenCalledWith(drop, 'a'.repeat(64));
 
     await expect(
       executor.execute(operation('index:user:name', 'add_index'), {

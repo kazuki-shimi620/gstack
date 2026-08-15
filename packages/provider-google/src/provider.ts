@@ -31,7 +31,7 @@ export const googleProviderManifest: ProviderManifest = Object.freeze({
     create_model: 'native',
     drop_model: 'unsupported',
     add_column: 'native',
-    drop_column: 'unsupported',
+    drop_column: 'native',
     rename_column: 'native',
     alter_column: 'unsupported',
     add_index: 'unsupported',

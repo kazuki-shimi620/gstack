@@ -78,6 +78,12 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
     return this.inspectColumns(input);
   }
 
+  async inspectDropColumn(
+    input: Parameters<GoogleSheetsBatchUpdateGateway['inspectDropColumn']>[0],
+  ): Promise<unknown> {
+    return this.inspectColumns(input);
+  }
+
   private async inspectColumns(input: {
     readonly spreadsheetId: string;
     readonly sheetTitle: string;

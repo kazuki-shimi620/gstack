@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   AddColumnOperation,
   CreateModelOperation,
+  DropColumnOperation,
   RenameColumnOperation,
 } from '@gstack/migration';
 
@@ -10,11 +11,14 @@ import type { GoogleProviderConfig } from './config.js';
 import {
   addColumnBatchRequests,
   createModelBatchRequests,
+  dropColumnBatchRequests,
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
+  GoogleSheetsDropColumnService,
   GoogleSheetsRenameColumnService,
   inspectAddColumnState,
   inspectCreateModelState,
+  inspectDropColumnState,
   inspectRenameColumnState,
   renameColumnBatchRequests,
   stableSheetId,
@@ -42,6 +46,15 @@ const renameColumn = {
   from: 'email',
   to: 'contact_email',
 } as unknown as RenameColumnOperation;
+const dropColumn = {
+  id: 'drop_column:users:legacy',
+  type: 'drop_column',
+  model: 'users',
+  risk: 'destructive',
+  destructive: true,
+  reversible: false,
+  previous: { name: 'legacy' },
+} as unknown as DropColumnOperation;
 
 describe('Google Sheets create_model mapper', () => {
   it('決定的なSheet、header、管理markerを1 batchへ変換する', () => {
@@ -489,6 +502,124 @@ describe('Google Sheets rename_column service', () => {
   });
 });
 
+describe('Google Sheets drop_column mapper', () => {
+  it('対象column削除とsheet-level markerを1 batchへ変換する', () => {
+    const sheetId = stableSheetId('users');
+    expect(
+      dropColumnBatchRequests(dropColumn, checksum, {
+        status: 'absent',
+        sheetId,
+        columnIndex: 1,
+      }),
+    ).toEqual([
+      {
+        deleteDimension: {
+          range: {
+            sheetId,
+            dimension: 'COLUMNS',
+            startIndex: 1,
+            endIndex: 2,
+          },
+        },
+      },
+      {
+        createDeveloperMetadata: {
+          developerMetadata: {
+            metadataKey: 'gstack_operation',
+            metadataValue: `${checksum}:${dropColumn.id}`,
+            location: { sheetId },
+            visibility: 'DOCUMENT',
+          },
+        },
+      },
+    ]);
+  });
+
+  it('対象headerの位置を決定しmarker一致を適用済みとする', () => {
+    expect(
+      inspectDropColumnState(dropColumnState(), dropColumn, checksum),
+    ).toEqual({
+      status: 'absent',
+      sheetId: stableSheetId('users'),
+      columnIndex: 1,
+    });
+    expect(
+      inspectDropColumnState(
+        dropColumnState({
+          headers: ['id'],
+          metadata: [dropOperationMarker()],
+        }),
+        dropColumn,
+        checksum,
+      ),
+    ).toEqual({ status: 'applied' });
+  });
+
+  it('markerなしの欠落、markerと残存header、位置付きmarkerを競合拒否する', () => {
+    expect(() =>
+      inspectDropColumnState(
+        dropColumnState({ headers: ['id'] }),
+        dropColumn,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+    expect(() =>
+      inspectDropColumnState(
+        dropColumnState({ metadata: [dropOperationMarker()] }),
+        dropColumn,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+    expect(() =>
+      inspectDropColumnState(
+        dropColumnState({
+          headers: ['id'],
+          metadata: [dropOperationMarker(1)],
+        }),
+        dropColumn,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+  });
+});
+
+describe('Google Sheets drop_column service', () => {
+  it('database_write scopeでatomic batchを実行し一致markerではskipする', async () => {
+    const batchUpdate = vi.fn().mockResolvedValue({ spreadsheetId: 'sheet-1' });
+    const inspectDropColumn = vi
+      .fn()
+      .mockResolvedValueOnce(dropColumnState())
+      .mockResolvedValueOnce(
+        dropColumnState({
+          headers: ['id'],
+          metadata: [dropOperationMarker()],
+        }),
+      );
+    const service = new GoogleSheetsDropColumnService(
+      { inspectDropColumn, batchUpdate },
+      config,
+      { get: vi.fn() },
+    );
+    await service.execute(dropColumn, checksum);
+    expect(batchUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        credential: {
+          credentialSecret: 'GOOGLE_CREDENTIALS',
+          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        },
+      }),
+    );
+    await service.execute(dropColumn, checksum);
+    expect(batchUpdate).toHaveBeenCalledTimes(1);
+  });
+});
+
 function addColumnState(
   overrides: {
     headers?: readonly unknown[];
@@ -564,6 +695,48 @@ function renameOperationMarker(columnIndex: number): unknown {
       startIndex: columnIndex,
       endIndex: columnIndex + 1,
     },
+  };
+}
+
+function dropColumnState(
+  overrides: {
+    headers?: readonly unknown[];
+    metadata?: readonly unknown[];
+  } = {},
+): unknown {
+  return {
+    sheets: [
+      {
+        sheetId: stableSheetId('users'),
+        title: 'users',
+        columnCount: 10,
+        headers: overrides.headers ?? ['id', 'legacy'],
+        metadata: [
+          {
+            key: 'gstack_model',
+            value: `${'c'.repeat(64)}:create_model:users:users`,
+            location: { sheetId: stableSheetId('users') },
+          },
+          ...(overrides.metadata ?? []),
+        ],
+      },
+    ],
+  };
+}
+
+function dropOperationMarker(columnIndex?: number): unknown {
+  return {
+    key: 'gstack_operation',
+    value: `${checksum}:${dropColumn.id}`,
+    location:
+      columnIndex === undefined
+        ? { sheetId: stableSheetId('users') }
+        : {
+            sheetId: stableSheetId('users'),
+            dimension: 'COLUMNS',
+            startIndex: columnIndex,
+            endIndex: columnIndex + 1,
+          },
   };
 }
 
