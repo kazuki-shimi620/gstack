@@ -241,6 +241,8 @@ AI Agentが安全にgstackを操作できる環境を整備する。
 - MCP Support拡張（Application Model、Migration、Provider Context）
 - AI Safety Rules
 
+Status: 完了。生成領域向けAGENTS.md／PROJECT_CONTEXT.md、secret-safeな構造化Logging、CLI JSON envelope、Application Model／Migration／Provider／Generated Artifactを含むread-only MCP Tool／Resource、危険操作を登録しないAI Safety allowlist、Codex／Claude Code／汎用stdio hostのlocal installation guideを実装済み。
+
 ---
 
 # 11. Version 1.0 - Stable Release

@@ -558,3 +558,9 @@ removeはManifest検証、configuration削除、Provider無効化を再確認後
 export entryは専用のlocal importerで読み、既存Plugin Loaderを通してnamed `gstackPlugin`、Manifest、definition、package identity、gstack互換性を検証し、Manifest versionとpackage.json versionを完全一致させる。このlocal path importは作者向け検証だけに閉じ、Project Runtimeのallowlist Loaderへpath／URLを許可しない。
 
 収録物はpackage directoryで`npm pack --dry-run --json --ignore-scripts`をshellなしで実行して取得し、単一packageのidentity、正規化された相対path、root entry、型宣言、package.jsonの収録を確認する。`.env`／`.env.*`、`.npmrc`、`credentials.json`、`service-account*.json`、`.pem`、`.key`が含まれる場合はpublish前errorとする。結果はManifest概要、entry／types、file count、unpacked sizeだけを返し、file本文やmodule内部値を返さない。commandは`npm publish`、pack file作成、lifecycle script、Project Config変更を行わない。
+
+## D-081 MCP Host Installation Guidance
+
+`@gstack/mcp`がprivate workspace packageである間は、存在しないregistry packageや`npx`利用を案内せず、source checkoutの`npm ci`／`npm run build`と`node <absolute dist/main.js>`を正規のlocal setupとする。stdio hostには`GSTACK_PROJECT_ROOT`とserver entryの絶対pathを渡し、host依存のworking directory探索へ依存しない。
+
+Codexは公式`codex mcp add`、Claude Codeは公式`claude mcp add --transport stdio`を使用し、その他hostには標準的なcommand／args／env例を示す。checked-in host configへcredentialやtokenを直接保存しない。MCP serverはRead専用Tool allowlistを維持し、hostへ登録した事実をwrite操作の承認として扱わない。npm公開後のpackage commandは実際のpackage名、version、bin、install検証が揃った時点で追加する。

@@ -34,7 +34,7 @@
 - [x] 対応サブシステムの実装に合わせてCore Read APIを拡張した。Application Model、Migration status／history／plan、Generation Plan preview、Provider capability／health、Google Migration History Storage、D-059のGenerated Artifact inventoryを提供する。
 - [x] 対応するCore Read APIへ委譲するMCP Resource／Toolを追加した。Application Model、Migration status／history、Generation Plan preview、Provider Catalog／inspection、Generated Artifact inventoryをread-onlyで提供する。
 - [x] Generator設計で生成領域向け`AGENTS.md`と永続化する`PROJECT_CONTEXT.md`の形式を定義し、Application Modelから導出する（`DECISIONS.md` D-031）。現在のCore／MCP Project Contextはmemory上のread modelであり、生成物ではない。
-- [ ] package配布commandが安定してから、Codex、Claude、その他MCP host向けのinstallation例を文書化する。
+- [x] Codex、Claude Code、その他stdio MCP host向けのsource checkout installation例を公式資料に合わせて文書化した（`DECISIONS.md` D-081）。npm公開後の例は実配布時に追加する。
 - [ ] 危険なMCP Toolは、明示的な確認、plan-before-apply、破壊操作承認を含む別設計が確定した場合にだけ追加する。現時点で承認済みの危険なToolはない。
 
 ## Migration Engine実装前の設計判断

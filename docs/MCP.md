@@ -2,7 +2,7 @@
 
 > ドキュメント一覧: [`../README.md`](../README.md)
 
-> Version: 0.1.0（初期Read専用integration）
+> Version: 0.0.0（開発中のRead専用integration）
 
 ## 1. 目的
 
@@ -32,6 +32,65 @@ GSTACK_PROJECT_ROOT=/absolute/path/to/project npm run mcp
 ```
 
 MCP hostは`node /absolute/path/to/gstack/packages/mcp/dist/main.js`を起動し、対象gstack projectをworking directoryに設定するか、`GSTACK_PROJECT_ROOT`を渡す。wrapperのoutputをserver stdoutへ出力してはいけない。
+
+### Hostへの登録
+
+現時点の`@gstack/mcp`はprivate workspace packageであり、npm registryからのinstallや`npx @gstack/mcp`はまだ案内しない。最初にsource checkoutで依存関係をinstallし、buildする。
+
+```bash
+cd /absolute/path/to/gstack
+npm ci
+npm run build
+```
+
+対象projectとserver entryは必ず絶対pathで指定する。stdio serverのworking directoryはhostによって一定でないため、`GSTACK_PROJECT_ROOT`を明示する。
+
+#### Codex CLI／IDE extension／ChatGPT desktop
+
+```bash
+codex mcp add gstack \
+  --env GSTACK_PROJECT_ROOT=/absolute/path/to/project \
+  -- node /absolute/path/to/gstack/packages/mcp/dist/main.js
+
+codex mcp list
+```
+
+Codex CLI、IDE extension、ChatGPT desktopは同じCodex MCP設定を共有する。project限定で管理する場合は、信頼済みprojectの`.codex/config.toml`を利用する。詳細は[OpenAI公式MCPドキュメント](https://learn.chatgpt.com/docs/extend/mcp)を参照する。
+
+#### Claude Code
+
+```bash
+claude mcp add \
+  --transport stdio \
+  --scope project \
+  --env GSTACK_PROJECT_ROOT=/absolute/path/to/project \
+  gstack -- node /absolute/path/to/gstack/packages/mcp/dist/main.js
+
+claude mcp get gstack
+```
+
+project scopeはproject rootの`.mcp.json`を更新し、Claude Codeは共有設定の初回利用時に承認を求める。詳細は[Claude Code公式MCPドキュメント](https://code.claude.com/docs/en/mcp)を参照する。credentialをcommand、args、checked-in `.mcp.json`へ直接記載しない。
+
+#### その他のstdio MCP host
+
+hostが標準的な`mcpServers` JSONを受け付ける場合の基本形は次のとおり。host固有の保存場所とtrust UIは各hostの公式資料を確認する。
+
+```json
+{
+  "mcpServers": {
+    "gstack": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/to/gstack/packages/mcp/dist/main.js"],
+      "env": {
+        "GSTACK_PROJECT_ROOT": "/absolute/path/to/project"
+      }
+    }
+  }
+}
+```
+
+stdioではstdoutがJSON-RPC専用である。起動確認はhostのMCP status UI／commandを使い、serverへ通常textを標準入力しない。絶対pathとstderr loggingの一般的な注意は[MCP公式debugging guide](https://modelcontextprotocol.io/docs/tools/debugging)に従う。
 
 ## 3. Core API境界
 

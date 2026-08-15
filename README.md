@@ -46,8 +46,11 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Application Model Resourceを含む読取専用local stdio MCP Tool／Resource
 - Provider非依存のMigration Diff／Plan／File／Historyと注入可能なCore／MCP Read API
 - Generated Artifact／Manifest／再生成Plan基盤とTypeScript Type／Validation／API／React UI／OpenAPI／Model・AI Documentation Generator
+- Google Provider、Migration Apply、Apps Script Build／Deploy、Local Development API
+- Provider／Generator Plugin、明示承認付きpackage管理、publish前検証
+- Application Model／Migration／Provider Contextを含むread-only MCPとhost別setup guide
 
-Migration Apply／Rollback、Provider実装、Deployは今後のPhaseです。
+未完了項目と安全上保留している機能は[`docs/TODO.md`](docs/TODO.md)および[`docs/ROADMAP.md`](docs/ROADMAP.md)を参照してください。
 
 ## 開発時の検証
 
