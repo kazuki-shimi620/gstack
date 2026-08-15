@@ -444,3 +444,13 @@ runtimeはSchema由来のresource、Model、Primary Key、Field allowlist、oper
 previewはProvider名、target Apps Script project ID、file名／type／source checksumの決定的な配列、targetと完全なbundleに結び付くSHA-256 fingerprintだけを返し、source本文、Spreadsheet ID、Drive folder ID、credential参照名、credential、tokenを出力しない。同じSchema、Config、Generatorから同じfingerprintを作り、source、runtime injection、target projectのいずれかが変わればfingerprintを変える。
 
 fingerprintは将来の明示Deploy approvalに使用する候補であり、この段階ではwrite権限を与えない。`gstack deploy`の非dry-runは、管理projectのstate照合、version／deploymentの冪等性、明示approvalが実装されるまで`DEPLOY_DRY_RUN_REQUIRED`で拒否する。MCPへDeployを追加しない。
+
+## D-066 Apps Script Version and Deployment Idempotency
+
+Apps Script content書き込み後のreleaseは、D-065 fingerprintを`gstack:<64-hex>` descriptionに持つimmutable versionと、固定description `gstack-managed`を持つ単一deploymentで表現する。version作成前に全pageをlistし、同じdescriptionが1件なら再利用、0件なら作成、複数なら競合として拒否する。deploymentも全pageをlistし、管理対象が0件なら作成、1件ならversion差分時だけ更新、複数なら競合として拒否する。管理対象でないdeploymentを変更・削除しない。
+
+versionのlist／createは`script.projects` scope、deploymentのlist／create／updateは`script.deployments` scopeを操作ごとに使用する。list GETだけをretry可能とし、version POST、deployment POST／PUTはresponse喪失時の重複・状態不明を避けるため自動retryしない。明示的なDeploy再実行は再listによって同一descriptionのversion／deploymentを回復する。
+
+list adapterは`nextPageToken`を最後まで辿り、token重複、100 page超過、不正responseを拒否する。deployment responseは正のversion number、非空deployment ID、管理description、単一のWEB_APP entry pointと非空URLを必須とする。結果は`created | updated | unchanged`、version number、deployment ID、Web App URLだけを返し、OAuth response、credential、token、生errorを含めない。source uploadとこのpublish serviceの順序・approval接続はRuntime契約で一体化する。
+
+参考: [projects.versions](https://developers.google.com/apps-script/api/reference/rest/v1/projects.versions)、[projects.deployments.list](https://developers.google.com/apps-script/api/reference/rest/v1/projects.deployments/list)、[projects.deployments.update](https://developers.google.com/apps-script/api/reference/rest/v1/projects.deployments/update)

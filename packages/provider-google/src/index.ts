@@ -82,6 +82,13 @@ export type {
 export { GoogleScriptHttpGateway } from './script-http.js';
 export { createGoogleScriptSourceBundle } from './script-bundle.js';
 export type { GoogleScriptDeployArtifact } from './script-bundle.js';
+export { GoogleDeployError, GoogleDeployService } from './deploy.js';
+export { GoogleDeployHttpGateway } from './deploy-http.js';
+export type {
+  GoogleDeployGateway,
+  GoogleDeployRequest,
+  GoogleDeploymentResult,
+} from './deploy.js';
 export {
   GSTACK_SCRIPT_MARKER_FILE,
   GSTACK_SCRIPT_MARKER_SOURCE,
