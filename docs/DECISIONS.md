@@ -474,3 +474,11 @@ gateはHistoryのstatusとsnapshotだけを参照し、Provider resource introsp
 Apps Script管理初期化は`gstack provider initialize google --dry-run`で、configured Script IDのcontentをreadし、D-062のbase manifest 1件だけであることを検証する。previewはScript ID、manifest sourceのSHA-256 checksum、operation／target／manifest checksumに結び付くfingerprintだけを返し、manifest本文、credential、tokenを出力しない。readにはreadonly projects scopeだけを使う。
 
 実初期化は同commandの`--approval <fingerprint>`を必須とし、最新contentを再readしてfingerprintを再計算し、一致した場合だけ既存manifestを保持して管理markerを追加する。dry-runとapprovalの同時指定、approval省略、content変更後の古いapproval、source／HTMLがあるproject、既に管理済みのprojectをwrite前に拒否する。初期化PUTはD-061どおり非retryとし、Deploy、generate、doctorがこの操作を暗黙実行しない。
+
+## D-070 Apps Script Runtime Field Validation
+
+Apps Script backend definitionは各公開ModelについてField名、type、required、unique、enum values、minLength／maxLength／pattern／min／maxをApplication Modelから決定的に埋め込む。createはrequired Fieldの存在、create／updateはunknown Field拒否と指定値の全ruleをSheets write前に検証する。Primary Keyはupdate pathと同値の場合以外変更を拒否する。
+
+型mappingはstring／textをstring、uuidを標準hyphen形式、integerをsafe integer、numberをfinite number、booleanをboolean、dateを`YYYY-MM-DD`の有効日、datetimeをparse可能なstring、enumを定義値、jsonをJSON requestで表現可能な値とする。string／number validationを該当型にだけ適用する。unique FieldはScript Lock内で既存rowを検査し、createでは全row、updateでは対象row以外との重複を拒否する。optionalなnull／空値は複数rowで許可する。
+
+検証失敗はsafeな`REQUEST_INVALID`、重複も内部詳細を公開せず同じsafe errorへ変換する。Schema permission roleとApps Script利用者identityの対応は未確定のため推測せず、Web App accessは引き続き`MYSELF`に限定する。role enforcementが確定するまでPublish accessを拡張しない。

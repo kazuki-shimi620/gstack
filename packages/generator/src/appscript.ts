@@ -18,6 +18,14 @@ export function generateAppsScriptBackendArtifacts(
       required: [...model.fields]
         .filter(({ required }) => required)
         .map(({ name }) => name),
+      rules: [...model.fields].map((field) => ({
+        name: field.name,
+        type: field.type,
+        required: field.required,
+        unique: field.unique,
+        enumValues: field.enumValues,
+        validation: field.validation,
+      })),
       create: model.api.create,
       update: model.api.update,
       delete: model.api.delete,
@@ -98,7 +106,7 @@ function gstackCreate_(definition, body) {
   lock.waitLock(30000);
   try {
     const existing = gstackList_(definition);
-    if (existing.some(function (item) { return String(item[definition.primaryKey]) === String(record[definition.primaryKey]); })) throw new Error('DUPLICATE');
+    gstackUnique_(definition, existing, record, null);
     gstackSheet_(definition).appendRow(definition.fields.map(function (name) { return record[name] === undefined ? '' : record[name]; }));
   } finally { lock.releaseLock(); }
   return record;
@@ -106,6 +114,7 @@ function gstackCreate_(definition, body) {
 
 function gstackUpdate_(definition, key, body) {
   const changes = gstackRecord_(definition, body, true);
+  if (Object.prototype.hasOwnProperty.call(changes, definition.primaryKey) && String(changes[definition.primaryKey]) !== key) throw new Error('INVALID');
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -116,6 +125,8 @@ function gstackUpdate_(definition, key, body) {
     if (rowIndex < 0) throw new Error('NOT_FOUND');
     const current = Object.fromEntries(table.header.map(function (name, index) { return [name, table.rows[rowIndex][index]]; }));
     Object.keys(changes).forEach(function (name) { current[name] = changes[name]; });
+    const existing = table.rows.map(function (row) { return Object.fromEntries(table.header.map(function (name, index) { return [name, row[index]]; })); });
+    gstackUnique_(definition, existing, current, rowIndex);
     sheet.getRange(rowIndex + 2, 1, 1, table.header.length).setValues([table.header.map(function (name) { return current[name]; })]);
     return current;
   } finally { lock.releaseLock(); }
@@ -139,7 +150,46 @@ function gstackRecord_(definition, body, partial) {
   const keys = Object.keys(body);
   if (keys.some(function (name) { return definition.fields.indexOf(name) < 0; })) throw new Error('INVALID');
   if (!partial && definition.required.some(function (name) { return !Object.prototype.hasOwnProperty.call(body, name); })) throw new Error('INVALID');
+  definition.rules.forEach(function (rule) {
+    if (Object.prototype.hasOwnProperty.call(body, rule.name) && !gstackValueValid_(rule, body[rule.name])) throw new Error('INVALID');
+  });
   return body;
+}
+
+function gstackValueValid_(rule, value) {
+  if (value === null) return !rule.required;
+  if (value === undefined) return !rule.required;
+  let valid = false;
+  if (rule.type === 'string' || rule.type === 'text') valid = typeof value === 'string';
+  if (rule.type === 'uuid') valid = typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  if (rule.type === 'integer') valid = typeof value === 'number' && Number.isSafeInteger(value);
+  if (rule.type === 'number') valid = typeof value === 'number' && Number.isFinite(value);
+  if (rule.type === 'boolean') valid = typeof value === 'boolean';
+  if (rule.type === 'date') valid = typeof value === 'string' && /^\\d{4}-\\d{2}-\\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + 'T00:00:00Z'));
+  if (rule.type === 'datetime') valid = typeof value === 'string' && !Number.isNaN(Date.parse(value));
+  if (rule.type === 'json') valid = true;
+  if (rule.type === 'enum') valid = typeof value === 'string' && rule.enumValues.indexOf(value) >= 0;
+  if (!valid) return false;
+  if (typeof value === 'string') {
+    if (rule.validation.minLength !== null && value.length < rule.validation.minLength) return false;
+    if (rule.validation.maxLength !== null && value.length > rule.validation.maxLength) return false;
+    if (rule.validation.pattern !== null && !new RegExp(rule.validation.pattern).test(value)) return false;
+  }
+  if (typeof value === 'number') {
+    if (rule.validation.min !== null && value < rule.validation.min) return false;
+    if (rule.validation.max !== null && value > rule.validation.max) return false;
+  }
+  return true;
+}
+
+function gstackUnique_(definition, existing, record, excludedIndex) {
+  definition.rules.filter(function (rule) { return rule.unique; }).forEach(function (rule) {
+    if (!Object.prototype.hasOwnProperty.call(record, rule.name)) return;
+    if (record[rule.name] === null || record[rule.name] === '') return;
+    if (existing.some(function (item, index) {
+      return index !== excludedIndex && String(item[rule.name]) === String(record[rule.name]);
+    })) throw new Error('DUPLICATE');
+  });
 }
 
 function gstackBody_(event) {

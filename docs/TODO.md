@@ -69,4 +69,5 @@
 - [x] Google Deploy buildの無副作用previewとtarget／bundle fingerprintを`DECISIONS.md` D-065で確定し、Runtimeと`gstack deploy --dry-run`へ実装した。
 - [x] fingerprintの再計算と明示approval、管理content全置換、version／deployment公開を`DECISIONS.md` D-067でRuntimeとCLIへ接続した。
 - [x] Deploy前に最新Historyがappliedかつ現在Application Model snapshotと一致することを確認するgateを`DECISIONS.md` D-068で実装した。
-- [ ] Apps Script runtimeへField型／validation／permission roleの実行時検証を追加して公開範囲を検討する。
+- [x] Apps Script runtimeへField型、required、enum、validation、unique、Primary Key不変の実行時検証を`DECISIONS.md` D-070で追加した。
+- [ ] Schema permission roleとApps Scriptアクセスidentityの対応を確定し、role enforcement後にPublish access拡張を検討する。

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runInNewContext } from 'node:vm';
 
 import { generateAppsScriptBackendArtifacts } from './appscript.js';
 
@@ -25,6 +26,37 @@ describe('Apps Script backend generator', () => {
     );
     expect(artifacts[1]!.content).not.toContain('internal');
     expect(artifacts[1]!.content).not.toContain('credential');
+    expect(artifacts[1]!.content).toContain('"type":"uuid"');
+    expect(artifacts[1]!.content).toContain('gstackValueValid_');
+  });
+
+  it('generated runtime validates required field types before write', () => {
+    const source = generateAppsScriptBackendArtifacts({
+      schemaVersion: 1,
+      name: 'sample',
+      metadata: {},
+      models: [model('users', 'users')],
+    })[1]!.content;
+    const validContext = { result: undefined as unknown };
+    runInNewContext(
+      `${source}\nresult = gstackRecord_(GSTACK_MODELS[0], { id: '123e4567-e89b-12d3-a456-426614174000' }, false);`,
+      validContext,
+    );
+    expect(validContext.result).toEqual({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+    });
+    expect(() =>
+      runInNewContext(
+        `${source}\ngstackRecord_(GSTACK_MODELS[0], { id: 'not-a-uuid' }, false);`,
+        {},
+      ),
+    ).toThrow('INVALID');
+    expect(() =>
+      runInNewContext(
+        `${source}\ngstackRecord_(GSTACK_MODELS[0], {}, false);`,
+        {},
+      ),
+    ).toThrow('INVALID');
   });
 
   it('is deterministic regardless of model order', () => {
