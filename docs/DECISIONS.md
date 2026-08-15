@@ -419,3 +419,11 @@ ownership確認のcontent GETは`script.projects.readonly` scopeでretry可能�
 既存Apps Script projectをgstack管理対象へ採用する初期化は、content readでJSON manifestがちょうど1件だけ存在し、SERVER_JS／HTMLや他fileが一切ない空projectと確認できる場合に限る。空projectの既存manifestをそのまま保持してD-061の管理markerだけを追加する完全置換とし、manifestのtimezone、runtime version、OAuth scope等を推測変更しない。
 
 source file、複数manifest、管理markerを含む既存projectは初期化を拒否する。手書きfileの自動退避、merge、上書き、既存管理projectの再初期化を行わない。readにはreadonly scope、writeにはprojects scopeを個別に使い、初期化PUTもresponse喪失時に自動retryしない。CLIから公開する場合はProject Initializationの明示commandとpreview／approvalを別途必須とし、通常のgenerate、doctor、deployが暗黙初期化してはならない。
+
+## D-063 Apps Script Generated Bundle Boundary
+
+GeneratorはProviderへ依存せず、Apps Script backend producerが所有するdeploy入力を`generated/backend/appsscript/`直下へ出力する。MVPの入力は`appsscript.json` manifestをちょうど1件、1件以上の`.gs` server source、optionalな`.html` sourceとする。flatなlower snake-case file名だけを許可し、subdirectory、未知拡張子、管理用予約名、他Generator成果物との混在を拒否する。
+
+Google Providerはこの明示的な成果物集合をApps Script APIの`JSON | SERVER_JS | HTML` fileへpureに変換し、configured Spreadsheet IDだけを`gstack_config` server fileへJSON string literalとして注入し、D-061の管理markerを追加する。Apps Script project ID、Drive folder ID、credential参照名、credential値、tokenはbundleへ含めない。GeneratorはGoogle Provider configurationを読まず、Google ProviderはApplication ModelやGenerator packageへ依存しない。
+
+bundle変換だけではbuild／deploy成功を意味しない。Generator producer、generated manifestによるchecksum照合、管理projectへのwrite、version作成、deployment公開はそれぞれ別の段階とし、通常Generator成果物やmanual fileを推測してuploadしてはならない。
