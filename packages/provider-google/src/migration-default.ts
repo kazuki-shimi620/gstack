@@ -14,6 +14,7 @@ import {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
   GoogleSheetsDropColumnService,
+  GoogleSheetsDropModelService,
   GoogleSheetsRenameColumnService,
 } from './sheets-migration.js';
 import type { DefaultGoogleProviderOptions } from './default.js';
@@ -67,6 +68,7 @@ export function createDefaultGoogleMigrationComponents(
       new GoogleSheetsAddColumnService(sheets, config, secrets),
       new GoogleSheetsRenameColumnService(sheets, config, secrets),
       new GoogleSheetsDropColumnService(sheets, config, secrets),
+      new GoogleSheetsDropModelService(sheets, config, secrets),
     ),
   });
 }

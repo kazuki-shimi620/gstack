@@ -11,6 +11,7 @@ import type {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
   GoogleSheetsDropColumnService,
+  GoogleSheetsDropModelService,
   GoogleSheetsRenameColumnService,
 } from './sheets-migration.js';
 
@@ -20,6 +21,7 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
     private readonly addColumn: GoogleSheetsAddColumnService,
     private readonly renameColumn: GoogleSheetsRenameColumnService,
     private readonly dropColumn: GoogleSheetsDropColumnService,
+    private readonly dropModel: GoogleSheetsDropModelService,
   ) {}
 
   async execute(
@@ -38,6 +40,9 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
         return;
       case 'drop_column':
         await this.dropColumn.execute(operation, context.migrationChecksum);
+        return;
+      case 'drop_model':
+        await this.dropModel.execute(operation, context.migrationChecksum);
         return;
       default:
         throw new GoogleMigrationOperationError(

@@ -1009,7 +1009,7 @@ Providerは以下を担当しない。
 
 Google Sheetsへの最初のMigration writeは`DECISIONS.md` D-053を規範とする。`create_model`をatomicなbatchUpdate、管理用Developer Metadata、明示resumeによるidempotency確認で実装する。Google固有request、quota、markerはGoogle Provider内に閉じ込め、Migration EngineやMigration Fileへ書かない。
 
-Google Sheetsの`add_column`は`DECISIONS.md` D-056を規範とする。連続headerの末尾へ既存dataを削除せず列を追加し、列範囲の管理marker、atomic batch、非retry write、明示resume時のstate再照合を使う。`create_model`と`add_column`以外のGoogle Migration Operationは、個別契約が確定するまで`unsupported`とする。
+Google Sheetsの`add_column`は`DECISIONS.md` D-056を規範とする。連続headerの末尾へ既存dataを削除せず列を追加し、列範囲の管理marker、atomic batch、非retry write、明示resume時のstate再照合を使う。`rename_column`、`drop_column`、`drop_model`はそれぞれD-082、D-083、D-084を規範とし、破壊操作はCoreの明示承認に加えてProviderでも厳密な事前状態を検証する。それ以外のGoogle Migration Operationは、個別契約が確定するまで`unsupported`とする。
 
 MVPのProvider Manifest、factory／session lifecycle、Secret Resolver境界、safe health、memory Registryは`DECISIONS.md` D-036を規範とする。package install、dynamic import、credential storageはこのFoundationに含めない。
 
@@ -1033,7 +1033,13 @@ providers:
 参照先の値は次のkeyだけを持つ1行JSONである。以下は形式説明用の明らかなplaceholderであり、実credentialをrepositoryへ保存してはいけない。
 
 ```json
-{"formatVersion":1,"type":"authorized_user","clientId":"example-client-id","clientSecret":"example-client-secret","refreshToken":"example-refresh-token"}
+{
+  "formatVersion": 1,
+  "type": "authorized_user",
+  "clientId": "example-client-id",
+  "clientSecret": "example-client-secret",
+  "refreshToken": "example-refresh-token"
+}
 ```
 
 local shellではsessionまたは利用中のsecret managerから`GSTACK_GOOGLE_CREDENTIAL`を注入し、CIではmasked secretを同名の環境変数へ割り当てる。gstackは`.env`を自動読込せず、credential fileやtoken cacheをProject内へ作らない。`provider validate`はoffline検証なのでsecretを読まず、実接続を伴う`provider health`、Migration read／applyなどで初めて解決する。

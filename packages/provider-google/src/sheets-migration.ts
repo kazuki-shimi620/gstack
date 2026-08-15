@@ -2,6 +2,7 @@ import type {
   AddColumnOperation,
   CreateModelOperation,
   DropColumnOperation,
+  DropModelOperation,
   RenameColumnOperation,
 } from '@gstack/migration';
 import type { ProviderSecretResolver } from '@gstack/provider';
@@ -39,6 +40,12 @@ export interface GoogleSheetsBatchUpdateGateway {
     readonly credential: GoogleCredentialRequest;
     readonly secrets: ProviderSecretResolver;
   }): Promise<unknown>;
+  inspectDropModel(input: {
+    readonly spreadsheetId: string;
+    readonly sheetTitle: string;
+    readonly credential: GoogleCredentialRequest;
+    readonly secrets: ProviderSecretResolver;
+  }): Promise<unknown>;
   batchUpdate(input: {
     readonly spreadsheetId: string;
     readonly credential: GoogleCredentialRequest;
@@ -65,6 +72,11 @@ export type GoogleSheetsRenameColumnGateway = Pick<
 export type GoogleSheetsDropColumnGateway = Pick<
   GoogleSheetsBatchUpdateGateway,
   'inspectDropColumn' | 'batchUpdate'
+>;
+
+export type GoogleSheetsDropModelGateway = Pick<
+  GoogleSheetsBatchUpdateGateway,
+  'inspectDropModel' | 'batchUpdate'
 >;
 
 export interface AddColumnAbsentState {
@@ -104,6 +116,17 @@ export interface DropColumnAppliedState {
 }
 
 export type DropColumnState = DropColumnAbsentState | DropColumnAppliedState;
+
+export interface DropModelAbsentState {
+  readonly status: 'absent';
+  readonly sheetId: number;
+}
+
+export interface DropModelAppliedState {
+  readonly status: 'applied';
+}
+
+export type DropModelState = DropModelAbsentState | DropModelAppliedState;
 
 export class GoogleSheetsMigrationError extends Error {
   public constructor(
@@ -331,6 +354,58 @@ export class GoogleSheetsDropColumnService {
         credential,
         secrets: this.secrets,
         requests: dropColumnBatchRequests(operation, migrationChecksum, state),
+      });
+    } catch (error: unknown) {
+      throw new GoogleSheetsMigrationError(
+        'GOOGLE_SHEETS_WRITE_FAILED',
+        'Google Sheets Migration Operation failed.',
+        { cause: error },
+      );
+    }
+    validateWriteResponse(response, this.config.spreadsheetId);
+  }
+}
+
+export class GoogleSheetsDropModelService {
+  public constructor(
+    private readonly gateway: GoogleSheetsDropModelGateway,
+    private readonly config: GoogleProviderConfig,
+    private readonly secrets: ProviderSecretResolver,
+  ) {}
+
+  async execute(
+    operation: DropModelOperation,
+    migrationChecksum: string,
+  ): Promise<void> {
+    validateChecksum(migrationChecksum);
+    const credential = googleCredentialRequest(
+      this.config.authentication.credentialSecret,
+      'database_write',
+    );
+    let value: unknown;
+    try {
+      value = await this.gateway.inspectDropModel({
+        spreadsheetId: this.config.spreadsheetId,
+        sheetTitle: operation.model,
+        credential,
+        secrets: this.secrets,
+      });
+    } catch (error: unknown) {
+      throw new GoogleSheetsMigrationError(
+        'GOOGLE_SHEETS_WRITE_FAILED',
+        'Google Sheets Migration state could not be read.',
+        { cause: error },
+      );
+    }
+    const state = inspectDropModelState(value, operation, migrationChecksum);
+    if (state.status === 'applied') return;
+    let response: unknown;
+    try {
+      response = await this.gateway.batchUpdate({
+        spreadsheetId: this.config.spreadsheetId,
+        credential,
+        secrets: this.secrets,
+        requests: dropModelBatchRequests(operation, migrationChecksum, state),
       });
     } catch (error: unknown) {
       throw new GoogleSheetsMigrationError(
@@ -921,6 +996,153 @@ export function dropColumnBatchRequests(
           metadataKey: GSTACK_OPERATION_METADATA_KEY,
           metadataValue: `${migrationChecksum}:${operation.id}`,
           location: Object.freeze({ sheetId: state.sheetId }),
+          visibility: 'DOCUMENT',
+        }),
+      }),
+    }),
+  ]);
+}
+
+export function inspectDropModelState(
+  value: unknown,
+  operation: DropModelOperation,
+  migrationChecksum: string,
+): DropModelState {
+  validateChecksum(migrationChecksum);
+  const expectedHeaders = operation.previous.fields.map(({ name }) => name);
+  if (
+    operation.previous.name !== operation.model ||
+    operation.risk !== 'destructive' ||
+    !operation.destructive ||
+    operation.reversible ||
+    expectedHeaders.some((header) => !header.trim()) ||
+    new Set(expectedHeaders).size !== expectedHeaders.length
+  ) {
+    throw new GoogleSheetsMigrationError(
+      'GOOGLE_MIGRATION_OPERATION_INVALID',
+      'Google Sheets drop_model Operation is invalid.',
+    );
+  }
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.sheets) ||
+    !Array.isArray(value.metadata)
+  ) {
+    invalidState();
+  }
+  const expectedSheetId = stableSheetId(operation.model);
+  const expectedMarker = `${migrationChecksum}:${operation.id}`;
+  const matchingMarkers: Record<string, unknown>[] = [];
+  for (const metadata of value.metadata) {
+    if (
+      !isRecord(metadata) ||
+      typeof metadata.key !== 'string' ||
+      typeof metadata.value !== 'string' ||
+      !isRecord(metadata.location)
+    ) {
+      invalidState();
+    }
+    if (
+      metadata.key === GSTACK_OPERATION_METADATA_KEY &&
+      metadata.value === expectedMarker
+    ) {
+      matchingMarkers.push(metadata);
+    }
+  }
+  if (matchingMarkers.length > 1) conflict();
+  const marker = matchingMarkers[0];
+  if (
+    marker &&
+    ((marker.location as Record<string, unknown>).spreadsheet !== true ||
+      Object.keys(marker.location as Record<string, unknown>).some(
+        (key) => key !== 'spreadsheet',
+      ))
+  ) {
+    conflict();
+  }
+
+  let target: Record<string, unknown> | null = null;
+  for (const sheet of value.sheets) {
+    if (
+      !isRecord(sheet) ||
+      !Number.isSafeInteger(sheet.sheetId) ||
+      typeof sheet.title !== 'string' ||
+      !Array.isArray(sheet.headers) ||
+      !Array.isArray(sheet.metadata)
+    ) {
+      invalidState();
+    }
+    const sameId = sheet.sheetId === expectedSheetId;
+    const sameTitle = sheet.title === operation.model;
+    if (sameId || sameTitle) {
+      if (!(sameId && sameTitle) || target) conflict();
+      target = sheet;
+    }
+  }
+  if (!target) {
+    if (!marker) conflict();
+    return Object.freeze({ status: 'applied' });
+  }
+  if (marker || value.sheets.length <= 1) conflict();
+  const headers = target.headers as unknown[];
+  if (
+    headers.length !== expectedHeaders.length ||
+    headers.some((header, index) => header !== expectedHeaders[index])
+  ) {
+    conflict();
+  }
+  let modelMarkerCount = 0;
+  for (const metadata of target.metadata as unknown[]) {
+    if (
+      !isRecord(metadata) ||
+      typeof metadata.key !== 'string' ||
+      typeof metadata.value !== 'string' ||
+      !isRecord(metadata.location)
+    ) {
+      invalidState();
+    }
+    if (metadata.key !== GSTACK_MODEL_METADATA_KEY) continue;
+    modelMarkerCount += 1;
+    const [modelChecksum, ...modelOperationParts] = metadata.value.split(':');
+    if (
+      !modelChecksum ||
+      !/^[a-f0-9]{64}$/u.test(modelChecksum) ||
+      modelOperationParts.join(':') !==
+        `create_model:${operation.model}:${operation.model}` ||
+      metadata.location.sheetId !== expectedSheetId
+    ) {
+      conflict();
+    }
+  }
+  if (modelMarkerCount !== 1) conflict();
+  return Object.freeze({ status: 'absent', sheetId: expectedSheetId });
+}
+
+export function dropModelBatchRequests(
+  operation: DropModelOperation,
+  migrationChecksum: string,
+  state: DropModelAbsentState,
+): readonly Readonly<Record<string, unknown>>[] {
+  validateChecksum(migrationChecksum);
+  if (
+    state.status !== 'absent' ||
+    state.sheetId !== stableSheetId(operation.model)
+  ) {
+    throw new GoogleSheetsMigrationError(
+      'GOOGLE_MIGRATION_OPERATION_INVALID',
+      'Google Sheets drop_model state is invalid.',
+    );
+  }
+  return Object.freeze([
+    Object.freeze({
+      deleteSheet: Object.freeze({ sheetId: state.sheetId }),
+    }),
+    Object.freeze({
+      createDeveloperMetadata: Object.freeze({
+        developerMetadata: Object.freeze({
+          metadataKey: GSTACK_OPERATION_METADATA_KEY,
+          metadataValue: `${migrationChecksum}:${operation.id}`,
+          location: Object.freeze({ spreadsheet: true }),
           visibility: 'DOCUMENT',
         }),
       }),

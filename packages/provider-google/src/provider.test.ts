@@ -55,13 +55,15 @@ describe('Google Provider foundation', () => {
         googleProviderManifest.migrationSupport.add_column === 'native' &&
         googleProviderManifest.migrationSupport.rename_column === 'native' &&
         googleProviderManifest.migrationSupport.drop_column === 'native' &&
+        googleProviderManifest.migrationSupport.drop_model === 'native' &&
         Object.entries(googleProviderManifest.migrationSupport)
           .filter(
             ([operation]) =>
               operation !== 'create_model' &&
               operation !== 'add_column' &&
               operation !== 'rename_column' &&
-              operation !== 'drop_column',
+              operation !== 'drop_column' &&
+              operation !== 'drop_model',
           )
           .every(([, support]) => support === 'unsupported'),
     ).toBe(true);

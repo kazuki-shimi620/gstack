@@ -17,6 +17,7 @@ describe('Google Migration capability mapping', () => {
       operation('add:user:name', 'add_column'),
       operation('rename:user:name:display_name', 'rename_column'),
       operation('drop:user:legacy', 'drop_column'),
+      operation('drop-model:user', 'drop_model'),
       operation('index:user:name', 'add_index'),
     ];
     const results = evaluateGoogleMigrationCapabilities(operations);
@@ -28,6 +29,7 @@ describe('Google Migration capability mapping', () => {
         capability: 'native',
       },
       { operationId: 'drop:user:legacy', capability: 'native' },
+      { operationId: 'drop-model:user', capability: 'native' },
       { operationId: 'index:user:name', capability: 'unsupported' },
     ]);
     expect(Object.isFrozen(results)).toBe(true);
@@ -44,11 +46,13 @@ describe('Google Migration capability mapping', () => {
     const addColumn = vi.fn();
     const renameColumn = vi.fn();
     const dropColumn = vi.fn();
+    const dropModel = vi.fn();
     const executor = new GoogleMigrationOperationExecutor(
       { execute: createModel } as never,
       { execute: addColumn } as never,
       { execute: renameColumn } as never,
       { execute: dropColumn } as never,
+      { execute: dropModel } as never,
     );
     const create = operation('create:user', 'create_model');
     await executor.execute(create, {
@@ -85,6 +89,15 @@ describe('Google Migration capability mapping', () => {
       idempotencyKey: `key:${drop.id}`,
     });
     expect(dropColumn).toHaveBeenCalledWith(drop, 'a'.repeat(64));
+
+    const dropModelOperation = operation('drop-model:user', 'drop_model');
+    await executor.execute(dropModelOperation, {
+      migrationVersion: '20260813_000001',
+      migrationChecksum: 'a'.repeat(64),
+      operationId: dropModelOperation.id,
+      idempotencyKey: `key:${dropModelOperation.id}`,
+    });
+    expect(dropModel).toHaveBeenCalledWith(dropModelOperation, 'a'.repeat(64));
 
     await expect(
       executor.execute(operation('index:user:name', 'add_index'), {

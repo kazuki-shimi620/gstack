@@ -4,6 +4,7 @@ import type {
   AddColumnOperation,
   CreateModelOperation,
   DropColumnOperation,
+  DropModelOperation,
   RenameColumnOperation,
 } from '@gstack/migration';
 
@@ -12,13 +13,16 @@ import {
   addColumnBatchRequests,
   createModelBatchRequests,
   dropColumnBatchRequests,
+  dropModelBatchRequests,
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
   GoogleSheetsDropColumnService,
+  GoogleSheetsDropModelService,
   GoogleSheetsRenameColumnService,
   inspectAddColumnState,
   inspectCreateModelState,
   inspectDropColumnState,
+  inspectDropModelState,
   inspectRenameColumnState,
   renameColumnBatchRequests,
   stableSheetId,
@@ -55,6 +59,18 @@ const dropColumn = {
   reversible: false,
   previous: { name: 'legacy' },
 } as unknown as DropColumnOperation;
+const dropModel = {
+  id: 'drop_model:users:users',
+  type: 'drop_model',
+  model: 'users',
+  risk: 'destructive',
+  destructive: true,
+  reversible: false,
+  previous: {
+    name: 'users',
+    fields: [{ name: 'id' }, { name: 'email' }],
+  },
+} as unknown as DropModelOperation;
 
 describe('Google Sheets create_model mapper', () => {
   it('決定的なSheet、header、管理markerを1 batchへ変換する', () => {
@@ -620,6 +636,96 @@ describe('Google Sheets drop_column service', () => {
   });
 });
 
+describe('Google Sheets drop_model mapper', () => {
+  it('Sheet削除とSpreadsheet-level markerを1 batchへ変換する', () => {
+    const sheetId = stableSheetId('users');
+    expect(
+      dropModelBatchRequests(dropModel, checksum, {
+        status: 'absent',
+        sheetId,
+      }),
+    ).toEqual([
+      { deleteSheet: { sheetId } },
+      {
+        createDeveloperMetadata: {
+          developerMetadata: {
+            metadataKey: 'gstack_operation',
+            metadataValue: `${checksum}:${dropModel.id}`,
+            location: { spreadsheet: true },
+            visibility: 'DOCUMENT',
+          },
+        },
+      },
+    ]);
+  });
+
+  it('管理markerと過去headerが一致するSheetだけを削除可能とする', () => {
+    expect(
+      inspectDropModelState(dropModelState(), dropModel, checksum),
+    ).toEqual({
+      status: 'absent',
+      sheetId: stableSheetId('users'),
+    });
+    expect(() =>
+      inspectDropModelState(
+        dropModelState({ headers: ['id', 'changed'] }),
+        dropModel,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+  });
+
+  it('Sheet消失とSpreadsheet-level marker一致を適用済みとする', () => {
+    expect(
+      inspectDropModelState(
+        dropModelState({ absent: true, rootMetadata: [dropModelMarker()] }),
+        dropModel,
+        checksum,
+      ),
+    ).toEqual({ status: 'applied' });
+    expect(() =>
+      inspectDropModelState(
+        dropModelState({ absent: true }),
+        dropModel,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+    expect(() =>
+      inspectDropModelState(
+        dropModelState({ rootMetadata: [dropModelMarker()] }),
+        dropModel,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+  });
+});
+
+describe('Google Sheets drop_model service', () => {
+  it('atomic batchを実行しSpreadsheet marker一致ではskipする', async () => {
+    const batchUpdate = vi.fn().mockResolvedValue({ spreadsheetId: 'sheet-1' });
+    const inspectDropModel = vi
+      .fn()
+      .mockResolvedValueOnce(dropModelState())
+      .mockResolvedValueOnce(
+        dropModelState({ absent: true, rootMetadata: [dropModelMarker()] }),
+      );
+    const service = new GoogleSheetsDropModelService(
+      { inspectDropModel, batchUpdate },
+      config,
+      { get: vi.fn() },
+    );
+    await service.execute(dropModel, checksum);
+    await service.execute(dropModel, checksum);
+    expect(batchUpdate).toHaveBeenCalledTimes(1);
+  });
+});
+
 function addColumnState(
   overrides: {
     headers?: readonly unknown[];
@@ -737,6 +843,45 @@ function dropOperationMarker(columnIndex?: number): unknown {
             startIndex: columnIndex,
             endIndex: columnIndex + 1,
           },
+  };
+}
+
+function dropModelState(
+  overrides: {
+    absent?: boolean;
+    headers?: readonly unknown[];
+    rootMetadata?: readonly unknown[];
+  } = {},
+): unknown {
+  return {
+    metadata: overrides.rootMetadata ?? [],
+    sheets: [
+      ...(overrides.absent
+        ? []
+        : [
+            {
+              sheetId: stableSheetId('users'),
+              title: 'users',
+              headers: overrides.headers ?? ['id', 'email'],
+              metadata: [
+                {
+                  key: 'gstack_model',
+                  value: `${'c'.repeat(64)}:create_model:users:users`,
+                  location: { sheetId: stableSheetId('users') },
+                },
+              ],
+            },
+          ]),
+      { sheetId: 999, title: 'other', headers: [], metadata: [] },
+    ],
+  };
+}
+
+function dropModelMarker(): unknown {
+  return {
+    key: 'gstack_operation',
+    value: `${checksum}:${dropModel.id}`,
+    location: { spreadsheet: true },
   };
 }
 

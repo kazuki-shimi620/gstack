@@ -211,6 +211,115 @@ describe('Google Sheets Migration HTTP gateway', () => {
     });
   });
 
+  it('drop_model用にSpreadsheet markerを先に取得し対象Sheetだけheaderを読む', async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        body: JSON.stringify({
+          developerMetadata: [
+            {
+              metadataKey: 'gstack_operation',
+              metadataValue: 'drop-marker',
+              location: { spreadsheet: true },
+            },
+          ],
+          sheets: [
+            {
+              properties: { sheetId: 10, title: 'users' },
+              developerMetadata: [
+                {
+                  metadataKey: 'gstack_model',
+                  metadataValue: 'model-marker',
+                  location: { sheetId: 10 },
+                },
+              ],
+            },
+            { properties: { sheetId: 20, title: 'other' } },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        body: JSON.stringify({
+          sheets: [
+            {
+              properties: {
+                sheetId: 10,
+                title: 'users',
+                gridProperties: { columnCount: 10 },
+              },
+              data: [
+                {
+                  rowData: [
+                    {
+                      values: [
+                        { userEnteredValue: { stringValue: 'id' } },
+                        { userEnteredValue: { stringValue: 'email' } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+    const gateway = new GoogleSheetsMigrationHttpGateway(
+      { execute },
+      {
+        refresh: vi.fn().mockResolvedValue({
+          accessToken: 'token',
+          expiresAt: '2026-08-13T01:00:00.000Z',
+          scopes: ['scope'],
+        }),
+      },
+      () => new Date('2026-08-13T00:00:00.000Z'),
+    );
+    await expect(
+      gateway.inspectDropModel({
+        spreadsheetId: 'id',
+        sheetTitle: 'users',
+        credential: { credentialSecret: 'SECRET', scopes: ['scope'] },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+      }),
+    ).resolves.toEqual({
+      metadata: [
+        {
+          key: 'gstack_operation',
+          value: 'drop-marker',
+          location: { spreadsheet: true },
+        },
+      ],
+      sheets: [
+        {
+          sheetId: 10,
+          title: 'users',
+          headers: ['id', 'email'],
+          metadata: [
+            {
+              key: 'gstack_model',
+              value: 'model-marker',
+              location: { sheetId: 10 },
+            },
+          ],
+        },
+        { sheetId: 20, title: 'other', headers: [], metadata: [] },
+      ],
+    });
+    expect(execute).toHaveBeenCalledTimes(2);
+    expect(
+      new URL(execute.mock.calls[0]?.[0].url).searchParams.get(
+        'includeGridData',
+      ),
+    ).toBe('false');
+    expect(
+      new URL(execute.mock.calls[1]?.[0].url).searchParams.get('ranges'),
+    ).toBe("'users'!1:1");
+  });
+
   it('不正JSON responseを拒否する', async () => {
     const gateway = new GoogleSheetsMigrationHttpGateway(
       {

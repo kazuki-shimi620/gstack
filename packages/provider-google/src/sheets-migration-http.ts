@@ -84,6 +84,53 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
     return this.inspectColumns(input);
   }
 
+  async inspectDropModel(
+    input: Parameters<GoogleSheetsBatchUpdateGateway['inspectDropModel']>[0],
+  ): Promise<unknown> {
+    const credential = await this.authorize(input);
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(input.spreadsheetId)}`,
+    );
+    url.searchParams.set('includeGridData', 'false');
+    url.searchParams.set(
+      'fields',
+      'developerMetadata(metadataKey,metadataValue,location(spreadsheet)),sheets(properties(sheetId,title),developerMetadata(metadataKey,metadataValue,location(sheetId,dimensionRange(sheetId,dimension,startIndex,endIndex))))',
+    );
+    const response = await this.http.execute({
+      method: 'GET',
+      url: url.href,
+      headers: {
+        accept: 'application/json',
+        authorization: `Bearer ${credential.accessToken}`,
+      },
+      body: null,
+      retryable: true,
+    });
+    const summary = normalizeDropModelSummary(parseJson(response.body));
+    const target = summary.sheets.find(
+      ({ title }) => title === input.sheetTitle,
+    );
+    if (!target) return summary;
+    const columns = await this.inspectColumns(input);
+    if (!isRecord(columns) || !Array.isArray(columns.sheets)) {
+      invalidStateResponse();
+    }
+    const detail = columns.sheets.find(
+      (sheet) => isRecord(sheet) && sheet.title === input.sheetTitle,
+    );
+    if (!isRecord(detail) || detail.sheetId !== target.sheetId) {
+      invalidStateResponse();
+    }
+    return {
+      metadata: summary.metadata,
+      sheets: summary.sheets.map((sheet) =>
+        sheet.sheetId === target.sheetId
+          ? { ...sheet, headers: detail.headers }
+          : sheet,
+      ),
+    };
+  }
+
   private async inspectColumns(input: {
     readonly spreadsheetId: string;
     readonly sheetTitle: string;
@@ -202,6 +249,49 @@ function normalizeAddColumnState(value: unknown): unknown {
         title: sheet.properties.title,
         columnCount: sheet.properties.gridProperties.columnCount,
         headers: values.map(headerValue),
+        metadata: Array.isArray(sheet.developerMetadata)
+          ? sheet.developerMetadata.map(normalizeMetadata)
+          : [],
+      };
+    }),
+  };
+}
+
+function normalizeDropModelSummary(value: unknown): {
+  readonly metadata: readonly {
+    readonly key: unknown;
+    readonly value: unknown;
+    readonly location: { readonly spreadsheet: unknown };
+  }[];
+  readonly sheets: readonly {
+    readonly sheetId: unknown;
+    readonly title: unknown;
+    readonly headers: readonly never[];
+    readonly metadata: readonly unknown[];
+  }[];
+} {
+  if (!isRecord(value) || !Array.isArray(value.sheets)) invalidStateResponse();
+  const metadata = value.developerMetadata ?? [];
+  if (!Array.isArray(metadata)) invalidStateResponse();
+  return {
+    metadata: metadata.map((entry) => {
+      if (!isRecord(entry) || !isRecord(entry.location)) {
+        invalidStateResponse();
+      }
+      return {
+        key: entry.metadataKey,
+        value: entry.metadataValue,
+        location: { spreadsheet: entry.location.spreadsheet },
+      };
+    }),
+    sheets: value.sheets.map((sheet) => {
+      if (!isRecord(sheet) || !isRecord(sheet.properties)) {
+        invalidStateResponse();
+      }
+      return {
+        sheetId: sheet.properties.sheetId,
+        title: sheet.properties.title,
+        headers: [],
         metadata: Array.isArray(sheet.developerMetadata)
           ? sheet.developerMetadata.map(normalizeMetadata)
           : [],

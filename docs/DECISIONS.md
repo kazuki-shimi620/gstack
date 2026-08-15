@@ -311,7 +311,7 @@ MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知
 
 Google ProviderのMigration capability結果はManifestのoperation type別supportを唯一のsourceとして、入力Planの全Operation IDへ順序を保持して射影する。結果をMigration packageの共通`applyCapabilityResults`へ渡し、欠落／重複／未知IDの検証とPlan集約を再利用する。Google Provider側で独自Planや独自applicability規則を実装しない。
 
-初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`は各条件を満たして`native`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
+初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`、D-084の`drop_model`は各条件を満たして`native`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
 
 ## D-051 Migration Rollback Plan
 
@@ -580,3 +580,11 @@ Google Providerの`drop_column`はCoreで`destructive: true`、`reversible: fals
 read-before-writeではstable sheet ID／title、単一Model marker、連続かつ一意なheader、grid column countを検証する。未適用は対象headerが存在して同Operation markerがない状態、適用済みはheaderがなく同checksum／Operation IDのsheet-level markerが1件ある状態だけとする。markerなしでheaderが欠落、markerがあるのにheaderが残存、column位置に誤配置されたmarker、最後のgrid columnを削除する要求は競合として拒否する。
 
 writeは`deleteDimension`とsheet-level `gstack_operation` metadata作成を単一非retry `spreadsheets.batchUpdate`で行う。markerを削除対象columnへ置かないため、response喪失後も再readで適用済みを判定できる。OAuthは`database_write` scopeを使い、safe error変換を共有する。rollbackは不可逆として公開せず、data backup／restoreの別契約なしに`add_column`で代替してはいけない。これらのtestと標準Runtime接続を条件にManifestの`drop_column`を`native`へ昇格する。
+
+## D-084 Google Sheets Drop Model Migration
+
+Google Providerの`drop_model`はCoreで`destructive: true`、`reversible: false`と評価されたOperationだけを対象とし、Migration Applyのfingerprint approvalに加えて`--allow-destructive`がない実行はProvider到達前に拒否する。Providerは`previous.name`と一致する管理対象Sheetを削除し、全cell、format、formula、Sheet固有metadataが失われることを隠さない。backupや暗黙restoreは行わず、削除後に空のSheetを再作成してrollback相当と扱わない。
+
+write前には決定的なSheet ID／title、`previous.fields`と完全一致するheader順、唯一で正しいModel markerを検証し、drift時は競合として停止する。Spreadsheetには最低1枚のSheetが必要なため、対象が最後の1枚なら実行を拒否する。readは最初にSpreadsheet直下metadataとSheet一覧だけを取得し、対象が存在する場合に限り対象Sheetのheader行を追加取得する。対象が存在せずSpreadsheet直下のOperation markerが一致する場合だけ適用済みと判定する。
+
+writeは`deleteSheet`とSpreadsheet直下の`gstack_operation` metadata作成を単一非retry `spreadsheets.batchUpdate`で行う。markerを削除対象Sheetへ置かないため、response喪失後も再readで適用済みを判定できる。OAuthは`database_write` scopeを使い、safe error変換を共有する。rollbackは不可逆として公開しない。これらのtestと標準Runtime接続を条件にManifestの`drop_model`を`native`へ昇格する。
