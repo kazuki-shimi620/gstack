@@ -204,6 +204,8 @@ CLIだけでアプリケーションを公開できるようにする。
 - Project Initialization
 - Local Development
 
+Status: BuildはApplication Modelからprivate Apps Script Web App sourceを決定的に生成し、Google bundleへ変換する。Deployは無副作用`--dry-run`、target／bundle fingerprint、明示`--approval`、管理project限定content更新、冪等version／deployment公開まで実装済み。Project Initialization CLI、Migration最新確認gate、runtime validation／permission強化、Publish access拡張、Local Developmentは未実装。
+
 ---
 
 # 9. Version 0.6 - Plugin System

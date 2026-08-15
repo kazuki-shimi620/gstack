@@ -11,12 +11,14 @@ import {
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollbackFile,
   prepareStandardGoogleDeploy,
+  deployStandardGoogle,
 } from '@gstack/runtime';
 import { Command } from 'commander';
 
 import {
   formatErrorHuman,
   formatDeployPreviewHuman,
+  formatDeployResultHuman,
   formatGenerationHuman,
   formatJson,
   formatMigrationHistoryHuman,
@@ -59,6 +61,10 @@ export interface ProgramServices {
   readonly prepareDeploy?: (
     project: GstackProject,
   ) => ReturnType<typeof prepareStandardGoogleDeploy>;
+  readonly executeDeploy?: (
+    project: GstackProject,
+    approval: string,
+  ) => ReturnType<typeof deployStandardGoogle>;
 }
 
 const defaultServices: ProgramServices = {
@@ -70,6 +76,8 @@ const defaultServices: ProgramServices = {
   prepareMigrationRollbackFile: (project, filePath) =>
     prepareStandardGoogleMigrationRollbackFile({ project, filePath }),
   prepareDeploy: (project) => prepareStandardGoogleDeploy({ project }),
+  executeDeploy: (project, approval) =>
+    deployStandardGoogle({ project, approval }),
 };
 
 export function createProgram(
@@ -382,32 +390,57 @@ export function createProgram(
     .command('deploy')
     .description('Build and deploy the configured application')
     .option('--dry-run', 'build and preview without changing Provider state')
+    .option('--approval <fingerprint>', 'approve the exact Deploy build')
     .option('--json', 'output structured JSON')
-    .action(async (options: { dryRun?: boolean; json?: boolean }) => {
-      await withProjectOutput(
-        io,
-        options.json,
-        async (project) => {
-          if (!options.dryRun) {
-            throw new GstackError({
-              code: 'DEPLOY_DRY_RUN_REQUIRED',
-              category: 'deploy',
-              message: 'Deploy is available as dry-run only.',
-              hint: 'Pass --dry-run to inspect the exact Deploy build.',
-            });
-          }
-          const preview = await (
-            services.prepareDeploy ??
-            ((selected) => prepareStandardGoogleDeploy({ project: selected }))
-          )(project);
-          return {
-            data: { dryRun: true, deploy: preview },
-            human: formatDeployPreviewHuman(preview),
-          };
-        },
-        services.loadProject,
-      );
-    });
+    .action(
+      async (options: {
+        dryRun?: boolean;
+        approval?: string;
+        json?: boolean;
+      }) => {
+        await withProjectOutput(
+          io,
+          options.json,
+          async (project) => {
+            if (options.dryRun && options.approval) {
+              throw new GstackError({
+                code: 'DEPLOY_APPROVAL_INVALID',
+                category: 'deploy',
+                message: 'Deploy dry-run cannot include approval.',
+              });
+            }
+            if (!options.dryRun && !options.approval) {
+              throw new GstackError({
+                code: 'DEPLOY_APPROVAL_REQUIRED',
+                category: 'deploy',
+                message: 'Deploy requires an explicit approval fingerprint.',
+                hint: 'Run deploy --dry-run, then pass its fingerprint to --approval.',
+              });
+            }
+            if (!options.dryRun) {
+              const result = await (
+                services.executeDeploy ??
+                ((selected, approval) =>
+                  deployStandardGoogle({ project: selected, approval }))
+              )(project, options.approval as string);
+              return {
+                data: { dryRun: false, deploy: result },
+                human: formatDeployResultHuman(result),
+              };
+            }
+            const preview = await (
+              services.prepareDeploy ??
+              ((selected) => prepareStandardGoogleDeploy({ project: selected }))
+            )(project);
+            return {
+              data: { dryRun: true, deploy: preview },
+              human: formatDeployPreviewHuman(preview),
+            };
+          },
+          services.loadProject,
+        );
+      },
+    );
 
   program.configureOutput({
     writeOut: (message) => io.stdout(message.trimEnd()),

@@ -71,6 +71,24 @@ export function formatDeployPreviewHuman(preview: {
   ].join('\n');
 }
 
+export function formatDeployResultHuman(result: {
+  readonly fingerprint: string;
+  readonly deployment: {
+    readonly outcome: string;
+    readonly versionNumber: number;
+    readonly deploymentId: string;
+    readonly url: string;
+  };
+}): string {
+  return [
+    `Deploy ${result.deployment.outcome}.`,
+    `Version: ${result.deployment.versionNumber}`,
+    `Deployment: ${result.deployment.deploymentId}`,
+    `URL: ${result.deployment.url}`,
+    `Fingerprint: ${result.fingerprint}`,
+  ].join('\n');
+}
+
 export function formatProviderListHuman(
   providers: readonly ProviderSummary[],
 ): string {

@@ -67,3 +67,6 @@
 - [ ] Apps Script project初期化のpreview／approval付きCLI commandを設計・実装する。
 - [x] Apps Script version／deploymentのfingerprint、再listによる再開、単一管理deployment、pagination、公開URLのsafe resultを`DECISIONS.md` D-066で確定しProvider adapterを実装した。
 - [x] Google Deploy buildの無副作用previewとtarget／bundle fingerprintを`DECISIONS.md` D-065で確定し、Runtimeと`gstack deploy --dry-run`へ実装した。
+- [x] fingerprintの再計算と明示approval、管理content全置換、version／deployment公開を`DECISIONS.md` D-067でRuntimeとCLIへ接続した。
+- [ ] Deploy前に対象SchemaのMigrationが最新appliedであることを確認するgateを設計・実装する。
+- [ ] Apps Script runtimeへField型／validation／permission roleの実行時検証を追加して公開範囲を検討する。

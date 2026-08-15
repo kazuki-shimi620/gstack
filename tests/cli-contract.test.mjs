@@ -188,7 +188,7 @@ test('Deployはdry-runでtargetとfingerprintだけを表示する', (t) => {
   assert.equal(rejected.status, 1);
   assert.equal(
     JSON.parse(rejected.stderr).error.code,
-    'DEPLOY_DRY_RUN_REQUIRED',
+    'DEPLOY_APPROVAL_REQUIRED',
   );
 
   const result = run(['deploy', '--dry-run', '--json'], root);

@@ -454,3 +454,11 @@ versionのlist／createは`script.projects` scope、deploymentのlist／create�
 list adapterは`nextPageToken`を最後まで辿り、token重複、100 page超過、不正responseを拒否する。deployment responseは正のversion number、非空deployment ID、管理description、単一のWEB_APP entry pointと非空URLを必須とする。結果は`created | updated | unchanged`、version number、deployment ID、Web App URLだけを返し、OAuth response、credential、token、生errorを含めない。source uploadとこのpublish serviceの順序・approval接続はRuntime契約で一体化する。
 
 参考: [projects.versions](https://developers.google.com/apps-script/api/reference/rest/v1/projects.versions)、[projects.deployments.list](https://developers.google.com/apps-script/api/reference/rest/v1/projects.deployments/list)、[projects.deployments.update](https://developers.google.com/apps-script/api/reference/rest/v1/projects.deployments/update)
+
+## D-067 Explicit Google Deploy Execution
+
+実Deployは`gstack deploy --approval <fingerprint>`だけで開始し、同command内でD-065 buildを再生成してapprovalと完全一致することをProvider write前に検証する。dry-runとapprovalの同時指定、approval省略、古い／別targetのfingerprintを拒否する。approvalはConfig、Schema、generated manifest、Apps Script content、version descriptionへ保存せず、version識別には承認対象であるfingerprintだけを使う。
+
+実行順は、管理markerを再確認したApps Script content全置換、fingerprint versionの解決／作成、単一`gstack-managed` deploymentの解決／作成／更新とする。未管理projectをdeployが暗黙初期化せず、content更新失敗後にversionを作らない。content更新後のversion／deployment失敗は自動rollbackせず、同じSchema／Configの明示再実行でD-061とD-066のstate再照合から回復する。
+
+成功結果はfingerprint、`created | updated | unchanged` outcome、version number、deployment ID、Web App URLだけを返す。source本文、Spreadsheet ID、credential参照名、credential、access／refresh token、生Google errorを含めない。MCPには実Deployを公開しない。Deploy前のMigration適用済み状態確認、runtimeの完全な型／permission検証、Project Initialization CLIはFirst Deploy完了前の独立gateとして残す。

@@ -37,11 +37,15 @@ import {
 } from '@gstack/provider';
 import {
   createDefaultGoogleMigrationComponents,
+  createDefaultGoogleDeployComponents,
   createDefaultGoogleProvider,
   createGoogleScriptSourceBundle,
   evaluateGoogleMigrationCapabilities,
   parseGoogleProviderConfig,
   type DefaultGoogleMigrationComponents,
+  type DefaultGoogleDeployComponents,
+  type GoogleScriptFile,
+  type GoogleDeploymentResult,
 } from '@gstack/provider-google';
 
 export interface StandardGoogleDeployPreview {
@@ -55,10 +59,68 @@ export interface StandardGoogleDeployPreview {
   }[];
 }
 
+export interface StandardGoogleDeployResult {
+  readonly fingerprint: string;
+  readonly deployment: GoogleDeploymentResult;
+}
+
 export async function prepareStandardGoogleDeploy(input: {
   readonly project: GstackProject;
 }): Promise<StandardGoogleDeployPreview> {
-  const config = await input.project.getConfig();
+  return (await prepareGoogleDeployBuild(input.project)).preview;
+}
+
+export async function deployStandardGoogle(input: {
+  readonly project: GstackProject;
+  readonly approval: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly components?: DefaultGoogleDeployComponents;
+}): Promise<StandardGoogleDeployResult> {
+  const build = await prepareGoogleDeployBuild(input.project);
+  if (input.approval !== build.preview.fingerprint) {
+    throw new GstackError({
+      code: 'DEPLOY_APPROVAL_INVALID',
+      category: 'deploy',
+      message: 'Deploy approval does not match the current build.',
+      hint: 'Run deploy --dry-run again and approve its current fingerprint.',
+    });
+  }
+  try {
+    const secrets = new EnvironmentSecretResolver(
+      input.environment ?? process.env,
+    );
+    const components =
+      input.components ??
+      createDefaultGoogleDeployComponents(build.config, secrets);
+    await components.content.replaceManagedContent(build.bundle);
+    const deployment = await components.deployment.publish(
+      build.preview.fingerprint,
+    );
+    return Object.freeze({
+      fingerprint: build.preview.fingerprint,
+      deployment,
+    });
+  } catch (error: unknown) {
+    if (error instanceof GstackError) throw error;
+    throw new GstackError(
+      {
+        code: 'DEPLOY_FAILED',
+        category: 'deploy',
+        message: 'Google Deploy failed.',
+      },
+      { cause: error },
+    );
+  }
+}
+
+async function prepareGoogleDeployBuild(project: GstackProject): Promise<{
+  readonly config: NonNullable<
+    ReturnType<typeof parseGoogleProviderConfig>['config']
+  >;
+  readonly bundle: readonly GoogleScriptFile[];
+  readonly preview: StandardGoogleDeployPreview;
+}> {
+  const config = await project.getConfig();
   const google = config.providers.find(
     ({ name, enabled }) => name === 'google' && enabled,
   );
@@ -78,7 +140,7 @@ export async function prepareStandardGoogleDeploy(input: {
     });
   }
   try {
-    const plan = await input.project.previewGeneration();
+    const plan = await project.previewGeneration();
     const artifacts = plan.writes.filter(({ path: artifactPath }) =>
       artifactPath.startsWith('generated/backend/appsscript/'),
     );
@@ -105,12 +167,13 @@ export async function prepareStandardGoogleDeploy(input: {
         'utf8',
       )
       .digest('hex');
-    return Object.freeze({
+    const preview = Object.freeze({
       provider: 'google',
       scriptId: parsed.config.appsScriptProjectId,
       fingerprint,
       files,
     });
+    return Object.freeze({ config: parsed.config, bundle, preview });
   } catch (error: unknown) {
     if (error instanceof GstackError) throw error;
     throw new GstackError(

@@ -84,6 +84,8 @@ export { createGoogleScriptSourceBundle } from './script-bundle.js';
 export type { GoogleScriptDeployArtifact } from './script-bundle.js';
 export { GoogleDeployError, GoogleDeployService } from './deploy.js';
 export { GoogleDeployHttpGateway } from './deploy-http.js';
+export { createDefaultGoogleDeployComponents } from './deploy-default.js';
+export type { DefaultGoogleDeployComponents } from './deploy-default.js';
 export type {
   GoogleDeployGateway,
   GoogleDeployRequest,

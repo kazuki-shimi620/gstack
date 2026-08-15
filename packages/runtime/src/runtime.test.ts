@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   applyCapabilityResults,
@@ -27,6 +27,7 @@ import {
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollback,
   prepareStandardGoogleDeploy,
+  deployStandardGoogle,
 } from './index.js';
 
 const roots: string[] = [];
@@ -84,6 +85,53 @@ describe('standard runtime', () => {
       ],
     });
     expect(JSON.stringify(first)).not.toContain('GOOGLE_CREDENTIALS');
+  });
+
+  it('一致するapprovalでcontent更新後にversionとdeploymentを公開する', async () => {
+    const project = deployProject();
+    const preview = await prepareStandardGoogleDeploy({ project });
+    const replaceManagedContent = vi.fn().mockResolvedValue([]);
+    const publish = vi.fn().mockResolvedValue({
+      outcome: 'created',
+      versionNumber: 3,
+      deploymentId: 'deployment-id',
+      url: 'https://script.google.com/macros/s/id/exec',
+    });
+    await expect(
+      deployStandardGoogle({
+        project,
+        approval: preview.fingerprint,
+        components: {
+          content: { replaceManagedContent } as never,
+          deployment: { publish } as never,
+        },
+      }),
+    ).resolves.toMatchObject({
+      fingerprint: preview.fingerprint,
+      deployment: { outcome: 'created', versionNumber: 3 },
+    });
+    expect(replaceManagedContent).toHaveBeenCalledOnce();
+    expect(publish).toHaveBeenCalledWith(preview.fingerprint);
+    expect(replaceManagedContent.mock.invocationCallOrder[0]).toBeLessThan(
+      publish.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it('approval不一致をProvider write前に拒否する', async () => {
+    const replaceManagedContent = vi.fn();
+    const publish = vi.fn();
+    await expect(
+      deployStandardGoogle({
+        project: deployProject(),
+        approval: 'f'.repeat(64),
+        components: {
+          content: { replaceManagedContent } as never,
+          deployment: { publish } as never,
+        },
+      }),
+    ).rejects.toMatchObject({ details: { code: 'DEPLOY_APPROVAL_INVALID' } });
+    expect(replaceManagedContent).not.toHaveBeenCalled();
+    expect(publish).not.toHaveBeenCalled();
   });
 
   it('enabledな公式Google ProviderをCatalogとInspectionへ接続する', async () => {
@@ -410,4 +458,38 @@ schema: { directory: schema }
 ${extra.trimStart()}`,
   );
   return root;
+}
+
+function deployProject() {
+  return {
+    getConfig: async () => ({
+      providers: [
+        {
+          name: 'google',
+          enabled: true,
+          configuration: {
+            spreadsheetId: 'spreadsheet-id',
+            appsScriptProjectId: 'script-id',
+            driveFolderId: 'folder-id',
+            authentication: {
+              mode: 'user_oauth',
+              credentialSecret: 'GOOGLE_CREDENTIALS',
+            },
+          },
+        },
+      ],
+    }),
+    previewGeneration: async () => ({
+      writes: [
+        {
+          path: 'generated/backend/appsscript/appsscript.json',
+          content: '{}\n',
+        },
+        {
+          path: 'generated/backend/appsscript/main.gs',
+          content: 'function doGet() {}\n',
+        },
+      ],
+    }),
+  } as never;
 }

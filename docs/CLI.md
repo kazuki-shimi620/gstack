@@ -445,6 +445,15 @@ gstack dev
 gstack deploy
 ```
 
+MVPのGoogle Deployは先に無副作用previewを行い、表示されたbuild fingerprintを明示承認する。
+
+```bash
+gstack deploy --dry-run
+gstack deploy --approval <fingerprint>
+```
+
+dry-runはfilesystemやProviderを変更しない。実Deployはgstack管理済みApps Script projectだけを対象とし、未管理projectを暗黙初期化しない。
+
 ---
 
 ## doctor
