@@ -80,6 +80,12 @@ describe('MCP read handlers', () => {
         deletes: [],
         manifest: { formatVersion: 1, artifacts: [] },
       }),
+      listGeneratedArtifacts: vi.fn().mockResolvedValue({
+        manifestPresent: true,
+        artifacts: [
+          { path: 'generated/types/users.ts', checksum: 'a'.repeat(64) },
+        ],
+      }),
       generate: vi.fn(),
     };
 
@@ -113,5 +119,11 @@ describe('MCP read handlers', () => {
     await expect(
       createReadHandlers(project).previewGeneration(),
     ).resolves.toMatchObject({ writes: [], deletes: [] });
+    await expect(
+      createReadHandlers(project).listGeneratedArtifacts(),
+    ).resolves.toMatchObject({
+      manifestPresent: true,
+      artifacts: [{ path: 'generated/types/users.ts' }],
+    });
   });
 });

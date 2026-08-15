@@ -387,3 +387,11 @@ MVPのRollback previewは`gstack migration rollback --file <path> --dry-run`で�
 Rollback PlannerはD-051に従って完了済みforward Operationを逆順変換し、Provider Manifestでinverse Operationのcapabilityを評価する。`--dry-run`はsource version／checksum、rollback target version、評価済みRollback Plan、risk、destructive、applicability、source Fileと評価済みPlanに結び付くfingerprintを表示するが、approval、lock、History write、Provider writeを行わない。irreversible forward Operation、History不整合、unsupported inverse Operationを隠さない。
 
 実Rollbackは、Providerごとの逆操作、drift照合、追加後に生じた業務dataの破壊確認、rollback専用History実行状態、response喪失時のidempotencyが確定するまで公開しない。previewで生成したfingerprintだけをもってApply Engineへ流用してはならず、将来の実Rollbackには別の明示承認契約を必要とする。
+
+## D-059 Generated Artifact Inventory
+
+Generated Artifact inventoryのSingle Source of TruthはD-026の`generated/.gstack-manifest.json`とする。Core Read APIはManifestの有無と、Manifestが所有するpath／checksumの決定的な配列だけを返す。Artifact本文、filesystem timestamp、size、manual file、credential、Schema／Provider runtime stateを含めない。
+
+Manifestが存在しない場合は`manifestPresent: false`と空配列を正常結果として返す。Generator Configが現在無効でもRead APIのcapabilityは`available`とし、残存Manifestがあれば所有情報を返す。filesystemを走査して未記録fileを追加したり、各Artifact本文を読んでchecksum一致やdriftを暗黙検証したりしない。Manifestが不正、symlink境界に違反、または安全に読めない場合は既存のsafe Generation errorへ変換し、部分的inventoryを返さない。
+
+MCPはCore APIへ委譲する`list_generated_artifacts` read-only Toolと`gstack://generated-artifacts` Resourceを公開する。MCP AdapterがManifestを直接parseしたり、generated directoryを走査したりしてはいけない。Artifact本文取得、drift検証、再生成、削除はこのinventory契約に含めない。

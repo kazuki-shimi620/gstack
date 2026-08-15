@@ -83,6 +83,7 @@ describe('gstack MCP server', () => {
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
       previewGeneration: vi.fn().mockResolvedValue(emptyGenerationPlan()),
+      listGeneratedArtifacts: vi.fn().mockResolvedValue(artifactInventory()),
       generate: vi.fn(),
     };
     const server = createMcpServer(project);
@@ -112,6 +113,7 @@ describe('gstack MCP server', () => {
       'list_migration_history',
       'preview_migration_plan',
       'preview_generation',
+      'list_generated_artifacts',
     ]);
     expect(
       tools.tools.every((tool) => tool.annotations?.readOnlyHint === true),
@@ -150,6 +152,15 @@ describe('gstack MCP server', () => {
       data: { generationPlan: { writes: [], deletes: [] } },
     });
     expect(project.previewGeneration).toHaveBeenCalledOnce();
+
+    const artifacts = await client.callTool({
+      name: 'list_generated_artifacts',
+    });
+    expect(artifacts.structuredContent).toMatchObject({
+      ok: true,
+      data: { generatedArtifacts: { manifestPresent: true } },
+    });
+    expect(project.listGeneratedArtifacts).toHaveBeenCalledOnce();
 
     const provider = await client.callTool({
       name: 'get_provider',
@@ -282,6 +293,7 @@ describe('gstack MCP server', () => {
       listMigrationHistory: vi.fn().mockResolvedValue([]),
       previewMigrationPlan: vi.fn().mockResolvedValue(emptyMigrationPlan()),
       previewGeneration: vi.fn().mockResolvedValue(emptyGenerationPlan()),
+      listGeneratedArtifacts: vi.fn().mockResolvedValue(artifactInventory()),
       generate: vi.fn(),
     };
     const server = createMcpServer(project);
@@ -310,6 +322,7 @@ describe('gstack MCP server', () => {
         'gstack://provider/example',
         'gstack://migration/status',
         'gstack://migration/history',
+        'gstack://generated-artifacts',
         'gstack://architecture',
       ]),
     );
@@ -370,6 +383,15 @@ describe('gstack MCP server', () => {
       throw new Error('Expected text Migration status resource');
     }
     expect(JSON.parse(migrationContent.text)).toEqual(emptyMigrationStatus());
+
+    const generatedArtifacts = await client.readResource({
+      uri: 'gstack://generated-artifacts',
+    });
+    const generatedContent = generatedArtifacts.contents[0];
+    if (!generatedContent || !('text' in generatedContent)) {
+      throw new Error('Expected text generated Artifact resource');
+    }
+    expect(JSON.parse(generatedContent.text)).toEqual(artifactInventory());
   });
 });
 
@@ -434,5 +456,17 @@ function emptyGenerationPlan() {
     writes: [],
     deletes: [],
     manifest: { formatVersion: 1, artifacts: [] },
+  };
+}
+
+function artifactInventory() {
+  return {
+    manifestPresent: true,
+    artifacts: [
+      {
+        path: 'generated/types/users.ts',
+        checksum: 'a'.repeat(64),
+      },
+    ],
   };
 }

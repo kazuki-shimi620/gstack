@@ -61,20 +61,21 @@ Migration Read APIはCoreへ注入されたProvider非依存Readerへ委譲す�
 
 ## 4. Tool
 
-| Tool                     | Core呼出                         | 分類                             |
-| ------------------------ | -------------------------------- | -------------------------------- |
-| `get_project_status`     | `project.getStatus()`            | Read専用、idempotent             |
-| `list_schemas`           | `project.listSchemas()`          | Read専用、idempotent             |
-| `get_schema`             | `project.getSchema(name)`        | Read専用、idempotent             |
-| `validate_schema`        | `project.validateSchema()`       | 副作用のないRead計算、idempotent |
-| `list_providers`         | `project.listProviders()`        | Read専用、idempotent             |
-| `get_provider`           | `project.getProvider(name)`      | Read専用、idempotent             |
-| `validate_provider`      | `project.validateProvider(name)` | Read検査、idempotent             |
-| `get_provider_health`    | `project.getProviderHealth(name)`| Read検査、idempotent             |
-| `get_migration_status`   | `project.getMigrationStatus()`   | Read専用、idempotent             |
-| `list_migration_history` | `project.listMigrationHistory()` | Read専用、idempotent             |
-| `preview_migration_plan` | `project.previewMigrationPlan()` | 副作用のないRead計算、idempotent |
-| `preview_generation`     | `project.previewGeneration()`    | 副作用のないRead計算、idempotent |
+| Tool                       | Core呼出                           | 分類                             |
+| -------------------------- | ---------------------------------- | -------------------------------- |
+| `get_project_status`       | `project.getStatus()`              | Read専用、idempotent             |
+| `list_schemas`             | `project.listSchemas()`            | Read専用、idempotent             |
+| `get_schema`               | `project.getSchema(name)`          | Read専用、idempotent             |
+| `validate_schema`          | `project.validateSchema()`         | 副作用のないRead計算、idempotent |
+| `list_providers`           | `project.listProviders()`          | Read専用、idempotent             |
+| `get_provider`             | `project.getProvider(name)`        | Read専用、idempotent             |
+| `validate_provider`        | `project.validateProvider(name)`   | Read検査、idempotent             |
+| `get_provider_health`      | `project.getProviderHealth(name)`  | Read検査、idempotent             |
+| `get_migration_status`     | `project.getMigrationStatus()`     | Read専用、idempotent             |
+| `list_migration_history`   | `project.listMigrationHistory()`   | Read専用、idempotent             |
+| `preview_migration_plan`   | `project.previewMigrationPlan()`   | 副作用のないRead計算、idempotent |
+| `preview_generation`       | `project.previewGeneration()`      | 副作用のないRead計算、idempotent |
+| `list_generated_artifacts` | `project.listGeneratedArtifacts()` | Manifest由来Read、idempotent     |
 
 Tool responseは互換性のためのJSON textと、machine consumer向け`structuredContent`を含む。すべてのToolはD-013で確定したenvelopeを使う。成功データは`data`内のnamespace（`status`、`schemas`、`schema`、`validation`）に格納する。
 
@@ -101,31 +102,32 @@ Tool responseは互換性のためのJSON textと、machine consumer向け`struc
 
 想定外のexceptionは`INTERNAL_ERROR`へ変換し、stack traceやlibrary／filesystemのerror messageをmachine outputへ露出しない。
 
-Migration ToolはCore Read APIへだけ委譲し、History StorageのReaderが注入されていないprojectでは`MIGRATION_NOT_AVAILABLE`を返す。Plan previewはMigration Fileを作成せず、Provider capability評価やApplyも実行しない。Provider Catalog ToolはCoreのCatalog Read APIへだけ委譲し、Factory初期化を行わない。Provider検査Toolは明示的なProvider名を必須とし、Coreへ注入されたInspection Serviceによる短命Sessionだけを利用する。MCP Adapter自身はProvider configuration、Secret Resolver、credentialを組み立てず、healthはsafe status／codeだけを返す。Generated artifact inventory Toolは、対応するCore Read APIが存在してから追加する。MCP固有の代替実装は禁止する。
+Migration ToolはCore Read APIへだけ委譲し、History StorageのReaderが注入されていないprojectでは`MIGRATION_NOT_AVAILABLE`を返す。Plan previewはMigration Fileを作成せず、Provider capability評価やApplyも実行しない。Provider Catalog ToolはCoreのCatalog Read APIへだけ委譲し、Factory初期化を行わない。Provider検査Toolは明示的なProvider名を必須とし、Coreへ注入されたInspection Serviceによる短命Sessionだけを利用する。MCP Adapter自身はProvider configuration、Secret Resolver、credentialを組み立てず、healthはsafe status／codeだけを返す。Generated Artifact inventoryはD-059のCore Read APIへ委譲し、Manifest parse、directory走査、Artifact本文取得をMCP側で行わない。MCP固有の代替実装は禁止する。
 
 `preview_generation`はCoreの副作用なしpreviewへ委譲し、Artifact write／deleteとManifest更新を実行しない。write可能な`generate` Toolは登録しない。
 
 ## 5. Resource
 
-| URI                          | 目的                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------ |
-| `gstack://project`           | 現在の構造化Project Status                                                           |
-| `gstack://project-context`   | 最初のproject entry向けに集約したstatus、Schema、Validation、capability availability |
-| `gstack://config`            | Validation済みでsecretを含まない`gstack.yaml`設定                                    |
-| `gstack://schema`            | Schema index                                                                         |
-| `gstack://schema/{name}`     | 1つのraw YAML Schema source。resource templateからdiscover可能                       |
-| `gstack://application-model` | Validation成功時の正規化済みApplication Model。失敗時は`null`                        |
-| `gstack://provider`          | 登録済みProviderのManifest／capability一覧。live stateを含まない                      |
-| `gstack://provider/{name}`   | 1つのProvider Manifest／capability。resource templateからdiscover可能                |
-| `gstack://migration/status`  | 注入済みHistory Storageから集約したMigration状態                                     |
-| `gstack://migration/history` | version順のMigration History                                                         |
-| `gstack://architecture`      | Architecture Invariantsとrepository Agent ruleへの入口                               |
+| URI                            | 目的                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------ |
+| `gstack://project`             | 現在の構造化Project Status                                                           |
+| `gstack://project-context`     | 最初のproject entry向けに集約したstatus、Schema、Validation、capability availability |
+| `gstack://config`              | Validation済みでsecretを含まない`gstack.yaml`設定                                    |
+| `gstack://schema`              | Schema index                                                                         |
+| `gstack://schema/{name}`       | 1つのraw YAML Schema source。resource templateからdiscover可能                       |
+| `gstack://application-model`   | Validation成功時の正規化済みApplication Model。失敗時は`null`                        |
+| `gstack://provider`            | 登録済みProviderのManifest／capability一覧。live stateを含まない                      |
+| `gstack://provider/{name}`     | 1つのProvider Manifest／capability。resource templateからdiscover可能                |
+| `gstack://migration/status`    | 注入済みHistory Storageから集約したMigration状態                                     |
+| `gstack://migration/history`   | version順のMigration History                                                         |
+| `gstack://generated-artifacts` | Manifestが所有するGenerated Artifact path／checksum inventory                       |
+| `gstack://architecture`        | Architecture Invariantsとrepository Agent ruleへの入口                               |
 
 ResourceはRead専用contextを公開する。Validationは外部副作用を持たないが計算を実行するため、ResourceではなくToolとする。
 
 ## 6. 安全方針
 
-serverは12個のRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
+serverは13個のRead／Validate Toolだけを明示的なallowlistで登録する。次のToolは登録しない。
 
 - Migration Apply／Rollback
 - Deploy／Publish

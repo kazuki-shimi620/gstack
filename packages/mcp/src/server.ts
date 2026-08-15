@@ -255,6 +255,24 @@ export function createMcpServer(project: GstackProject): McpServer {
       })),
   );
 
+  server.registerTool(
+    'list_generated_artifacts',
+    {
+      title: 'List generated gstack Artifacts',
+      description:
+        'Lists generated Artifact paths and checksums from the ownership Manifest without reading Artifact contents.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () =>
+      safeStructured(async () => ({
+        generatedArtifacts: await handlers.listGeneratedArtifacts(),
+      })),
+  );
+
   server.registerResource(
     'project',
     'gstack://project',
@@ -496,6 +514,30 @@ export function createMcpServer(project: GstackProject): McpServer {
           uri: uri.href,
           mimeType: 'application/json',
           text: JSON.stringify(await handlers.listMigrationHistory(), null, 2),
+        },
+      ],
+    }),
+  );
+
+  server.registerResource(
+    'generated-artifacts',
+    'gstack://generated-artifacts',
+    {
+      title: 'gstack generated Artifact inventory',
+      description:
+        'Manifest-owned generated Artifact paths and checksums without file contents.',
+      mimeType: 'application/json',
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: 'application/json',
+          text: JSON.stringify(
+            await handlers.listGeneratedArtifacts(),
+            null,
+            2,
+          ),
         },
       ],
     }),

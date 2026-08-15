@@ -24,6 +24,7 @@ export type { FailureResult, MachineResult, SuccessResult } from './result.js';
 export type { LoadProjectOptions } from './project.js';
 export type {
   FeatureConfigurationStatus,
+  GeneratedArtifactInventory,
   GstackProject,
   MigrationReader,
   ProviderReader,

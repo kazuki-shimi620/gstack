@@ -352,6 +352,10 @@ describe('gstack project read API', () => {
       });
 
       await expect(project.generate()).resolves.toEqual(preview);
+      await expect(project.listGeneratedArtifacts()).resolves.toEqual({
+        manifestPresent: true,
+        artifacts: preview.manifest.artifacts,
+      });
       await expect(
         readFile(path.join(root, 'generated', 'types', 'users.ts'), 'utf8'),
       ).resolves.toContain('export interface Users');
@@ -369,6 +373,26 @@ describe('gstack project read API', () => {
     await expect(project.previewGeneration()).rejects.toMatchObject({
       details: { code: 'GENERATOR_NOT_CONFIGURED', category: 'generator' },
     });
+  });
+
+  it('ManifestがないProjectでは空のGenerated Artifact inventoryを返す', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'gstack-core-inventory-'));
+    try {
+      const project = await loadProject({
+        root,
+        loadConfig: async () => TEST_CONFIG,
+        loadSources: async () => [],
+      });
+      await expect(project.listGeneratedArtifacts()).resolves.toEqual({
+        manifestPresent: false,
+        artifacts: [],
+      });
+      await expect(project.getProjectContext()).resolves.toMatchObject({
+        capabilities: { generatedArtifacts: 'available' },
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it('returns semantic diagnostics and exposes the Application Model only when valid', async () => {

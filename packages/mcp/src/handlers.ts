@@ -17,6 +17,7 @@ export function createReadHandlers(project: GstackProject) {
     listMigrationHistory: () => project.listMigrationHistory(),
     previewMigrationPlan: () => project.previewMigrationPlan(),
     previewGeneration: () => project.previewGeneration(),
+    listGeneratedArtifacts: () => project.listGeneratedArtifacts(),
   } as const;
 }
 

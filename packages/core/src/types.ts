@@ -1,7 +1,10 @@
 import type { ApplicationModel } from '@gstack/application';
 import type { GstackConfig } from '@gstack/config';
 import type { Diagnostic, SchemaSource } from '@gstack/schema';
-import type { GenerationPlan } from '@gstack/generator';
+import type {
+  GeneratedArtifactManifestEntry,
+  GenerationPlan,
+} from '@gstack/generator';
 import type {
   MigrationHistoryEntry,
   MigrationPlanPreview,
@@ -58,6 +61,11 @@ export interface ValidationResult {
   readonly warnings: readonly Diagnostic[];
 }
 
+export interface GeneratedArtifactInventory {
+  readonly manifestPresent: boolean;
+  readonly artifacts: readonly GeneratedArtifactManifestEntry[];
+}
+
 export interface ProjectContext {
   readonly status: ProjectStatus;
   readonly schemas: readonly SchemaSummary[];
@@ -94,6 +102,7 @@ export interface GstackProject {
     renameIntents?: readonly RenameColumnIntent[],
   ): Promise<MigrationPlanPreview>;
   previewGeneration(): Promise<GenerationPlan>;
+  listGeneratedArtifacts(): Promise<GeneratedArtifactInventory>;
   generate(): Promise<GenerationPlan>;
 }
 

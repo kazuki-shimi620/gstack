@@ -144,9 +144,7 @@ class Project implements GstackProject {
           ? 'available'
           : 'not_configured',
         migrationPlan: this.migrationReader ? 'available' : 'not_configured',
-        generatedArtifacts: this.config.generator
-          ? 'available'
-          : 'not_configured',
+        generatedArtifacts: 'available',
       },
     };
   }
@@ -247,6 +245,22 @@ class Project implements GstackProject {
     try {
       const previous = await loadGeneratedManifest(this.root);
       return generateApplication(application, config, previous);
+    } catch (error: unknown) {
+      throw generationError(error);
+    }
+  }
+
+  public async listGeneratedArtifacts() {
+    try {
+      const manifest = await loadGeneratedManifest(this.root);
+      return Object.freeze({
+        manifestPresent: manifest !== null,
+        artifacts: Object.freeze(
+          manifest?.artifacts.map((artifact) =>
+            Object.freeze({ ...artifact }),
+          ) ?? [],
+        ),
+      });
     } catch (error: unknown) {
       throw generationError(error);
     }
