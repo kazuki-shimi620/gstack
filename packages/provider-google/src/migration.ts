@@ -8,6 +8,7 @@ import type {
 
 import { googleProviderManifest } from './provider.js';
 import type { GoogleSheetsAlterColumnService } from './sheets-alter-column.js';
+import type { GoogleSheetsIndexService } from './sheets-index.js';
 import type {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
@@ -24,6 +25,7 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
     private readonly dropColumn: GoogleSheetsDropColumnService,
     private readonly dropModel: GoogleSheetsDropModelService,
     private readonly alterColumn: GoogleSheetsAlterColumnService,
+    private readonly index: GoogleSheetsIndexService,
   ) {}
 
   async execute(
@@ -48,6 +50,10 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
         return;
       case 'alter_column':
         await this.alterColumn.execute(operation, context.migrationChecksum);
+        return;
+      case 'add_index':
+      case 'drop_index':
+        await this.index.execute(operation, context.migrationChecksum);
         return;
       default:
         throw new GoogleMigrationOperationError(

@@ -202,6 +202,85 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
     };
   }
 
+  async inspectIndex(input: {
+    readonly spreadsheetId: string;
+    readonly sheetTitle: string;
+    readonly columns: readonly string[];
+    readonly includeValues: boolean;
+    readonly credential: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['credential'];
+    readonly secrets: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['secrets'];
+  }): Promise<unknown> {
+    const summary = await this.inspectColumns(input);
+    if (!isRecord(summary) || !Array.isArray(summary.sheets)) {
+      invalidStateResponse();
+    }
+    const target = summary.sheets.find(
+      (sheet) => isRecord(sheet) && sheet.title === input.sheetTitle,
+    );
+    if (
+      !isRecord(target) ||
+      !Array.isArray(target.headers) ||
+      !Number.isSafeInteger(target.rowCount) ||
+      (target.rowCount as number) < 1
+    ) {
+      return summary;
+    }
+    const targetHeaders = target.headers as unknown[];
+    const columnIndexes = input.columns.map((column) =>
+      targetHeaders.indexOf(column),
+    );
+    if (
+      !input.includeValues ||
+      columnIndexes.some((index) => index < 0) ||
+      target.rowCount === 1
+    ) {
+      return {
+        sheets: summary.sheets.map((sheet) =>
+          sheet === target ? { ...target, rows: [] } : sheet,
+        ),
+      };
+    }
+    const credential = await this.authorize(input);
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(input.spreadsheetId)}`,
+    );
+    url.searchParams.set('includeGridData', 'true');
+    url.searchParams.set(
+      'ranges',
+      `${quoteSheetTitle(input.sheetTitle)}!2:${String(target.rowCount)}`,
+    );
+    url.searchParams.set(
+      'fields',
+      'sheets(properties(sheetId,title),data(rowData(values(effectiveValue))))',
+    );
+    const response = await this.http.execute({
+      method: 'GET',
+      url: url.href,
+      headers: {
+        accept: 'application/json',
+        authorization: `Bearer ${credential.accessToken}`,
+      },
+      body: null,
+      retryable: true,
+    });
+    const rows = normalizeIndexRows(
+      parseJson(response.body),
+      target.sheetId,
+      input.sheetTitle,
+      targetHeaders,
+      columnIndexes,
+    );
+    return {
+      sheets: summary.sheets.map((sheet) =>
+        sheet === target ? { ...target, rows } : sheet,
+      ),
+    };
+  }
+
   private async inspectColumns(input: {
     readonly spreadsheetId: string;
     readonly sheetTitle: string;
@@ -373,6 +452,64 @@ function normalizeAlterColumnRows(
           value: values[columnIndex],
         }),
       ];
+    }),
+  );
+}
+
+function normalizeIndexRows(
+  value: unknown,
+  sheetId: unknown,
+  sheetTitle: string,
+  headers: readonly unknown[],
+  columnIndexes: readonly number[],
+): readonly Readonly<{ rowNumber: number; values: readonly unknown[] }>[] {
+  const rows = normalizeGridRows(value, sheetId, sheetTitle, headers.length);
+  return Object.freeze(
+    rows.map(({ rowNumber, values }) =>
+      Object.freeze({
+        rowNumber,
+        values: Object.freeze(columnIndexes.map((index) => values[index])),
+      }),
+    ),
+  );
+}
+
+function normalizeGridRows(
+  value: unknown,
+  sheetId: unknown,
+  sheetTitle: string,
+  headerCount: number,
+): readonly Readonly<{ rowNumber: number; values: readonly unknown[] }>[] {
+  if (!isRecord(value) || !Array.isArray(value.sheets)) {
+    invalidStateResponse();
+  }
+  const sheets = value.sheets;
+  if (sheets.length !== 1) invalidStateResponse();
+  const sheet = sheets[0];
+  if (
+    !isRecord(sheet) ||
+    !isRecord(sheet.properties) ||
+    sheet.properties.sheetId !== sheetId ||
+    sheet.properties.title !== sheetTitle
+  ) {
+    invalidStateResponse();
+  }
+  const data = sheet.data ?? [];
+  if (!Array.isArray(data) || data.length > 1) invalidStateResponse();
+  const grid = data[0];
+  if (grid !== undefined && !isRecord(grid)) invalidStateResponse();
+  const rowData = grid?.rowData ?? [];
+  if (!Array.isArray(rowData)) invalidStateResponse();
+  return Object.freeze(
+    rowData.flatMap((row, index) => {
+      if (!isRecord(row)) invalidStateResponse();
+      const cells = row.values ?? [];
+      if (!Array.isArray(cells) || cells.length > headerCount) {
+        invalidStateResponse();
+      }
+      const values = cells.map(effectiveCellValue);
+      if (values.every((item) => item === undefined)) return [];
+      return [Object.freeze({ rowNumber: index + 2, values })];
     }),
   );
 }

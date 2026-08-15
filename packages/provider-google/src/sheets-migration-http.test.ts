@@ -11,6 +11,97 @@ const credentialSource = JSON.stringify({
 });
 
 describe('Google Sheets Migration HTTP gateway', () => {
+  it('unique Index用に論理rowの対象tupleだけを正規化する', async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        body: JSON.stringify({
+          sheets: [
+            {
+              properties: {
+                sheetId: 10,
+                title: 'users',
+                gridProperties: { columnCount: 8, rowCount: 1000 },
+              },
+              data: [
+                {
+                  rowData: [
+                    {
+                      values: [
+                        { userEnteredValue: { stringValue: 'id' } },
+                        { userEnteredValue: { stringValue: 'tenant' } },
+                        { userEnteredValue: { stringValue: 'email' } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              developerMetadata: [],
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        body: JSON.stringify({
+          sheets: [
+            {
+              properties: { sheetId: 10, title: 'users' },
+              data: [
+                {
+                  rowData: [
+                    {
+                      values: [
+                        { effectiveValue: { stringValue: 'id-1' } },
+                        { effectiveValue: { stringValue: 'tenant-a' } },
+                        { effectiveValue: { stringValue: 'a@example.test' } },
+                      ],
+                    },
+                    {
+                      values: [
+                        { effectiveValue: { stringValue: 'id-2' } },
+                        {},
+                        { effectiveValue: { stringValue: 'b@example.test' } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+    const gateway = migrationGateway(execute);
+    await expect(
+      gateway.inspectIndex({
+        spreadsheetId: 'id',
+        sheetTitle: 'users',
+        columns: ['tenant', 'email'],
+        includeValues: true,
+        credential: { credentialSecret: 'SECRET', scopes: ['scope'] },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+      }),
+    ).resolves.toEqual({
+      sheets: [
+        expect.objectContaining({
+          sheetId: 10,
+          title: 'users',
+          rows: [
+            {
+              rowNumber: 2,
+              values: ['tenant-a', 'a@example.test'],
+            },
+            { rowNumber: 3, values: [undefined, 'b@example.test'] },
+          ],
+        }),
+      ],
+    });
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
+
   it('alter_column用にheader確認後、使用中の全rowから対象列だけを正規化する', async () => {
     const execute = vi
       .fn()
@@ -465,3 +556,17 @@ describe('Google Sheets Migration HTTP gateway', () => {
     ).rejects.toThrow('Google Sheets batch response is invalid.');
   });
 });
+
+function migrationGateway(execute: ReturnType<typeof vi.fn>) {
+  return new GoogleSheetsMigrationHttpGateway(
+    { execute: execute as never },
+    {
+      refresh: vi.fn().mockResolvedValue({
+        accessToken: 'token',
+        expiresAt: '2026-08-13T01:00:00.000Z',
+        scopes: ['scope'],
+      }),
+    },
+    () => new Date('2026-08-13T00:00:00.000Z'),
+  );
+}

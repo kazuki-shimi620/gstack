@@ -65,6 +65,19 @@ export {
   inspectAlterColumnState,
   validateAlterColumnValues,
 } from './sheets-alter-column.js';
+export {
+  GoogleSheetsIndexService,
+  indexBatchRequests,
+  inspectIndexState,
+  validateUniqueIndexRows,
+} from './sheets-index.js';
+export type {
+  GoogleSheetsIndexGateway,
+  GoogleSheetsIndexOperation,
+  IndexAbsentState,
+  IndexAppliedState,
+  IndexMigrationState,
+} from './sheets-index.js';
 export type {
   AlterColumnAbsentState,
   AlterColumnAppliedState,

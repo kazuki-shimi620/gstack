@@ -311,7 +311,7 @@ MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知
 
 Google ProviderのMigration capability結果はManifestのoperation type別supportを唯一のsourceとして、入力Planの全Operation IDへ順序を保持して射影する。結果をMigration packageの共通`applyCapabilityResults`へ渡し、欠落／重複／未知IDの検証とPlan集約を再利用する。Google Provider側で独自Planや独自applicability規則を実装しない。
 
-初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`、D-084の`drop_model`は各条件を満たして`native`へ、D-085の`alter_column`は`emulated`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
+初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`、D-084の`drop_model`は各条件を満たして`native`へ、D-085の`alter_column`とD-086の`add_index`／`drop_index`は`emulated`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
 
 ## D-051 Migration Rollback Plan
 
@@ -601,7 +601,7 @@ ProviderはOperationの`previous`、`target`、`changes`が同じ列名に対す
 
 Google SheetsにはgstackのIndexに対応するquery planner用native indexがないため、`add_index`／`drop_index`は`emulated` Operationとする。非unique IndexはApplication Modelと生成物がquery intentを保持するが、Spreadsheet構造やcellを変更しない。unique Indexは列単位の`Field.unique`とは別に、定義された複数列の組合せを一意制約として扱う。`add_index`前に管理対象Sheet、Model marker、全対象headerを検証し、全論理rowのeffective valueを走査する。構成値のいずれかが空のrowは一意性比較から除外し、全構成値がある同一tupleが複数存在する場合は値を公開せずrow番号だけで競合を返す。値のcoerce、trim、deduplicateは行わない。
 
-生成Apps Script runtimeはApplication Modelのunique Indexを埋め込み、createでは既存全row、updateでは更新対象row以外とtuple重複しないことをScript Lock内で検証する。非unique Indexを性能最適化済みと表明してはいけない。`drop_index`は将来write時の制約／query intentをApplication Modelから除くが、既存dataやSheet構造を変更しない。各Operationは対象Sheet直下へchecksum＋Operation IDのmarkerを単一非retry batchで記録し、response喪失後の再readで適用済みを判定する。strict state／Operation parser、複合unique検査、生成runtime、marker idempotency、標準Runtime接続をtestした後にだけManifestを`emulated`へ変更する。
+生成Apps Script runtimeはApplication Modelのunique Indexを埋め込み、createでは既存全row、updateでは更新対象row以外とtuple重複しないことをScript Lock内で検証する。非unique Indexを性能最適化済みと表明してはいけない。`drop_index`は将来write時の制約／query intentをApplication Modelから除くが、既存dataやSheet構造を変更しない。各Operationは対象Sheet直下へchecksum＋Operation IDのmarkerを単一非retry batchで記録し、response喪失後の再readで適用済みを判定する。strict state／Operation parser、複合unique検査、生成runtime、marker idempotency、標準Runtime接続をtestし、Manifestの`add_index`／`drop_index`を`emulated`へ昇格済みである。
 
 ## D-087 Google Sheets Relation Migration
 

@@ -1013,7 +1013,7 @@ Google Sheetsの`add_column`は`DECISIONS.md` D-056を規範とする。連続he
 
 Google Sheetsの`alter_column`は`DECISIONS.md` D-085を規範とする。Providerは既存cellを変換せず、対象列の全rowが変更後のField定義と互換であることを検査してからcolumn markerを記録する。新規writeのvalidationは生成Apps Script runtimeが担い、Google Sheets Data Validationを暗黙のschema constraintとして扱わない。strict adapter、値非露出error、再開時marker照合、標準Runtime接続を検証し、Manifestでは`emulated`と宣言する。
 
-Google SheetsのIndex／Relationは`DECISIONS.md` D-086／D-087を規範とする。Sheets native indexや外部キーが存在するとは表明せず、Providerによる既存data検査、管理marker、生成Apps Script runtimeによる将来write検証を一体で満たす場合だけ`emulated`と宣言する。複合unique違反や参照不整合を暗黙修復せず、Relation deleteはRESTRICTとする。adapterと生成runtimeの検証が完了するまではManifestの`unsupported`を維持する。
+Google SheetsのIndex／Relationは`DECISIONS.md` D-086／D-087を規範とする。Sheets native indexや外部キーが存在するとは表明せず、Providerによる既存data検査、管理marker、生成Apps Script runtimeによる将来write検証を一体で満たす場合だけ`emulated`と宣言する。複合unique違反や参照不整合を暗黙修復せず、Relation deleteはRESTRICTとする。Indexはstrict adapterと生成runtimeを検証して`emulated`へ昇格済みであり、Relationは検証完了までManifestの`unsupported`を維持する。
 
 MVPのProvider Manifest、factory／session lifecycle、Secret Resolver境界、safe health、memory Registryは`DECISIONS.md` D-036を規範とする。package install、dynamic import、credential storageはこのFoundationに含めない。
 
