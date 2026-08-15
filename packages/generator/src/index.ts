@@ -27,6 +27,7 @@ export { generateAiDocumentationArtifacts } from './ai-documentation.js';
 export { generateApplication } from './generator.js';
 export { generateApiArtifact } from './api.js';
 export { generateReactArtifacts } from './react.js';
+export { generateAppsScriptBackendArtifacts } from './appscript.js';
 export type { GeneratorConfig } from './generator.js';
 export {
   GenerationWriteError,

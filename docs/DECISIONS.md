@@ -19,6 +19,7 @@ generator:
   types: true
   validation: true
   api: true
+  backend: true
   frontend: true
   openapi: true
   documentation: true
@@ -198,7 +199,7 @@ MVP AI Documentation Generatorは`generated/ai/PROJECT_CONTEXT.md`と`generated/
 
 ## D-032 Generator ConfigとOrchestration
 
-MVPのprogrammatic Generator Configは`formatVersion: 1`と、`types`、`validation`、`api`、`frontend`、`openapi`、`documentation`、`aiDocumentation`のbooleanを持つ。すべて必須とし、Core側defaultを推測しない。Generator Engineは有効なproducerを固定順序で実行し、Artifact path重複を共通Planで拒否して、直前Manifestに基づくwrite／delete／new manifestを1つのGeneration Planとして返す。
+MVPのprogrammatic Generator Configは`formatVersion: 1`と、`types`、`validation`、`api`、`backend`、`frontend`、`openapi`、`documentation`、`aiDocumentation`のbooleanを持つ。すべて必須とし、Core側defaultを推測しない。Generator Engineは有効なproducerを固定順序で実行し、Artifact path重複を共通Planで拒否して、直前Manifestに基づくwrite／delete／new manifestを1つのGeneration Planとして返す。
 
 Orchestratorの入力はApplication Model、Config、optionalな直前Manifestだけとする。Templateを必要としないbuilt-in producerだけをMVPで統合し、API runtime／UIなどTemplate必須のproducerを有効化したように見せてはいけない。Orchestratorはfilesystem、Provider、Core、CLIへ依存せず、同一入力から同一Planを返す。
 
@@ -427,3 +428,11 @@ GeneratorはProviderへ依存せず、Apps Script backend producerが所有す�
 Google Providerはこの明示的な成果物集合をApps Script APIの`JSON | SERVER_JS | HTML` fileへpureに変換し、configured Spreadsheet IDだけを`gstack_config` server fileへJSON string literalとして注入し、D-061の管理markerを追加する。Apps Script project ID、Drive folder ID、credential参照名、credential値、tokenはbundleへ含めない。GeneratorはGoogle Provider configurationを読まず、Google ProviderはApplication ModelやGenerator packageへ依存しない。
 
 bundle変換だけではbuild／deploy成功を意味しない。Generator producer、generated manifestによるchecksum照合、管理projectへのwrite、version作成、deployment公開はそれぞれ別の段階とし、通常Generator成果物やmanual fileを推測してuploadしてはならない。
+
+## D-064 Apps Script Backend Generator and Transport
+
+MVP Generator Configに独立した`backend` booleanを必須追加し、有効時だけ`generated/backend/appsscript/appsscript.json`と`main.gs`をApplication Modelから決定的に生成する。GeneratorはProvider configurationやGoogle Provider packageを参照せず、Spreadsheet IDはD-063のbundle段階で注入する。API公開対象でないModelはruntime definitionへ含めない。
+
+初期Web App manifestは意図しない公開を避けるため`access: MYSELF`、`executeAs: USER_DEPLOYING`とし、V8 runtimeを使う。匿名公開やdomain公開へ暗黙拡張しない。Apps Script Web AppがGET／POST entry pointだけを提供する制約に合わせ、listはGET、createはPOST、update／deleteはPOST parameter `__gstack_method=PATCH|DELETE`による明示overrideとする。通常のAPI contractが示すPATCH／DELETEとのtransport変換は将来のclient adapterが担当する。
+
+runtimeはSchema由来のresource、Model、Primary Key、Field allowlist、operation flagだけを含み、unknown resource／operation／fieldを拒否する。writeはScript Lockで直列化し、configured Spreadsheetのgstack管理SheetだけをModel名で取得し、headerがApplication ModelのField順と完全一致しなければdriftとして拒否する。ResponseはJSONの`ok`と`data | error.code`だけを返し、生error、stack、credential、tokenを返さない。型・required・permissionの完全な実行時検証、HTTP status表現、認証role mappingはDeploy公開範囲を広げる前に追加する。

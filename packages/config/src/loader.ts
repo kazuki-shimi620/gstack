@@ -24,6 +24,7 @@ const GENERATOR_KEYS = new Set([
   'types',
   'validation',
   'api',
+  'backend',
   'frontend',
   'openapi',
   'documentation',
@@ -193,6 +194,7 @@ function readGenerator(
     issues,
   );
   const api = readBoolean(value.api, 'generator.api', issues);
+  const backend = readBoolean(value.backend, 'generator.backend', issues);
   const frontend = readBoolean(value.frontend, 'generator.frontend', issues);
   const openapi = readBoolean(value.openapi, 'generator.openapi', issues);
   const documentation = readBoolean(
@@ -211,6 +213,7 @@ function readGenerator(
       types,
       validation,
       api,
+      backend,
       frontend,
       openapi,
       documentation,
@@ -223,6 +226,7 @@ function readGenerator(
     types: types!,
     validation: validation!,
     api: api!,
+    backend: backend!,
     frontend: frontend!,
     openapi: openapi!,
     documentation: documentation!,

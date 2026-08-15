@@ -92,6 +92,7 @@ const config: GeneratorConfig = {
   types: true,
   validation: true,
   api: true,
+  backend: true,
   frontend: true,
   openapi: true,
   documentation: true,

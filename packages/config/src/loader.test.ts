@@ -104,6 +104,7 @@ generator:
   types: true
   validation: true
   api: true
+  backend: true
   frontend: true
   openapi: false
   documentation: true
@@ -115,6 +116,7 @@ generator:
         types: true,
         validation: true,
         api: true,
+        backend: true,
         frontend: true,
         openapi: false,
         documentation: true,
@@ -134,6 +136,7 @@ generator:
   types: true
   validation: true
   api: true
+  backend: true
   frontend: true
   openapi: true
   documentation: true

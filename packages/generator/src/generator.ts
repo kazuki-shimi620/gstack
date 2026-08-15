@@ -1,6 +1,7 @@
 import type { ApplicationModel } from '@gstack/application';
 
 import { generateAiDocumentationArtifacts } from './ai-documentation.js';
+import { generateAppsScriptBackendArtifacts } from './appscript.js';
 import { generateApiArtifact } from './api.js';
 import { generateDocumentationArtifact } from './documentation.js';
 import type { GeneratedArtifactInput } from './artifact.js';
@@ -16,6 +17,7 @@ export interface GeneratorConfig {
   readonly types: boolean;
   readonly validation: boolean;
   readonly api: boolean;
+  readonly backend: boolean;
   readonly frontend: boolean;
   readonly openapi: boolean;
   readonly documentation: boolean;
@@ -32,6 +34,8 @@ export function generateApplication(
   if (config.validation)
     outputs.push(...generateValidationArtifacts(application));
   if (config.api) outputs.push(generateApiArtifact(application));
+  if (config.backend)
+    outputs.push(...generateAppsScriptBackendArtifacts(application));
   if (config.frontend) outputs.push(...generateReactArtifacts(application));
   if (config.openapi) outputs.push(generateOpenApiArtifact(application));
   if (config.documentation)
