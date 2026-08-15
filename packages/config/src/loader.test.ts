@@ -33,6 +33,47 @@ schema:
       schema: { directory: 'schemas' },
       generator: null,
       providers: [],
+      plugins: { packages: [], configuration: {} },
+    });
+  });
+
+  it('明示Plugin package allowlistとPlugin固有設定を読み込む', async () => {
+    const root = await projectWithConfig(`
+version: 1
+name: sample-app
+schemaVersion: 1
+schema: { directory: schema }
+plugins:
+  packages:
+    - '@example/gstack-plugin'
+  configuration:
+    example:
+      output: compact
+`);
+    await expect(loadProjectConfig(root)).resolves.toMatchObject({
+      plugins: {
+        packages: ['@example/gstack-plugin'],
+        configuration: { example: { output: 'compact' } },
+      },
+    });
+  });
+
+  it('Plugin path／URL／重複packageと不正configurationを拒否する', async () => {
+    const root = await projectWithConfig(`
+version: 1
+name: sample-app
+schemaVersion: 1
+schema: { directory: schema }
+plugins:
+  packages: ['./local.js', './local.js']
+  configuration:
+    Bad_ID: value
+`);
+    await expect(loadProjectConfig(root)).rejects.toMatchObject({
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: 'plugins.packages.0' }),
+        expect.objectContaining({ path: 'plugins.configuration.Bad_ID' }),
+      ]),
     });
   });
 

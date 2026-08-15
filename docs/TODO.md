@@ -74,5 +74,6 @@
 - [x] generated writeとGoogle Deploy bundle検証を分離するBuild CLI契約を`DECISIONS.md` D-071で実装した。
 - [x] loopback限定in-memory APIによる初期Local Development serverと`gstack dev`を`DECISIONS.md` D-072で実装した。
 - [x] Provider／Generator共通Plugin Manifest、Registry、明示package Loader、Generator namespaceを`DECISIONS.md` D-073で実装した。
-- [ ] Plugin package allowlistとPlugin固有configurationのProject Config永続形式を確定し、標準Runtimeへ接続する。
+- [x] Plugin package allowlistとPlugin固有configurationのProject Config永続形式を`DECISIONS.md` D-074で確定・実装した。
+- [ ] 標準Runtimeでallowlist packageをloadしProvider Registry／Generation Planへ接続する。
 - [ ] Plugin install／remove CLIはpackage manager変更と供給網確認の安全契約を確定してから実装する。

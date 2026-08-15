@@ -508,3 +508,9 @@ Plugin Registryはmemory上でIDとpackage nameの双方を一意に登録し、
 Plugin Loaderは呼出側が明示したnpm package specifierだけを注入可能Importerでdynamic importし、moduleのnamed export `gstackPlugin`、package identity、version互換性、definitionを検証してからRegistryへ登録する。relative／absolute path、URL、重複specifier、filesystem探索、node_modules scan、package install、credential解決を行わない。load／validation errorはpackage内部や生import errorを通常結果へ含めない。
 
 Generator Plugin成果物は`generated/plugins/<plugin-id>/`配下だけを許可し、共通Artifact path／checksum／重複検証を通す。他Plugin、built-in generated、manual領域へ出力できない。Plugin configurationのProject Config永続形式、公式Runtimeへの明示package allowlist接続、CLI install／removeは別契約で追加する。
+
+## D-074 Plugin Project Configuration
+
+`gstack.yaml`のoptional `plugins` sectionは必須子key `packages`と`configuration`だけを持つ。`packages`は利用者が明示した重複なしnpm package name sequenceで、relative／absolute path、URL、空値を拒否する。section未指定は空allowlistと空configurationへ正規化し、filesystemやdependenciesからpackageを自動発見しない。
+
+`configuration`はPlugin IDをkey、JSON-compatible mappingを値とし、credential値やtokenを置く場所として扱わない。Config Loaderは構文、package name、ID、JSON互換性だけを検証・freezeし、package import、Manifest解釈、Plugin実行を行わない。packageとPlugin IDの対応、未使用configuration、互換性はPlugin Loader／Runtime接続時に検証する。

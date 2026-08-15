@@ -7,6 +7,14 @@ export interface GstackConfig {
   };
   readonly generator: GeneratorProjectConfig | null;
   readonly providers: readonly ProviderProjectConfig[];
+  readonly plugins?: PluginProjectConfig;
+}
+
+export interface PluginProjectConfig {
+  readonly packages: readonly string[];
+  readonly configuration: Readonly<
+    Record<string, Readonly<Record<string, unknown>>>
+  >;
 }
 
 export interface ProviderProjectConfig {

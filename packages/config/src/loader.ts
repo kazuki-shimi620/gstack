@@ -17,6 +17,7 @@ const ROOT_KEYS = new Set([
   'schema',
   'generator',
   'providers',
+  'plugins',
 ]);
 const SCHEMA_KEYS = new Set(['directory']);
 const GENERATOR_KEYS = new Set([
@@ -31,6 +32,8 @@ const GENERATOR_KEYS = new Set([
   'aiDocumentation',
 ]);
 const PROVIDER_KEYS = new Set(['enabled', 'configuration']);
+const PLUGIN_KEYS = new Set(['packages', 'configuration']);
+const PLUGIN_PACKAGE = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/u;
 
 export async function loadProjectConfig(
   projectRoot: string,
@@ -92,12 +95,93 @@ export async function loadProjectConfig(
   const schema = readSchema(value.schema, issues);
   const generator = readGenerator(value.generator, issues);
   const providers = readProviders(value.providers, issues);
+  const plugins = readPlugins(value.plugins, issues);
 
   if (issues.length > 0 || !version || !name || !schemaVersion || !schema) {
     throw new ConfigLoadError(issues);
   }
 
-  return { version, name, schemaVersion, schema, generator, providers };
+  return {
+    version,
+    name,
+    schemaVersion,
+    schema,
+    generator,
+    providers,
+    plugins,
+  };
+}
+
+function readPlugins(
+  value: unknown,
+  issues: ConfigIssue[],
+): NonNullable<GstackConfig['plugins']> {
+  if (value === undefined) {
+    return Object.freeze({
+      packages: Object.freeze([]),
+      configuration: Object.freeze({}),
+    });
+  }
+  if (!isRecord(value)) {
+    issues.push({
+      code: 'CONFIG_VALUE_INVALID',
+      message: 'plugins must be a mapping.',
+      path: 'plugins',
+    });
+    return Object.freeze({
+      packages: Object.freeze([]),
+      configuration: Object.freeze({}),
+    });
+  }
+  reportUnknownKeys(value, PLUGIN_KEYS, 'plugins', issues);
+  const packages: string[] = [];
+  if (!Array.isArray(value.packages)) {
+    issues.push({
+      code: 'CONFIG_REQUIRED',
+      message: 'plugins.packages must be a sequence.',
+      path: 'plugins.packages',
+    });
+  } else {
+    for (const [index, packageName] of value.packages.entries()) {
+      if (
+        typeof packageName !== 'string' ||
+        !PLUGIN_PACKAGE.test(packageName) ||
+        packages.includes(packageName)
+      ) {
+        issues.push({
+          code: 'CONFIG_VALUE_INVALID',
+          message: 'Plugin package must be a unique npm package name.',
+          path: `plugins.packages.${index}`,
+        });
+      } else packages.push(packageName);
+    }
+  }
+  const configuration: Record<string, Readonly<Record<string, unknown>>> = {};
+  if (!isRecord(value.configuration)) {
+    issues.push({
+      code: 'CONFIG_REQUIRED',
+      message: 'plugins.configuration must be a mapping.',
+      path: 'plugins.configuration',
+    });
+  } else {
+    for (const [id, item] of Object.entries(value.configuration)) {
+      if (
+        !/^[a-z][a-z0-9-]*$/u.test(id) ||
+        !isRecord(item) ||
+        !isJsonCompatible(item)
+      ) {
+        issues.push({
+          code: 'CONFIG_VALUE_INVALID',
+          message: 'Plugin configuration must be a JSON-compatible mapping.',
+          path: `plugins.configuration.${id}`,
+        });
+      } else configuration[id] = deepFreeze(structuredClone(item));
+    }
+  }
+  return Object.freeze({
+    packages: Object.freeze(packages),
+    configuration: Object.freeze(configuration),
+  });
 }
 
 function readProviders(
