@@ -294,6 +294,10 @@ describe('plugin CLI', () => {
       },
       currentPackages: [],
       nextPackages: ['@example/generator'],
+      stateChecksums: {
+        config: 'b'.repeat(64),
+        packageJson: 'c'.repeat(64),
+      },
       fingerprint: 'a'.repeat(64),
     }));
     await createProgram(
@@ -327,6 +331,54 @@ describe('plugin CLI', () => {
           fingerprint: 'a'.repeat(64),
         },
       },
+    });
+  });
+
+  it('approval付きinstallだけを実変更serviceへ渡す', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const plan = {
+      action: 'install' as const,
+      packageName: '@example/generator',
+      version: '1.2.3',
+      pluginId: null,
+      command: { executable: 'npm' as const, arguments: [] },
+      currentPackages: [],
+      nextPackages: ['@example/generator'],
+      stateChecksums: {
+        config: 'b'.repeat(64),
+        packageJson: 'c'.repeat(64),
+      },
+      fingerprint: 'a'.repeat(64),
+    };
+    const applyPluginInstall = vi.fn(async () => plan);
+    await createProgram(
+      { stdout, stderr },
+      {
+        loadProject: vi.fn(),
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile: vi.fn(),
+        prepareMigrationRollbackFile: vi.fn(),
+        applyPluginInstall,
+      },
+    ).parseAsync([
+      'node',
+      'gstack',
+      'plugin',
+      'install',
+      '@example/generator@1.2.3',
+      '--approval',
+      plan.fingerprint,
+      '--json',
+    ]);
+    expect(applyPluginInstall).toHaveBeenCalledWith(
+      '@example/generator@1.2.3',
+      plan.fingerprint,
+    );
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: { dryRun: false, pluginChange: { action: 'install' } },
     });
   });
 });

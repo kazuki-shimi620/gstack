@@ -1,10 +1,12 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  applyStandardPluginInstall,
+  applyStandardPluginRemove,
   prepareStandardPluginInstall,
   prepareStandardPluginRemove,
 } from './plugin-management.js';
@@ -86,6 +88,77 @@ describe('Plugin management plan', () => {
       }),
     ).rejects.toMatchObject({ details: { code: 'CONFIG_INVALID' } });
   });
+
+  it('installはapproval一致後にnpm、Manifest検証、allowlist更新の順で実行する', async () => {
+    const root = await project([], {});
+    const preview = await prepareStandardPluginInstall({
+      root,
+      packageSpec: '@example/generator@1.2.3',
+    });
+    const events: string[] = [];
+    const pluginImporter = vi.fn(async () => {
+      events.push('manifest');
+      return importerResult();
+    });
+    await applyStandardPluginInstall({
+      root,
+      packageSpec: '@example/generator@1.2.3',
+      approval: preview.fingerprint,
+      pluginImporter,
+      packageManager: {
+        run: vi.fn(async () => {
+          events.push('npm');
+          return { exitCode: 0 };
+        }),
+      },
+    });
+    expect(events).toEqual(['npm', 'manifest']);
+    await expect(
+      readFile(path.join(root, 'gstack.yaml'), 'utf8'),
+    ).resolves.toContain('- "@example/generator"');
+  });
+
+  it('removeは先にallowlistを無効化してからnpmを実行する', async () => {
+    const root = await project(['@example/generator'], {
+      '@example/generator': '1.2.3',
+    });
+    const preview = await prepareStandardPluginRemove({
+      root,
+      packageName: '@example/generator',
+      pluginImporter: importer(),
+    });
+    const packageManager = {
+      run: vi.fn(async () => {
+        const config = await readFile(path.join(root, 'gstack.yaml'), 'utf8');
+        expect(config).not.toContain('- "@example/generator"');
+        return { exitCode: 0 };
+      }),
+    };
+    await applyStandardPluginRemove({
+      root,
+      packageName: '@example/generator',
+      approval: preview.fingerprint,
+      pluginImporter: importer(),
+      packageManager,
+    });
+    expect(packageManager.run).toHaveBeenCalledOnce();
+  });
+
+  it('不一致approvalではnpmもConfigも変更しない', async () => {
+    const root = await project([], {});
+    const before = await snapshot(root);
+    const packageManager = { run: vi.fn() };
+    await expect(
+      applyStandardPluginInstall({
+        root,
+        packageSpec: '@example/generator@1.2.3',
+        approval: 'invalid',
+        packageManager,
+      }),
+    ).rejects.toMatchObject({ details: { code: 'CONFIG_INVALID' } });
+    expect(packageManager.run).not.toHaveBeenCalled();
+    await expect(snapshot(root)).resolves.toEqual(before);
+  });
 });
 
 async function project(
@@ -117,7 +190,11 @@ ${configuration}
 }
 
 function importer() {
-  return vi.fn().mockResolvedValue({
+  return vi.fn().mockResolvedValue(importerResult());
+}
+
+function importerResult() {
+  return {
     gstackPlugin: {
       manifest: {
         formatVersion: 1,
@@ -129,11 +206,10 @@ function importer() {
       },
       generate: vi.fn(() => []),
     },
-  });
+  };
 }
 
 async function snapshot(root: string): Promise<readonly string[]> {
-  const { readFile } = await import('node:fs/promises');
   return Promise.all(
     ['gstack.yaml', 'package.json'].map((file) =>
       readFile(path.join(root, file), 'utf8'),

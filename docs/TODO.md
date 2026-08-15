@@ -79,4 +79,5 @@
 - [x] Generator Plugin成果物をbuilt-in成果物と単一Generation Plan／Manifestへ合成した（`DECISIONS.md` D-076）。
 - [x] 検証済みPlugin Manifestをconfiguration本文なしで表示するread-onlyな`plugin list`を追加した（`DECISIONS.md` D-077）。
 - [x] Plugin install／removeのexact version、lifecycle script無効、state fingerprintを持つread-only Planを実装した（`DECISIONS.md` D-078）。
-- [ ] Plugin install／removeの実変更はfingerprint再検証、npm失敗時の状態、Manifest検証後のConfig更新、atomic writeを確定してから公開する。
+- [x] Plugin install／removeの実変更をfingerprint再検証、npm失敗時の安全側状態、Manifest検証後のatomic Config更新付きで実装した（`DECISIONS.md` D-079）。
+- [ ] Plugin配布packageの公開前検証契約とcommandを実装する。

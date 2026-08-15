@@ -139,16 +139,21 @@ export function formatPluginListHuman(
         .join('\n');
 }
 
-export function formatPluginChangePlanHuman(plan: {
-  readonly action: string;
-  readonly packageName: string;
-  readonly version: string;
-  readonly pluginId: string | null;
-  readonly nextPackages: readonly string[];
-  readonly fingerprint: string;
-}): string {
+export function formatPluginChangePlanHuman(
+  plan: {
+    readonly action: string;
+    readonly packageName: string;
+    readonly version: string;
+    readonly pluginId: string | null;
+    readonly nextPackages: readonly string[];
+    readonly fingerprint: string;
+  },
+  dryRun = true,
+): string {
   return [
-    `Plugin ${plan.action} Dry Run:`,
+    dryRun
+      ? `Plugin ${plan.action} Dry Run:`
+      : `Plugin ${plan.action} completed.`,
     `Package: ${plan.packageName}@${plan.version}`,
     ...(plan.pluginId ? [`Plugin: ${plan.pluginId}`] : []),
     `Next allowlist: ${plan.nextPackages.join(', ') || '(empty)'}`,

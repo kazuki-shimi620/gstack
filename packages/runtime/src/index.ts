@@ -64,10 +64,13 @@ import {
 export { startStandardDevServer } from './dev.js';
 export type { StandardDevServer } from './dev.js';
 export {
+  applyStandardPluginInstall,
+  applyStandardPluginRemove,
   prepareStandardPluginInstall,
   prepareStandardPluginRemove,
 } from './plugin-management.js';
 export type {
+  PluginPackageManager,
   StandardPluginChangeOptions,
   StandardPluginChangePlan,
 } from './plugin-management.js';

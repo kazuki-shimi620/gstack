@@ -356,14 +356,16 @@ gstack plugin list --json
 
 ### install / remove
 
-初期段階では副作用のないPlanだけを提供する。installはexact SemVerを必須とし、removeはPluginが無効かつconfiguration削除済みの場合だけ計画できる。
+installはexact SemVerを必須とし、removeはPluginが無効かつconfiguration削除済みの場合だけ計画・実行できる。最初にdry-runで現在stateに結び付くfingerprintを確認する。
 
 ```bash
 gstack plugin install @example/generator@1.2.3 --dry-run
 gstack plugin remove @example/generator --dry-run
+gstack plugin install @example/generator@1.2.3 --approval <fingerprint>
+gstack plugin remove @example/generator --approval <fingerprint>
 ```
 
-Planは現在の`gstack.yaml`と`package.json`に結び付くfingerprint、npm command、変更前後のallowlistを返す。現時点ではdry-run省略を拒否し、packageやfilesystemを変更しない。
+Planは現在の`gstack.yaml`と`package.json`に結び付くfingerprint、npm command、変更前後のallowlistを返す。dry-runはpackageやfilesystemを変更しない。実変更は同じPlanのfingerprintを必須とし、npm lifecycle scriptを無効化する。
 
 ---
 

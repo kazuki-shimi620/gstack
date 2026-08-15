@@ -1,8 +1,14 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 
-import { findProjectRoot, loadProjectConfig } from '@gstack/config';
+import {
+  ConfigWriteError,
+  findProjectRoot,
+  loadProjectConfig,
+  writePluginPackages,
+} from '@gstack/config';
 import { GstackError } from '@gstack/core';
 import {
   loadPlugins,
@@ -21,6 +27,10 @@ export interface StandardPluginChangePlan {
   };
   readonly currentPackages: readonly string[];
   readonly nextPackages: readonly string[];
+  readonly stateChecksums: {
+    readonly config: string;
+    readonly packageJson: string;
+  };
   readonly fingerprint: string;
 }
 
@@ -28,6 +38,63 @@ export interface StandardPluginChangeOptions {
   readonly root?: string;
   readonly startDirectory?: string;
   readonly pluginImporter?: PluginModuleImporter;
+}
+
+export interface PluginPackageManager {
+  run(input: {
+    readonly executable: 'npm';
+    readonly arguments: readonly string[];
+    readonly cwd: string;
+  }): Promise<{ readonly exitCode: number }>;
+}
+
+export async function applyStandardPluginInstall(
+  input: StandardPluginChangeOptions & {
+    readonly packageSpec: string;
+    readonly approval: string;
+    readonly packageManager?: PluginPackageManager;
+  },
+): Promise<StandardPluginChangePlan> {
+  const root = await resolveRoot(input);
+  const prepared = await prepareStandardPluginInstall({ ...input, root });
+  approve(prepared, input.approval);
+  await runPackageManager(root, prepared, input.packageManager);
+  const installed = await loadConfiguredPlugins([prepared.packageName], input);
+  const plugin =
+    installed.get(prepared.packageName) ??
+    installed
+      .list()
+      .find(({ manifest }) => manifest.packageName === prepared.packageName);
+  if (!plugin || plugin.manifest.version !== prepared.version) {
+    invalid(
+      'Installed package did not expose the approved Plugin version; it was not allowlisted.',
+    );
+  }
+  await updatePluginPackages({
+    projectRoot: root,
+    expectedChecksum: prepared.stateChecksums.config,
+    packages: prepared.nextPackages,
+  });
+  return prepared;
+}
+
+export async function applyStandardPluginRemove(
+  input: StandardPluginChangeOptions & {
+    readonly packageName: string;
+    readonly approval: string;
+    readonly packageManager?: PluginPackageManager;
+  },
+): Promise<StandardPluginChangePlan> {
+  const root = await resolveRoot(input);
+  const prepared = await prepareStandardPluginRemove({ ...input, root });
+  approve(prepared, input.approval);
+  await updatePluginPackages({
+    projectRoot: root,
+    expectedChecksum: prepared.stateChecksums.config,
+    packages: prepared.nextPackages,
+  });
+  await runPackageManager(root, prepared, input.packageManager);
+  return prepared;
 }
 
 export async function prepareStandardPluginInstall(
@@ -99,16 +166,7 @@ export async function prepareStandardPluginRemove(
 }
 
 async function loadContext(options: StandardPluginChangeOptions) {
-  const root = options.root
-    ? path.resolve(options.root)
-    : await findProjectRoot(options.startDirectory ?? process.cwd());
-  if (!root) {
-    throw new GstackError({
-      code: 'PROJECT_NOT_FOUND',
-      category: 'configuration',
-      message: 'No gstack project was found.',
-    });
-  }
+  const root = await resolveRoot(options);
   const configPath = path.join(root, 'gstack.yaml');
   const packagePath = path.join(root, 'package.json');
   let configSource: string;
@@ -221,7 +279,10 @@ function plan(input: {
   readonly commandArguments: readonly string[];
   readonly currentPackages: readonly string[];
   readonly nextPackages: readonly string[];
-  readonly stateChecksums: Readonly<Record<string, string>>;
+  readonly stateChecksums: {
+    readonly config: string;
+    readonly packageJson: string;
+  };
 }): StandardPluginChangePlan {
   const content = {
     action: input.action,
@@ -241,9 +302,69 @@ function plan(input: {
     }),
     currentPackages: Object.freeze([...content.currentPackages]),
     nextPackages: Object.freeze([...content.nextPackages]),
+    stateChecksums: Object.freeze({ ...content.stateChecksums }),
     fingerprint: checksum(JSON.stringify(content)),
   });
 }
+
+async function resolveRoot(options: StandardPluginChangeOptions) {
+  const root = options.root
+    ? path.resolve(options.root)
+    : await findProjectRoot(options.startDirectory ?? process.cwd());
+  if (!root) {
+    throw new GstackError({
+      code: 'PROJECT_NOT_FOUND',
+      category: 'configuration',
+      message: 'No gstack project was found.',
+    });
+  }
+  return root;
+}
+
+function approve(plan: StandardPluginChangePlan, approval: string): void {
+  if (approval !== plan.fingerprint) {
+    invalid('Plugin change approval does not match the current Plan.');
+  }
+}
+
+async function runPackageManager(
+  root: string,
+  plan: StandardPluginChangePlan,
+  packageManager: PluginPackageManager = defaultPackageManager,
+): Promise<void> {
+  const result = await packageManager.run({
+    executable: plan.command.executable,
+    arguments: plan.command.arguments,
+    cwd: root,
+  });
+  if (result.exitCode !== 0) {
+    invalid('npm failed while applying the Plugin change.');
+  }
+}
+
+async function updatePluginPackages(
+  input: Parameters<typeof writePluginPackages>[0],
+): Promise<void> {
+  try {
+    await writePluginPackages(input);
+  } catch (cause: unknown) {
+    if (cause instanceof ConfigWriteError) invalid(cause.message);
+    throw cause;
+  }
+}
+
+const defaultPackageManager: PluginPackageManager = {
+  run: ({ executable, arguments: args, cwd }) =>
+    new Promise((resolve, reject) => {
+      const child = spawn(executable, args, {
+        cwd,
+        shell: false,
+        stdio: 'inherit',
+      });
+      child.once('error', reject);
+      child.once('exit', (code) => resolve({ exitCode: code ?? 1 }));
+    }),
+};
 
 function checksum(value: string): string {
   return createHash('sha256').update(value).digest('hex');

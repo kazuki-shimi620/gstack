@@ -7,6 +7,8 @@ import {
 } from '@gstack/core';
 import {
   applyStandardGoogleMigrationFile,
+  applyStandardPluginInstall,
+  applyStandardPluginRemove,
   buildStandardGoogle,
   listStandardPlugins,
   loadStandardProject,
@@ -98,6 +100,14 @@ export interface ProgramServices {
   readonly preparePluginRemove?: (
     packageName: string,
   ) => ReturnType<typeof prepareStandardPluginRemove>;
+  readonly applyPluginInstall?: (
+    packageSpec: string,
+    approval: string,
+  ) => ReturnType<typeof applyStandardPluginInstall>;
+  readonly applyPluginRemove?: (
+    packageName: string,
+    approval: string,
+  ) => ReturnType<typeof applyStandardPluginRemove>;
 }
 
 const defaultServices: ProgramServices = {
@@ -122,6 +132,10 @@ const defaultServices: ProgramServices = {
     prepareStandardPluginInstall({ packageSpec }),
   preparePluginRemove: (packageName) =>
     prepareStandardPluginRemove({ packageName }),
+  applyPluginInstall: (packageSpec, approval) =>
+    applyStandardPluginInstall({ packageSpec, approval }),
+  applyPluginRemove: (packageName, approval) =>
+    applyStandardPluginRemove({ packageName, approval }),
 };
 
 export function createProgram(
@@ -184,22 +198,32 @@ export function createProgram(
     .description('Preview installation of an exact Plugin package version')
     .argument('<package-spec>', 'npm package with an exact SemVer version')
     .option('--dry-run', 'create a Plan without changing files or packages')
+    .option('--approval <fingerprint>', 'approve the exact current Plan')
     .option('--json', 'output structured JSON')
     .action(
       async (
         packageSpec: string,
-        options: { dryRun?: boolean; json?: boolean },
+        options: { dryRun?: boolean; approval?: string; json?: boolean },
       ) => {
         await withOutput(io, options.json, async () => {
-          if (!options.dryRun) pluginDryRunRequired('install');
-          const plan = await (
-            services.preparePluginInstall ??
-            ((selected) =>
-              prepareStandardPluginInstall({ packageSpec: selected }))
-          )(packageSpec);
+          validatePluginChangeOptions('install', options);
+          const plan = options.dryRun
+            ? await (
+                services.preparePluginInstall ??
+                ((selected) =>
+                  prepareStandardPluginInstall({ packageSpec: selected }))
+              )(packageSpec)
+            : await (
+                services.applyPluginInstall ??
+                ((selected, approval) =>
+                  applyStandardPluginInstall({
+                    packageSpec: selected,
+                    approval,
+                  }))
+              )(packageSpec, options.approval as string);
           return {
-            data: { dryRun: true, pluginChange: plan },
-            human: formatPluginChangePlanHuman(plan),
+            data: { dryRun: Boolean(options.dryRun), pluginChange: plan },
+            human: formatPluginChangePlanHuman(plan, Boolean(options.dryRun)),
           };
         });
       },
@@ -210,22 +234,32 @@ export function createProgram(
     .description('Preview removal of an unused Plugin package')
     .argument('<package-name>', 'allowlisted npm package name')
     .option('--dry-run', 'create a Plan without changing files or packages')
+    .option('--approval <fingerprint>', 'approve the exact current Plan')
     .option('--json', 'output structured JSON')
     .action(
       async (
         packageName: string,
-        options: { dryRun?: boolean; json?: boolean },
+        options: { dryRun?: boolean; approval?: string; json?: boolean },
       ) => {
         await withOutput(io, options.json, async () => {
-          if (!options.dryRun) pluginDryRunRequired('remove');
-          const plan = await (
-            services.preparePluginRemove ??
-            ((selected) =>
-              prepareStandardPluginRemove({ packageName: selected }))
-          )(packageName);
+          validatePluginChangeOptions('remove', options);
+          const plan = options.dryRun
+            ? await (
+                services.preparePluginRemove ??
+                ((selected) =>
+                  prepareStandardPluginRemove({ packageName: selected }))
+              )(packageName)
+            : await (
+                services.applyPluginRemove ??
+                ((selected, approval) =>
+                  applyStandardPluginRemove({
+                    packageName: selected,
+                    approval,
+                  }))
+              )(packageName, options.approval as string);
           return {
-            data: { dryRun: true, pluginChange: plan },
-            human: formatPluginChangePlanHuman(plan),
+            data: { dryRun: Boolean(options.dryRun), pluginChange: plan },
+            human: formatPluginChangePlanHuman(plan, Boolean(options.dryRun)),
           };
         });
       },
@@ -704,13 +738,25 @@ async function withProviderOutput(
   return withProjectOutput(io, json, operation);
 }
 
-function pluginDryRunRequired(action: 'install' | 'remove'): never {
-  throw new GstackError({
-    code: 'CONFIG_INVALID',
-    category: 'configuration',
-    message: `Plugin ${action} is currently available as dry-run only.`,
-    hint: 'Pass --dry-run to inspect the package and allowlist changes.',
-  });
+function validatePluginChangeOptions(
+  action: 'install' | 'remove',
+  options: { readonly dryRun?: boolean; readonly approval?: string },
+): void {
+  if (options.dryRun && options.approval) {
+    throw new GstackError({
+      code: 'CONFIG_INVALID',
+      category: 'configuration',
+      message: `Plugin ${action} dry-run cannot include an approval.`,
+    });
+  }
+  if (!options.dryRun && !options.approval) {
+    throw new GstackError({
+      code: 'CONFIG_INVALID',
+      category: 'configuration',
+      message: `Plugin ${action} requires an explicit approval fingerprint.`,
+      hint: 'Run with --dry-run, then pass its fingerprint to --approval.',
+    });
+  }
 }
 
 async function withOutput(
