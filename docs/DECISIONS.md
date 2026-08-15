@@ -588,3 +588,11 @@ Google Providerの`drop_model`はCoreで`destructive: true`、`reversible: false
 write前には決定的なSheet ID／title、`previous.fields`と完全一致するheader順、唯一で正しいModel markerを検証し、drift時は競合として停止する。Spreadsheetには最低1枚のSheetが必要なため、対象が最後の1枚なら実行を拒否する。readは最初にSpreadsheet直下metadataとSheet一覧だけを取得し、対象が存在する場合に限り対象Sheetのheader行を追加取得する。対象が存在せずSpreadsheet直下のOperation markerが一致する場合だけ適用済みと判定する。
 
 writeは`deleteSheet`とSpreadsheet直下の`gstack_operation` metadata作成を単一非retry `spreadsheets.batchUpdate`で行う。markerを削除対象Sheetへ置かないため、response喪失後も再readで適用済みを判定できる。OAuthは`database_write` scopeを使い、safe error変換を共有する。rollbackは不可逆として公開しない。これらのtestと標準Runtime接続を条件にManifestの`drop_model`を`native`へ昇格する。
+
+## D-085 Google Sheets Alter Column Migration
+
+Google SheetsのcellにはgstackのField type、required、unique、Enumを一貫して表現できるnative schema constraintがない。Google Providerの`alter_column`は既存dataを変換せず、対象列の互換性を検査してApplication Model変更の適用可否を判定する`emulated` Operationとする。Google SheetsのData Validationや表示形式をgstackのschema constraintとして暗黙作成・上書きしてはいけない。変更後の新規write validationはApplication Modelから生成されるApps Script runtimeの責務とし、Migration EngineやProviderへ混在させない。
+
+ProviderはOperationの`previous`、`target`、`changes`が同じ列名に対する完全で矛盾のない差分であり、D-017のriskと一致することを再検証する。write前には決定的なSheet ID／title、Model marker、header内の対象列位置を検証する。対象列はheaderを除く全rowのeffective valueをreadし、空cellを未設定として扱う。`required: false -> true`では空cellを拒否し、`unique: false -> true`では空cellを除く重複を拒否し、type変更とEnum value削除では全ての非空値がtarget Fieldの型／Enumに適合することを要求する。formulaは計算結果を検査する。値のcoerce、trim、backfill、deduplicate、日付やJSONの暗黙変換は行わない。検査件数やrow番号はdiagnosticに利用できるが、cell値をerror、log、History、Migration Fileへ保存してはいけない。
+
+互換性確認後は対象column dimensionへ`gstack_operation` metadataを単一非retry `spreadsheets.batchUpdate`で作成し、cell値、format、formula、既存metadataは変更しない。response喪失後は同じcolumn位置のmarkerを再readして適用済みを判定する。検査read後からmarker writeまでの同時編集をGoogle Sheets APIだけで排他的に防げないため、D-054のMigration lockを必須とし、batch write直前にもheader／marker状態を再取得する。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict state parser、全型の互換性判定、required／unique／Enum競合、値非露出error、marker idempotency、lock下の標準Runtime接続をtestした後にだけManifestの`alter_column`を`emulated`へ変更する。
