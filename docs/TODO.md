@@ -62,5 +62,6 @@
 - [x] Logging contractを`DECISIONS.md` D-060で確定し、任意message／metadataを持たない最小Event、注入可能Sink／clock、no-op既定、secret-safeなCLI／MCP境界をCoreへ実装した。
 - [x] Apps Scriptの全置換特性を`DECISIONS.md` D-061で確定し、管理marker、strict source bundle、read-before-write、非retry PUTをGoogle Providerへ実装した。
 - [ ] Generator成果物からGoogle Provider固有Apps Script source bundleへ変換する境界とmanifest生成規則を確定する。
-- [ ] 未管理Apps Script projectをgstack管理対象へ明示採用するProject Initialization契約を確定する。
+- [x] 空の未管理Apps Script projectだけを管理marker付きへ明示採用するProvider初期化境界を`DECISIONS.md` D-062で確定した。
+- [ ] Apps Script project初期化のpreview／approval付きCLI commandを設計・実装する。
 - [ ] Apps Script version／deploymentのpreview fingerprint、再開、冪等性、公開URLの安全な出力契約を確定する。

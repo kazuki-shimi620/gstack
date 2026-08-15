@@ -42,6 +42,49 @@ const secrets: ProviderSecretResolver = {
 };
 
 describe('Google Apps Script managed content write', () => {
+  it('initializes only a base-manifest-only project with the marker', async () => {
+    const manifest = {
+      name: 'appsscript',
+      type: 'JSON' as const,
+      source: '{}',
+    };
+    const initialized = [manifest, files[1]];
+    const gateway: GoogleScriptContentGateway = {
+      getProjectContent: vi.fn().mockResolvedValue({ files: [manifest] }),
+      updateProjectContent: vi.fn().mockResolvedValue({ files: initialized }),
+    };
+    await expect(
+      new GoogleScriptWriteService(
+        gateway,
+        config,
+        secrets,
+      ).initializeManagedProject(),
+    ).resolves.toEqual(initialized);
+    expect(gateway.updateProjectContent).toHaveBeenCalledWith(
+      expect.objectContaining({ files: initialized }),
+    );
+  });
+
+  it('refuses initialization when any manual source exists', async () => {
+    const gateway: GoogleScriptContentGateway = {
+      getProjectContent: vi.fn().mockResolvedValue({
+        files: [
+          { name: 'appsscript', type: 'JSON', source: '{}' },
+          { name: 'Code', type: 'SERVER_JS', source: 'function main() {}' },
+        ],
+      }),
+      updateProjectContent: vi.fn(),
+    };
+    await expect(
+      new GoogleScriptWriteService(
+        gateway,
+        config,
+        secrets,
+      ).initializeManagedProject(),
+    ).rejects.toMatchObject({ code: 'GOOGLE_SCRIPT_PROJECT_UNMANAGED' });
+    expect(gateway.updateProjectContent).not.toHaveBeenCalled();
+  });
+
   it('reads ownership before replacing all content with write scope', async () => {
     const gateway: GoogleScriptContentGateway = {
       getProjectContent: vi.fn().mockResolvedValue({ files }),

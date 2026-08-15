@@ -413,3 +413,9 @@ source bundleは重複しない非空file名、`SERVER_JS | HTML | JSON` type、
 ownership確認のcontent GETは`script.projects.readonly` scopeでretry可能とする。全置換PUTは`script.projects` scopeを使い、response喪失時に適用結果を断定できないため自動retryしない。Apps Script APIにはcontent更新用のcompare-and-set／ETag前提を置けないため、readとwriteの間の外部編集を完全には防げない。CLI Deployへ接続する前に、Generator成果物からProvider固有bundleを組み立てる境界、未管理projectを明示採用する初期化手順、preview fingerprint、version／deploymentの再開・冪等性を別途確定する。
 
 参考: [Apps Script API: Manage projects](https://developers.google.com/apps-script/api/how-tos/manage-projects)、[projects.updateContent](https://developers.google.com/apps-script/api/reference/rest/v1/projects/updateContent)
+
+## D-062 Apps Script Project Management Initialization
+
+既存Apps Script projectをgstack管理対象へ採用する初期化は、content readでJSON manifestがちょうど1件だけ存在し、SERVER_JS／HTMLや他fileが一切ない空projectと確認できる場合に限る。空projectの既存manifestをそのまま保持してD-061の管理markerだけを追加する完全置換とし、manifestのtimezone、runtime version、OAuth scope等を推測変更しない。
+
+source file、複数manifest、管理markerを含む既存projectは初期化を拒否する。手書きfileの自動退避、merge、上書き、既存管理projectの再初期化を行わない。readにはreadonly scope、writeにはprojects scopeを個別に使い、初期化PUTもresponse喪失時に自動retryしない。CLIから公開する場合はProject Initializationの明示commandとpreview／approvalを別途必須とし、通常のgenerate、doctor、deployが暗黙初期化してはならない。

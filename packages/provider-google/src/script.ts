@@ -71,6 +71,24 @@ export class GoogleScriptWriteService {
     private readonly secrets: ProviderSecretResolver,
   ) {}
 
+  async initializeManagedProject(): Promise<readonly GoogleScriptFile[]> {
+    const current = await this.readCurrentContent();
+    if (current.length !== 1 || current[0]?.type !== 'JSON') {
+      throw new GoogleScriptError(
+        'GOOGLE_SCRIPT_PROJECT_UNMANAGED',
+        'Only an empty Apps Script project can be initialized for gstack.',
+      );
+    }
+    return this.writeContent([
+      current[0],
+      Object.freeze({
+        name: GSTACK_SCRIPT_MARKER_FILE,
+        type: 'SERVER_JS',
+        source: GSTACK_SCRIPT_MARKER_SOURCE,
+      }),
+    ]);
+  }
+
   async replaceManagedContent(
     files: readonly GoogleScriptFile[],
   ): Promise<readonly GoogleScriptFile[]> {
@@ -82,9 +100,19 @@ export class GoogleScriptWriteService {
       );
     }
 
-    let current: readonly GoogleScriptFile[];
+    const current = await this.readCurrentContent();
+    if (!hasManagementMarker(current)) {
+      throw new GoogleScriptError(
+        'GOOGLE_SCRIPT_PROJECT_UNMANAGED',
+        'Google Apps Script project is not managed by gstack.',
+      );
+    }
+    return this.writeContent(desired);
+  }
+
+  private async readCurrentContent(): Promise<readonly GoogleScriptFile[]> {
     try {
-      current = parseProjectContent(
+      return parseProjectContent(
         await this.gateway.getProjectContent({
           scriptId: this.config.appsScriptProjectId,
           credential: googleCredentialRequest(
@@ -102,16 +130,14 @@ export class GoogleScriptWriteService {
         { cause: error },
       );
     }
-    if (!hasManagementMarker(current)) {
-      throw new GoogleScriptError(
-        'GOOGLE_SCRIPT_PROJECT_UNMANAGED',
-        'Google Apps Script project is not managed by gstack.',
-      );
-    }
+  }
 
-    let updated: readonly GoogleScriptFile[];
+  private async writeContent(
+    files: readonly GoogleScriptFile[],
+  ): Promise<readonly GoogleScriptFile[]> {
+    const desired = validateScriptFiles(files);
     try {
-      updated = parseProjectContent(
+      const updated = parseProjectContent(
         await this.gateway.updateProjectContent({
           scriptId: this.config.appsScriptProjectId,
           files: desired,
@@ -122,6 +148,13 @@ export class GoogleScriptWriteService {
           secrets: this.secrets,
         }),
       );
+      if (!sameFiles(desired, updated)) {
+        throw new GoogleScriptError(
+          'GOOGLE_SCRIPT_CONTENT_INVALID',
+          'Google Apps Script project content response is invalid.',
+        );
+      }
+      return updated;
     } catch (error: unknown) {
       if (error instanceof GoogleScriptError) throw error;
       throw new GoogleScriptError(
@@ -130,13 +163,6 @@ export class GoogleScriptWriteService {
         { cause: error },
       );
     }
-    if (!sameFiles(desired, updated)) {
-      throw new GoogleScriptError(
-        'GOOGLE_SCRIPT_CONTENT_INVALID',
-        'Google Apps Script project content response is invalid.',
-      );
-    }
-    return updated;
   }
 }
 
