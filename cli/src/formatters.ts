@@ -89,6 +89,24 @@ export function formatDeployResultHuman(result: {
   ].join('\n');
 }
 
+export function formatBuildHuman(result: {
+  readonly dryRun: boolean;
+  readonly artifacts: readonly { readonly path: string }[];
+  readonly deletes: readonly string[];
+  readonly deploy: {
+    readonly fingerprint: string;
+    readonly files: readonly unknown[];
+  };
+}): string {
+  return [
+    result.dryRun ? 'Build Dry Run:' : 'Build completed.',
+    ...result.artifacts.map(({ path }) => `BUILD ${path}`),
+    ...result.deletes.map((path) => `DELETE ${path}`),
+    `Deploy fingerprint: ${result.deploy.fingerprint}`,
+    `Summary: ${result.artifacts.length} artifact(s), ${result.deploy.files.length} deploy file(s).`,
+  ].join('\n');
+}
+
 export function formatProviderListHuman(
   providers: readonly ProviderSummary[],
 ): string {

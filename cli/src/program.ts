@@ -7,6 +7,7 @@ import {
 } from '@gstack/core';
 import {
   applyStandardGoogleMigrationFile,
+  buildStandardGoogle,
   loadStandardProject,
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollbackFile,
@@ -21,6 +22,7 @@ import {
   formatErrorHuman,
   formatDeployPreviewHuman,
   formatDeployResultHuman,
+  formatBuildHuman,
   formatGenerationHuman,
   formatJson,
   formatMigrationHistoryHuman,
@@ -75,6 +77,10 @@ export interface ProgramServices {
     project: GstackProject,
     approval: string,
   ) => ReturnType<typeof initializeStandardGoogleProject>;
+  readonly build?: (
+    project: GstackProject,
+    dryRun: boolean,
+  ) => ReturnType<typeof buildStandardGoogle>;
 }
 
 const defaultServices: ProgramServices = {
@@ -92,6 +98,7 @@ const defaultServices: ProgramServices = {
     prepareStandardGoogleProjectInitialization({ project }),
   initializeProject: (project, approval) =>
     initializeStandardGoogleProject({ project, approval }),
+  build: (project, dryRun) => buildStandardGoogle({ project, dryRun }),
 };
 
 export function createProgram(
@@ -473,6 +480,30 @@ export function createProgram(
         );
         process.exitCode = details.category === 'configuration' ? 3 : 1;
       }
+    });
+
+  program
+    .command('build')
+    .description('Build generated Artifacts and validate the Deploy bundle')
+    .option('--dry-run', 'preview Build without changing generated files')
+    .option('--json', 'output structured JSON')
+    .action(async (options: { dryRun?: boolean; json?: boolean }) => {
+      await withProjectOutput(
+        io,
+        options.json,
+        async (project) => {
+          const result = await (
+            services.build ??
+            ((selected, dryRun) =>
+              buildStandardGoogle({ project: selected, dryRun }))
+          )(project, Boolean(options.dryRun));
+          return {
+            data: { build: result },
+            human: formatBuildHuman(result),
+          };
+        },
+        services.loadProject,
+      );
     });
 
   program

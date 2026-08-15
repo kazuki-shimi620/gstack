@@ -482,3 +482,11 @@ Apps Script backend definitionは各公開ModelについてField名、type、req
 型mappingはstring／textをstring、uuidを標準hyphen形式、integerをsafe integer、numberをfinite number、booleanをboolean、dateを`YYYY-MM-DD`の有効日、datetimeをparse可能なstring、enumを定義値、jsonをJSON requestで表現可能な値とする。string／number validationを該当型にだけ適用する。unique FieldはScript Lock内で既存rowを検査し、createでは全row、updateでは対象row以外との重複を拒否する。optionalなnull／空値は複数rowで許可する。
 
 検証失敗はsafeな`REQUEST_INVALID`、重複も内部詳細を公開せず同じsafe errorへ変換する。Schema permission roleとApps Script利用者identityの対応は未確定のため推測せず、Web App accessは引き続き`MYSELF`に限定する。role enforcementが確定するまでPublish accessを拡張しない。
+
+## D-071 Build CLI Contract
+
+`gstack build --dry-run`はApplication ModelとGenerator ConfigからGeneration Planをmemory上で作り、D-063 Google source bundleへの変換とD-065 Deploy fingerprint生成まで検証する。filesystem、Provider、Secret Resolverを変更・呼出しせず、artifact path／checksum、stale delete path、sourceを含まないDeploy previewだけを返す。
+
+`gstack build`は同じGeneration PlanをGenerator Writerで`generated/`所有領域だけへ反映した後、その同一Planからbundleとfingerprintを検証する。manual領域、Provider content、Migration、deploymentを変更しない。Build結果はdry-run flag、artifact path／checksum、delete path、Deploy previewを持ち、artifact本文、credential、tokenをCLI JSONへ含めない。同じ入力のdry-runとwriteで同じDeploy fingerprintを返す。
+
+`generate`はProvider非依存の全生成物作成、`build`は生成物作成と標準Google Deploy bundleの成立確認、`deploy`はapproval付きProvider公開を担当する。BuildがProject Initialization、Migration Apply、Deployを暗黙実行してはいけない。

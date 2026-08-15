@@ -465,6 +465,17 @@ gstack deploy --approval <fingerprint>
 
 dry-runはfilesystemやProviderを変更しない。実Deployはgstack管理済みApps Script projectだけを対象とし、未管理projectを暗黙初期化しない。
 
+## build
+
+生成物とDeploy bundleを構築・検証する。
+
+```bash
+gstack build --dry-run
+gstack build
+```
+
+dry-runはfilesystemを変更しない。通常実行は`generated/`だけを書き換え、Providerへは接続しない。
+
 ---
 
 ## doctor

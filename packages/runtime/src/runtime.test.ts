@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { GstackProject } from '@gstack/core';
 
 import {
   applyCapabilityResults,
@@ -23,6 +24,7 @@ import {
   createStandardGoogleMigrationRuntime,
   EnvironmentSecretResolver,
   applyStandardGoogleMigration,
+  buildStandardGoogle,
   loadStandardProject,
   prepareStandardGoogleMigrationApply,
   prepareStandardGoogleMigrationApplyFile,
@@ -88,6 +90,40 @@ describe('standard runtime', () => {
       ],
     });
     expect(JSON.stringify(first)).not.toContain('GOOGLE_CREDENTIALS');
+  });
+
+  it('Build dry-runとwriteを同じbundle検証へ接続する', async () => {
+    const project = deployProject();
+    const previewGeneration = vi.fn(project.previewGeneration);
+    const generate = vi.fn(project.previewGeneration);
+    const buildProject = {
+      ...project,
+      previewGeneration,
+      generate,
+    } as GstackProject;
+    const preview = await buildStandardGoogle({
+      project: buildProject,
+      dryRun: true,
+    });
+    expect(preview).toMatchObject({
+      dryRun: true,
+      deploy: { fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u) },
+    });
+    expect(
+      preview.artifacts.map(({ path: artifactPath }) => artifactPath),
+    ).toEqual([
+      'generated/backend/appsscript/appsscript.json',
+      'generated/backend/appsscript/main.gs',
+    ]);
+    expect(previewGeneration).toHaveBeenCalledOnce();
+    expect(generate).not.toHaveBeenCalled();
+
+    const written = await buildStandardGoogle({
+      project: buildProject,
+      dryRun: false,
+    });
+    expect(written.deploy.fingerprint).toBe(preview.deploy.fingerprint);
+    expect(generate).toHaveBeenCalledOnce();
   });
 
   it('空Apps Script projectの初期化をpreviewして明示承認する', async () => {
@@ -541,7 +577,7 @@ ${extra.trimStart()}`,
   return root;
 }
 
-function deployProject() {
+function deployProject(): GstackProject {
   return {
     getConfig: async () => ({
       providers: [
@@ -565,15 +601,19 @@ function deployProject() {
         {
           path: 'generated/backend/appsscript/appsscript.json',
           content: '{}\n',
+          checksum: 'a'.repeat(64),
         },
         {
           path: 'generated/backend/appsscript/main.gs',
           content: 'function doGet() {}\n',
+          checksum: 'b'.repeat(64),
         },
       ],
+      deletes: [],
+      manifest: { formatVersion: 1, artifacts: [] },
     }),
     getApplicationModel: async () => deployApplication(),
-  } as never;
+  } as unknown as GstackProject;
 }
 
 function deployApplication() {

@@ -6,7 +6,12 @@ import {
   loadProjectConfig,
   type GstackConfig,
 } from '@gstack/config';
-import { GstackError, loadProject, type GstackProject } from '@gstack/core';
+import {
+  GstackError,
+  loadProject,
+  type GenerationPlan,
+  type GstackProject,
+} from '@gstack/core';
 import {
   applyCapabilityResults,
   createApplicationModelSnapshot,
@@ -64,6 +69,36 @@ export interface StandardGoogleDeployPreview {
 export interface StandardGoogleDeployResult {
   readonly fingerprint: string;
   readonly deployment: GoogleDeploymentResult;
+}
+
+export interface StandardGoogleBuildResult {
+  readonly dryRun: boolean;
+  readonly artifacts: readonly {
+    readonly path: string;
+    readonly checksum: string;
+  }[];
+  readonly deletes: readonly string[];
+  readonly deploy: StandardGoogleDeployPreview;
+}
+
+export async function buildStandardGoogle(input: {
+  readonly project: GstackProject;
+  readonly dryRun: boolean;
+}): Promise<StandardGoogleBuildResult> {
+  const plan = input.dryRun
+    ? await input.project.previewGeneration()
+    : await input.project.generate();
+  const build = await prepareGoogleDeployBuild(input.project, plan);
+  return Object.freeze({
+    dryRun: input.dryRun,
+    artifacts: Object.freeze(
+      plan.writes.map(({ path: artifactPath, checksum }) =>
+        Object.freeze({ path: artifactPath, checksum }),
+      ),
+    ),
+    deletes: Object.freeze([...plan.deletes]),
+    deploy: build.preview,
+  });
 }
 
 export async function prepareStandardGoogleProjectInitialization(input: {
@@ -236,7 +271,10 @@ async function requireDeployMigrationReady(
   }
 }
 
-async function prepareGoogleDeployBuild(project: GstackProject): Promise<{
+async function prepareGoogleDeployBuild(
+  project: GstackProject,
+  existingPlan?: GenerationPlan,
+): Promise<{
   readonly config: NonNullable<
     ReturnType<typeof parseGoogleProviderConfig>['config']
   >;
@@ -263,7 +301,7 @@ async function prepareGoogleDeployBuild(project: GstackProject): Promise<{
     });
   }
   try {
-    const plan = await project.previewGeneration();
+    const plan = existingPlan ?? (await project.previewGeneration());
     const artifacts = plan.writes.filter(({ path: artifactPath }) =>
       artifactPath.startsWith('generated/backend/appsscript/'),
     );

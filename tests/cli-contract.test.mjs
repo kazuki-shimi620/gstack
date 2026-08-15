@@ -205,6 +205,43 @@ test('Deployはdry-runでtargetとfingerprintだけを表示する', (t) => {
   assert.equal(result.stdout.includes('GOOGLE_CREDENTIALS'), false);
 });
 
+test('Buildはdry-runとgenerated領域へのwriteを分離する', (t) => {
+  const root = project(
+    'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+    `providers:
+  google:
+    enabled: true
+    configuration:
+      spreadsheetId: spreadsheet-id
+      appsScriptProjectId: script-id
+      driveFolderId: folder-id
+      authentication:
+        mode: user_oauth
+        credentialSecret: GOOGLE_CREDENTIALS
+`,
+  );
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const preview = run(['build', '--dry-run', '--json'], root);
+  assert.equal(preview.status, 0);
+  const previewData = JSON.parse(preview.stdout).data.build;
+  assert.equal(previewData.dryRun, true);
+  assert.match(previewData.deploy.fingerprint, /^[a-f0-9]{64}$/u);
+  assert.equal(existsSync(path.join(root, 'generated')), false);
+
+  const built = run(['build', '--json'], root);
+  assert.equal(built.status, 0);
+  const buildData = JSON.parse(built.stdout).data.build;
+  assert.equal(buildData.dryRun, false);
+  assert.equal(buildData.deploy.fingerprint, previewData.deploy.fingerprint);
+  assert.equal(
+    existsSync(
+      path.join(root, 'generated', 'backend', 'appsscript', 'main.gs'),
+    ),
+    true,
+  );
+});
+
 test('Provider list／info／validateを標準Runtime経由で実行する', (t) => {
   const root = project(
     'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
