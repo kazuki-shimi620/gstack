@@ -311,7 +311,7 @@ MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知
 
 Google ProviderのMigration capability結果はManifestのoperation type別supportを唯一のsourceとして、入力Planの全Operation IDへ順序を保持して射影する。結果をMigration packageの共通`applyCapabilityResults`へ渡し、欠落／重複／未知IDの検証とPlan集約を再利用する。Google Provider側で独自Planや独自applicability規則を実装しない。
 
-初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の条件を満たした`create_model`とD-056の条件を満たした`add_column`は`native`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
+初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`は各条件を満たして`native`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
 
 ## D-051 Migration Rollback Plan
 
@@ -564,3 +564,11 @@ export entryは専用のlocal importerで読み、既存Plugin Loaderを通し�
 `@gstack/mcp`がprivate workspace packageである間は、存在しないregistry packageや`npx`利用を案内せず、source checkoutの`npm ci`／`npm run build`と`node <absolute dist/main.js>`を正規のlocal setupとする。stdio hostには`GSTACK_PROJECT_ROOT`とserver entryの絶対pathを渡し、host依存のworking directory探索へ依存しない。
 
 Codexは公式`codex mcp add`、Claude Codeは公式`claude mcp add --transport stdio`を使用し、その他hostには標準的なcommand／args／env例を示す。checked-in host configへcredentialやtokenを直接保存しない。MCP serverはRead専用Tool allowlistを維持し、hostへ登録した事実をwrite操作の承認として扱わない。npm公開後のpackage commandは実際のpackage名、version、bin、install検証が揃った時点で追加する。
+
+## D-082 Google Sheets Rename Column Migration
+
+Google Providerの`rename_column`は明示rename intentからCoreが生成・検証したOperationだけを受け、管理対象Model sheetのheader cellを同じcolumn indexで旧名から新名へ変更する。column dimensionのinsert／delete／moveを行わず、2行目以降のcell、format、formula、Developer Metadataを保持する。旧名と新名は非空かつ異なることをProvider write前にも検証する。
+
+read-before-writeではstable sheet ID／title、単一Model marker、連続かつ一意なheader、grid column count、Operation marker位置を検証する。未適用は旧名だけが存在し新名とmarkerがない状態、適用済みは新名だけが存在し同じchecksum／Operation IDのmarkerがそのcolumnにある状態だけとする。新名だけでmarkerがない、旧名と新名が共存、marker位置不一致、対象Model不在は競合として拒否する。
+
+writeはheaderの`updateCells`とcolumn位置に結び付く`gstack_operation` metadata作成を単一非retry `spreadsheets.batchUpdate`で行う。response喪失後は再readでmarker一致を確認してskipする。OAuthは`database_write` scopeを使い、safe error変換を共有する。逆向きrenameも同じServiceで表現可能だが、Rollback実行CLIの公開は別途Provider rollback契約とapprovalを確定するまで行わない。これらのtestと標準Runtime接続を条件にManifestの`rename_column`を`native`へ昇格する。

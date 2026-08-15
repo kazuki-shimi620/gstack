@@ -1,6 +1,7 @@
 import type {
   AddColumnOperation,
   CreateModelOperation,
+  RenameColumnOperation,
 } from '@gstack/migration';
 import type { ProviderSecretResolver } from '@gstack/provider';
 
@@ -25,6 +26,12 @@ export interface GoogleSheetsBatchUpdateGateway {
     readonly credential: GoogleCredentialRequest;
     readonly secrets: ProviderSecretResolver;
   }): Promise<unknown>;
+  inspectRenameColumn(input: {
+    readonly spreadsheetId: string;
+    readonly sheetTitle: string;
+    readonly credential: GoogleCredentialRequest;
+    readonly secrets: ProviderSecretResolver;
+  }): Promise<unknown>;
   batchUpdate(input: {
     readonly spreadsheetId: string;
     readonly credential: GoogleCredentialRequest;
@@ -43,6 +50,11 @@ export type GoogleSheetsAddColumnGateway = Pick<
   'inspectAddColumn' | 'batchUpdate'
 >;
 
+export type GoogleSheetsRenameColumnGateway = Pick<
+  GoogleSheetsBatchUpdateGateway,
+  'inspectRenameColumn' | 'batchUpdate'
+>;
+
 export interface AddColumnAbsentState {
   readonly status: 'absent';
   readonly sheetId: number;
@@ -55,6 +67,19 @@ export interface AddColumnAppliedState {
 }
 
 export type AddColumnState = AddColumnAbsentState | AddColumnAppliedState;
+
+export interface RenameColumnAbsentState {
+  readonly status: 'absent';
+  readonly sheetId: number;
+  readonly columnIndex: number;
+}
+
+export interface RenameColumnAppliedState {
+  readonly status: 'applied';
+}
+
+export type RenameColumnState =
+  RenameColumnAbsentState | RenameColumnAppliedState;
 
 export class GoogleSheetsMigrationError extends Error {
   public constructor(
@@ -174,6 +199,62 @@ export class GoogleSheetsAddColumnService {
         credential,
         secrets: this.secrets,
         requests: addColumnBatchRequests(operation, migrationChecksum, state),
+      });
+    } catch (error: unknown) {
+      throw new GoogleSheetsMigrationError(
+        'GOOGLE_SHEETS_WRITE_FAILED',
+        'Google Sheets Migration Operation failed.',
+        { cause: error },
+      );
+    }
+    validateWriteResponse(response, this.config.spreadsheetId);
+  }
+}
+
+export class GoogleSheetsRenameColumnService {
+  public constructor(
+    private readonly gateway: GoogleSheetsRenameColumnGateway,
+    private readonly config: GoogleProviderConfig,
+    private readonly secrets: ProviderSecretResolver,
+  ) {}
+
+  async execute(
+    operation: RenameColumnOperation,
+    migrationChecksum: string,
+  ): Promise<void> {
+    validateChecksum(migrationChecksum);
+    const credential = googleCredentialRequest(
+      this.config.authentication.credentialSecret,
+      'database_write',
+    );
+    let value: unknown;
+    try {
+      value = await this.gateway.inspectRenameColumn({
+        spreadsheetId: this.config.spreadsheetId,
+        sheetTitle: operation.model,
+        credential,
+        secrets: this.secrets,
+      });
+    } catch (error: unknown) {
+      throw new GoogleSheetsMigrationError(
+        'GOOGLE_SHEETS_WRITE_FAILED',
+        'Google Sheets Migration state could not be read.',
+        { cause: error },
+      );
+    }
+    const state = inspectRenameColumnState(value, operation, migrationChecksum);
+    if (state.status === 'applied') return;
+    let response: unknown;
+    try {
+      response = await this.gateway.batchUpdate({
+        spreadsheetId: this.config.spreadsheetId,
+        credential,
+        secrets: this.secrets,
+        requests: renameColumnBatchRequests(
+          operation,
+          migrationChecksum,
+          state,
+        ),
       });
     } catch (error: unknown) {
       throw new GoogleSheetsMigrationError(
@@ -437,6 +518,170 @@ export function addColumnBatchRequests(
                 userEnteredValue: Object.freeze({
                   stringValue: operation.column.name,
                 }),
+              }),
+            ]),
+          }),
+        ]),
+        fields: 'userEnteredValue',
+      }),
+    }),
+    Object.freeze({
+      createDeveloperMetadata: Object.freeze({
+        developerMetadata: Object.freeze({
+          metadataKey: GSTACK_OPERATION_METADATA_KEY,
+          metadataValue: `${migrationChecksum}:${operation.id}`,
+          location: Object.freeze({
+            dimensionRange: Object.freeze({
+              sheetId: state.sheetId,
+              dimension: 'COLUMNS',
+              startIndex: state.columnIndex,
+              endIndex: state.columnIndex + 1,
+            }),
+          }),
+          visibility: 'DOCUMENT',
+        }),
+      }),
+    }),
+  ]);
+}
+
+export function inspectRenameColumnState(
+  value: unknown,
+  operation: RenameColumnOperation,
+  migrationChecksum: string,
+): RenameColumnState {
+  validateChecksum(migrationChecksum);
+  if (
+    !operation.from.trim() ||
+    !operation.to.trim() ||
+    operation.from === operation.to
+  ) {
+    throw new GoogleSheetsMigrationError(
+      'GOOGLE_MIGRATION_OPERATION_INVALID',
+      'Google Sheets rename_column Operation is invalid.',
+    );
+  }
+  if (!isRecord(value) || !Array.isArray(value.sheets)) invalidState();
+  const expectedSheetId = stableSheetId(operation.model);
+  const expectedMarker = `${migrationChecksum}:${operation.id}`;
+  let target: Record<string, unknown> | null = null;
+  for (const sheet of value.sheets) {
+    if (
+      !isRecord(sheet) ||
+      !Number.isSafeInteger(sheet.sheetId) ||
+      typeof sheet.title !== 'string' ||
+      !Number.isSafeInteger(sheet.columnCount) ||
+      (sheet.columnCount as number) < 1 ||
+      !Array.isArray(sheet.headers) ||
+      !Array.isArray(sheet.metadata)
+    ) {
+      invalidState();
+    }
+    const sameId = sheet.sheetId === expectedSheetId;
+    const sameTitle = sheet.title === operation.model;
+    if (sameId || sameTitle) {
+      if (!(sameId && sameTitle) || target) conflict();
+      target = sheet;
+    }
+  }
+  if (!target) conflict();
+  const headers = target.headers as unknown[];
+  if (
+    headers.length > (target.columnCount as number) ||
+    headers.some((header) => typeof header !== 'string' || !header.trim()) ||
+    new Set(headers).size !== headers.length
+  ) {
+    invalidState();
+  }
+  let modelMarkerCount = 0;
+  const matchingMarkers: Record<string, unknown>[] = [];
+  for (const metadata of target.metadata as unknown[]) {
+    if (
+      !isRecord(metadata) ||
+      typeof metadata.key !== 'string' ||
+      typeof metadata.value !== 'string' ||
+      !isRecord(metadata.location)
+    ) {
+      invalidState();
+    }
+    if (metadata.key === GSTACK_MODEL_METADATA_KEY) {
+      modelMarkerCount += 1;
+      const [modelChecksum, ...modelOperationParts] = metadata.value.split(':');
+      if (
+        !modelChecksum ||
+        !/^[a-f0-9]{64}$/u.test(modelChecksum) ||
+        modelOperationParts.join(':') !==
+          `create_model:${operation.model}:${operation.model}` ||
+        metadata.location.sheetId !== expectedSheetId
+      ) {
+        conflict();
+      }
+    }
+    if (
+      metadata.key === GSTACK_OPERATION_METADATA_KEY &&
+      metadata.value === expectedMarker
+    ) {
+      matchingMarkers.push(metadata);
+    }
+  }
+  if (modelMarkerCount !== 1 || matchingMarkers.length > 1) conflict();
+  const headerNames = headers as string[];
+  const fromIndex = headerNames.indexOf(operation.from);
+  const toIndex = headerNames.indexOf(operation.to);
+  const marker = matchingMarkers[0];
+  if (marker) {
+    const location = marker.location as Record<string, unknown>;
+    if (
+      fromIndex >= 0 ||
+      toIndex < 0 ||
+      location.sheetId !== expectedSheetId ||
+      location.dimension !== 'COLUMNS' ||
+      location.startIndex !== toIndex ||
+      location.endIndex !== toIndex + 1
+    ) {
+      conflict();
+    }
+    return Object.freeze({ status: 'applied' });
+  }
+  if (fromIndex < 0 || toIndex >= 0) conflict();
+  return Object.freeze({
+    status: 'absent',
+    sheetId: expectedSheetId,
+    columnIndex: fromIndex,
+  });
+}
+
+export function renameColumnBatchRequests(
+  operation: RenameColumnOperation,
+  migrationChecksum: string,
+  state: RenameColumnAbsentState,
+): readonly Readonly<Record<string, unknown>>[] {
+  validateChecksum(migrationChecksum);
+  if (
+    state.status !== 'absent' ||
+    state.sheetId !== stableSheetId(operation.model) ||
+    !Number.isSafeInteger(state.columnIndex) ||
+    state.columnIndex < 0 ||
+    !operation.to.trim()
+  ) {
+    throw new GoogleSheetsMigrationError(
+      'GOOGLE_MIGRATION_OPERATION_INVALID',
+      'Google Sheets rename_column state is invalid.',
+    );
+  }
+  return Object.freeze([
+    Object.freeze({
+      updateCells: Object.freeze({
+        start: Object.freeze({
+          sheetId: state.sheetId,
+          rowIndex: 0,
+          columnIndex: state.columnIndex,
+        }),
+        rows: Object.freeze([
+          Object.freeze({
+            values: Object.freeze([
+              Object.freeze({
+                userEnteredValue: Object.freeze({ stringValue: operation.to }),
               }),
             ]),
           }),

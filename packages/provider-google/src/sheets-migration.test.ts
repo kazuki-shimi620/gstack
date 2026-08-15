@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   AddColumnOperation,
   CreateModelOperation,
+  RenameColumnOperation,
 } from '@gstack/migration';
 
 import type { GoogleProviderConfig } from './config.js';
@@ -11,8 +12,11 @@ import {
   createModelBatchRequests,
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
+  GoogleSheetsRenameColumnService,
   inspectAddColumnState,
   inspectCreateModelState,
+  inspectRenameColumnState,
+  renameColumnBatchRequests,
   stableSheetId,
 } from './sheets-migration.js';
 
@@ -31,6 +35,13 @@ const addColumn = {
   model: 'users',
   column: { name: 'email' },
 } as unknown as AddColumnOperation;
+const renameColumn = {
+  id: 'rename_column:users:email:contact_email',
+  type: 'rename_column',
+  model: 'users',
+  from: 'email',
+  to: 'contact_email',
+} as unknown as RenameColumnOperation;
 
 describe('Google Sheets create_model mapper', () => {
   it('決定的なSheet、header、管理markerを1 batchへ変換する', () => {
@@ -349,6 +360,135 @@ describe('Google Sheets add_column service', () => {
   });
 });
 
+describe('Google Sheets rename_column mapper', () => {
+  it('同じ列位置のheader更新とOperation markerを1 batchへ変換する', () => {
+    const sheetId = stableSheetId('users');
+    expect(
+      renameColumnBatchRequests(renameColumn, checksum, {
+        status: 'absent',
+        sheetId,
+        columnIndex: 1,
+      }),
+    ).toEqual([
+      {
+        updateCells: {
+          start: { sheetId, rowIndex: 0, columnIndex: 1 },
+          rows: [
+            {
+              values: [{ userEnteredValue: { stringValue: 'contact_email' } }],
+            },
+          ],
+          fields: 'userEnteredValue',
+        },
+      },
+      {
+        createDeveloperMetadata: {
+          developerMetadata: {
+            metadataKey: 'gstack_operation',
+            metadataValue: `${checksum}:${renameColumn.id}`,
+            location: {
+              dimensionRange: {
+                sheetId,
+                dimension: 'COLUMNS',
+                startIndex: 1,
+                endIndex: 2,
+              },
+            },
+            visibility: 'DOCUMENT',
+          },
+        },
+      },
+    ]);
+  });
+
+  it('旧headerだけがある状態を未適用として同じ列位置を返す', () => {
+    expect(
+      inspectRenameColumnState(renameColumnState(), renameColumn, checksum),
+    ).toEqual({
+      status: 'absent',
+      sheetId: stableSheetId('users'),
+      columnIndex: 1,
+    });
+  });
+
+  it('新headerと一致markerを適用済みとして扱い競合を拒否する', () => {
+    expect(
+      inspectRenameColumnState(
+        renameColumnState({
+          headers: ['id', 'contact_email'],
+          metadata: [renameOperationMarker(1)],
+        }),
+        renameColumn,
+        checksum,
+      ),
+    ).toEqual({ status: 'applied' });
+    expect(() =>
+      inspectRenameColumnState(
+        renameColumnState({ headers: ['id', 'contact_email'] }),
+        renameColumn,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+    expect(() =>
+      inspectRenameColumnState(
+        renameColumnState({ headers: ['id', 'email', 'contact_email'] }),
+        renameColumn,
+        checksum,
+      ),
+    ).toThrowError(
+      expect.objectContaining({ code: 'GOOGLE_SHEETS_MIGRATION_CONFLICT' }),
+    );
+  });
+});
+
+describe('Google Sheets rename_column service', () => {
+  it('state read後にdatabase_write credentialでatomic batchを実行する', async () => {
+    const batchUpdate = vi.fn().mockResolvedValue({ spreadsheetId: 'sheet-1' });
+    const service = new GoogleSheetsRenameColumnService(
+      {
+        inspectRenameColumn: vi.fn().mockResolvedValue(renameColumnState()),
+        batchUpdate,
+      },
+      config,
+      { get: vi.fn() },
+    );
+    await service.execute(renameColumn, checksum);
+    expect(batchUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        spreadsheetId: 'sheet-1',
+        credential: {
+          credentialSecret: 'GOOGLE_CREDENTIALS',
+          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        },
+        requests: expect.arrayContaining([
+          expect.objectContaining({ updateCells: expect.any(Object) }),
+        ]),
+      }),
+    );
+  });
+
+  it('一致markerがあればresponse喪失後の再開でwriteをskipする', async () => {
+    const batchUpdate = vi.fn();
+    const service = new GoogleSheetsRenameColumnService(
+      {
+        inspectRenameColumn: vi.fn().mockResolvedValue(
+          renameColumnState({
+            headers: ['id', 'contact_email'],
+            metadata: [renameOperationMarker(1)],
+          }),
+        ),
+        batchUpdate,
+      },
+      config,
+      { get: vi.fn() },
+    );
+    await service.execute(renameColumn, checksum);
+    expect(batchUpdate).not.toHaveBeenCalled();
+  });
+});
+
 function addColumnState(
   overrides: {
     headers?: readonly unknown[];
@@ -379,6 +519,45 @@ function operationMarker(columnIndex: number): unknown {
   return {
     key: 'gstack_operation',
     value: `${checksum}:${addColumn.id}`,
+    location: {
+      sheetId: stableSheetId('users'),
+      dimension: 'COLUMNS',
+      startIndex: columnIndex,
+      endIndex: columnIndex + 1,
+    },
+  };
+}
+
+function renameColumnState(
+  overrides: {
+    headers?: readonly unknown[];
+    metadata?: readonly unknown[];
+  } = {},
+): unknown {
+  return {
+    sheets: [
+      {
+        sheetId: stableSheetId('users'),
+        title: 'users',
+        columnCount: 10,
+        headers: overrides.headers ?? ['id', 'email'],
+        metadata: [
+          {
+            key: 'gstack_model',
+            value: `${'c'.repeat(64)}:create_model:users:users`,
+            location: { sheetId: stableSheetId('users') },
+          },
+          ...(overrides.metadata ?? []),
+        ],
+      },
+    ],
+  };
+}
+
+function renameOperationMarker(columnIndex: number): unknown {
+  return {
+    key: 'gstack_operation',
+    value: `${checksum}:${renameColumn.id}`,
     location: {
       sheetId: stableSheetId('users'),
       dimension: 'COLUMNS',

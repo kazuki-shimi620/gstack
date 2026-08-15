@@ -67,8 +67,11 @@ export {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
   GoogleSheetsMigrationError,
+  GoogleSheetsRenameColumnService,
   inspectAddColumnState,
   inspectCreateModelState,
+  inspectRenameColumnState,
+  renameColumnBatchRequests,
   stableSheetId,
 } from './sheets-migration.js';
 export type {
@@ -78,6 +81,10 @@ export type {
   GoogleSheetsAddColumnGateway,
   GoogleSheetsBatchUpdateGateway,
   GoogleSheetsCreateModelGateway,
+  GoogleSheetsRenameColumnGateway,
+  RenameColumnAbsentState,
+  RenameColumnAppliedState,
+  RenameColumnState,
 } from './sheets-migration.js';
 export { GoogleScriptHttpGateway } from './script-http.js';
 export { createGoogleScriptSourceBundle } from './script-bundle.js';

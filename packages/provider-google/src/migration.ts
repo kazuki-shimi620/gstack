@@ -10,12 +10,14 @@ import { googleProviderManifest } from './provider.js';
 import type {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
+  GoogleSheetsRenameColumnService,
 } from './sheets-migration.js';
 
 export class GoogleMigrationOperationExecutor implements MigrationOperationExecutor {
   public constructor(
     private readonly createModel: GoogleSheetsCreateModelService,
     private readonly addColumn: GoogleSheetsAddColumnService,
+    private readonly renameColumn: GoogleSheetsRenameColumnService,
   ) {}
 
   async execute(
@@ -28,6 +30,9 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
         return;
       case 'add_column':
         await this.addColumn.execute(operation, context.migrationChecksum);
+        return;
+      case 'rename_column':
+        await this.renameColumn.execute(operation, context.migrationChecksum);
         return;
       default:
         throw new GoogleMigrationOperationError(

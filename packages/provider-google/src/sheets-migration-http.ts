@@ -69,6 +69,25 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
   async inspectAddColumn(
     input: Parameters<GoogleSheetsBatchUpdateGateway['inspectAddColumn']>[0],
   ): Promise<unknown> {
+    return this.inspectColumns(input);
+  }
+
+  async inspectRenameColumn(
+    input: Parameters<GoogleSheetsBatchUpdateGateway['inspectRenameColumn']>[0],
+  ): Promise<unknown> {
+    return this.inspectColumns(input);
+  }
+
+  private async inspectColumns(input: {
+    readonly spreadsheetId: string;
+    readonly sheetTitle: string;
+    readonly credential: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['credential'];
+    readonly secrets: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['secrets'];
+  }): Promise<unknown> {
     const credential = await this.authorize(input);
     const url = new URL(
       `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(input.spreadsheetId)}`,
