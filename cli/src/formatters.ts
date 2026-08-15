@@ -139,6 +139,23 @@ export function formatPluginListHuman(
         .join('\n');
 }
 
+export function formatPluginChangePlanHuman(plan: {
+  readonly action: string;
+  readonly packageName: string;
+  readonly version: string;
+  readonly pluginId: string | null;
+  readonly nextPackages: readonly string[];
+  readonly fingerprint: string;
+}): string {
+  return [
+    `Plugin ${plan.action} Dry Run:`,
+    `Package: ${plan.packageName}@${plan.version}`,
+    ...(plan.pluginId ? [`Plugin: ${plan.pluginId}`] : []),
+    `Next allowlist: ${plan.nextPackages.join(', ') || '(empty)'}`,
+    `Fingerprint: ${plan.fingerprint}`,
+  ].join('\n');
+}
+
 export function formatProviderInfoHuman(provider: ProviderSummary): string {
   return [
     `Provider: ${provider.name}`,

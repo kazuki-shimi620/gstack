@@ -10,6 +10,8 @@ import {
   buildStandardGoogle,
   listStandardPlugins,
   loadStandardProject,
+  prepareStandardPluginInstall,
+  prepareStandardPluginRemove,
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollbackFile,
   prepareStandardGoogleDeploy,
@@ -38,6 +40,7 @@ import {
   formatProviderListHuman,
   formatProviderValidationHuman,
   formatPluginListHuman,
+  formatPluginChangePlanHuman,
   formatProjectInitializationHuman,
   formatValidationHuman,
 } from './formatters.js';
@@ -89,6 +92,12 @@ export interface ProgramServices {
     port: number,
   ) => ReturnType<typeof startStandardDevServer>;
   readonly listPlugins?: () => ReturnType<typeof listStandardPlugins>;
+  readonly preparePluginInstall?: (
+    packageSpec: string,
+  ) => ReturnType<typeof prepareStandardPluginInstall>;
+  readonly preparePluginRemove?: (
+    packageName: string,
+  ) => ReturnType<typeof prepareStandardPluginRemove>;
 }
 
 const defaultServices: ProgramServices = {
@@ -109,6 +118,10 @@ const defaultServices: ProgramServices = {
   build: (project, dryRun) => buildStandardGoogle({ project, dryRun }),
   startDev: (project, port) => startStandardDevServer({ project, port }),
   listPlugins: () => listStandardPlugins(),
+  preparePluginInstall: (packageSpec) =>
+    prepareStandardPluginInstall({ packageSpec }),
+  preparePluginRemove: (packageName) =>
+    prepareStandardPluginRemove({ packageName }),
 };
 
 export function createProgram(
@@ -165,6 +178,58 @@ export function createProgram(
         };
       });
     });
+
+  plugin
+    .command('install')
+    .description('Preview installation of an exact Plugin package version')
+    .argument('<package-spec>', 'npm package with an exact SemVer version')
+    .option('--dry-run', 'create a Plan without changing files or packages')
+    .option('--json', 'output structured JSON')
+    .action(
+      async (
+        packageSpec: string,
+        options: { dryRun?: boolean; json?: boolean },
+      ) => {
+        await withOutput(io, options.json, async () => {
+          if (!options.dryRun) pluginDryRunRequired('install');
+          const plan = await (
+            services.preparePluginInstall ??
+            ((selected) =>
+              prepareStandardPluginInstall({ packageSpec: selected }))
+          )(packageSpec);
+          return {
+            data: { dryRun: true, pluginChange: plan },
+            human: formatPluginChangePlanHuman(plan),
+          };
+        });
+      },
+    );
+
+  plugin
+    .command('remove')
+    .description('Preview removal of an unused Plugin package')
+    .argument('<package-name>', 'allowlisted npm package name')
+    .option('--dry-run', 'create a Plan without changing files or packages')
+    .option('--json', 'output structured JSON')
+    .action(
+      async (
+        packageName: string,
+        options: { dryRun?: boolean; json?: boolean },
+      ) => {
+        await withOutput(io, options.json, async () => {
+          if (!options.dryRun) pluginDryRunRequired('remove');
+          const plan = await (
+            services.preparePluginRemove ??
+            ((selected) =>
+              prepareStandardPluginRemove({ packageName: selected }))
+          )(packageName);
+          return {
+            data: { dryRun: true, pluginChange: plan },
+            human: formatPluginChangePlanHuman(plan),
+          };
+        });
+      },
+    );
 
   migration
     .command('status')
@@ -637,6 +702,15 @@ async function withProviderOutput(
   }>,
 ): Promise<void> {
   return withProjectOutput(io, json, operation);
+}
+
+function pluginDryRunRequired(action: 'install' | 'remove'): never {
+  throw new GstackError({
+    code: 'CONFIG_INVALID',
+    category: 'configuration',
+    message: `Plugin ${action} is currently available as dry-run only.`,
+    hint: 'Pass --dry-run to inspect the package and allowlist changes.',
+  });
 }
 
 async function withOutput(

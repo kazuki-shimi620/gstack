@@ -534,3 +534,11 @@ Google Deploy bundleはD-063のbuilt-in Apps Script pathだけを入力とし、
 `gstack plugin list`はProject Configの明示allowlistからRuntimeがload・検証したPluginをID順で表示するread-only commandとする。結果はPlugin ID、kind、npm package name、version、minimum gstack version、Plugin IDに対応するconfigurationの有無だけを含み、configuration本文、credential、token、module export、filesystem pathを含めない。
 
 commandはpackage install／remove、Config変更、Plugin実行、Provider接続、generated writeを行わない。load／Manifest／互換性／未使用configurationの検証失敗は通常のProject errorとして返し、不正Pluginを「利用可能」と表示しない。install／removeはpackage managerと供給網の安全契約を別途確定してから追加する。
+
+## D-078 Plugin Package Change Plan
+
+Plugin package管理はProject localのnpmだけを対象とし、installはnpm package nameとexact SemVerを結合したspecifierを必須とする。range、tag、path、URL、git specifierを拒否する。計画するnpm commandはinstallで`--save-exact --ignore-scripts`、removeで`--ignore-scripts`を使用し、lifecycle scriptを暗黙実行しない。
+
+`gstack plugin install/remove --dry-run`は`gstack.yaml`と`package.json`をreadし、action、package、version、検証済みPlugin ID、npm引数、変更前後のallowlist、現在2ファイルのchecksumに結び付くSHA-256 fingerprintを返す。source本文、Plugin configuration本文、credential、tokenを返さず、package manager実行やfile writeを行わない。同じstateと引数から同じfingerprintを作り、いずれかのfileまたは要求が変わればfingerprintを変える。
+
+removeはallowlistとdependenciesの両方に存在し、Manifestをload・検証でき、対応configurationがなく、Provider Pluginなら同名Providerがdisabledの場合だけ計画する。install済み／allowlist済みpackageの重複installを拒否する。実変更はfingerprint再検証、npm失敗時の状態、Manifest検証後のConfig更新、atomic writeが確定するまで公開せず、dry-run省略を拒否する。

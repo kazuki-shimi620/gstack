@@ -78,4 +78,5 @@
 - [x] 標準Runtimeでallowlist packageをloadしProvider Pluginを既存Provider Registryへ接続した（`DECISIONS.md` D-075）。
 - [x] Generator Plugin成果物をbuilt-in成果物と単一Generation Plan／Manifestへ合成した（`DECISIONS.md` D-076）。
 - [x] 検証済みPlugin Manifestをconfiguration本文なしで表示するread-onlyな`plugin list`を追加した（`DECISIONS.md` D-077）。
-- [ ] Plugin install／remove CLIはpackage manager変更と供給網確認の安全契約を確定してから実装する。
+- [x] Plugin install／removeのexact version、lifecycle script無効、state fingerprintを持つread-only Planを実装した（`DECISIONS.md` D-078）。
+- [ ] Plugin install／removeの実変更はfingerprint再検証、npm失敗時の状態、Manifest検証後のConfig更新、atomic writeを確定してから公開する。

@@ -63,6 +63,14 @@ import {
 
 export { startStandardDevServer } from './dev.js';
 export type { StandardDevServer } from './dev.js';
+export {
+  prepareStandardPluginInstall,
+  prepareStandardPluginRemove,
+} from './plugin-management.js';
+export type {
+  StandardPluginChangeOptions,
+  StandardPluginChangePlan,
+} from './plugin-management.js';
 
 export interface StandardGoogleDeployPreview {
   readonly provider: 'google';

@@ -274,6 +274,61 @@ describe('plugin CLI', () => {
       },
     });
   });
+
+  it('installをdry-run Planとして表示しpackage managerを実行しない', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const preparePluginInstall = vi.fn(async () => ({
+      action: 'install' as const,
+      packageName: '@example/generator',
+      version: '1.2.3',
+      pluginId: null,
+      command: {
+        executable: 'npm' as const,
+        arguments: [
+          'install',
+          '--save-exact',
+          '--ignore-scripts',
+          '@example/generator@1.2.3',
+        ],
+      },
+      currentPackages: [],
+      nextPackages: ['@example/generator'],
+      fingerprint: 'a'.repeat(64),
+    }));
+    await createProgram(
+      { stdout, stderr },
+      {
+        loadProject: vi.fn(),
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile: vi.fn(),
+        prepareMigrationRollbackFile: vi.fn(),
+        preparePluginInstall,
+      },
+    ).parseAsync([
+      'node',
+      'gstack',
+      'plugin',
+      'install',
+      '@example/generator@1.2.3',
+      '--dry-run',
+      '--json',
+    ]);
+    expect(preparePluginInstall).toHaveBeenCalledWith(
+      '@example/generator@1.2.3',
+    );
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        dryRun: true,
+        pluginChange: {
+          action: 'install',
+          fingerprint: 'a'.repeat(64),
+        },
+      },
+    });
+  });
 });
 
 describe('project initialization CLI', () => {
