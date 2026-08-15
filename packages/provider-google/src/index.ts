@@ -60,6 +60,19 @@ export type {
 export { GoogleSheetsHttpGateway } from './sheets-http.js';
 export { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
 export {
+  alterColumnBatchRequests,
+  GoogleSheetsAlterColumnService,
+  inspectAlterColumnState,
+  validateAlterColumnValues,
+} from './sheets-alter-column.js';
+export type {
+  AlterColumnAbsentState,
+  AlterColumnAppliedState,
+  AlterColumnRow,
+  AlterColumnState,
+  GoogleSheetsAlterColumnGateway,
+} from './sheets-alter-column.js';
+export {
   addColumnBatchRequests,
   createModelBatchRequests,
   dropColumnBatchRequests,

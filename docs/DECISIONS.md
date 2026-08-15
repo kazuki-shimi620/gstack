@@ -311,7 +311,7 @@ MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知
 
 Google ProviderのMigration capability結果はManifestのoperation type別supportを唯一のsourceとして、入力Planの全Operation IDへ順序を保持して射影する。結果をMigration packageの共通`applyCapabilityResults`へ渡し、欠落／重複／未知IDの検証とPlan集約を再利用する。Google Provider側で独自Planや独自applicability規則を実装しない。
 
-初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`、D-084の`drop_model`は各条件を満たして`native`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
+初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`、D-084の`drop_model`は各条件を満たして`native`へ、D-085の`alter_column`は`emulated`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
 
 ## D-051 Migration Rollback Plan
 
@@ -595,4 +595,4 @@ Google SheetsのcellにはgstackのField type、required、unique、Enumを一�
 
 ProviderはOperationの`previous`、`target`、`changes`が同じ列名に対する完全で矛盾のない差分であり、D-017のriskと一致することを再検証する。write前には決定的なSheet ID／title、Model marker、header内の対象列位置を検証する。対象列はheaderを除く全rowのeffective valueをreadし、空cellを未設定として扱う。`required: false -> true`では空cellを拒否し、`unique: false -> true`では空cellを除く重複を拒否し、type変更とEnum value削除では全ての非空値がtarget Fieldの型／Enumに適合することを要求する。formulaは計算結果を検査する。値のcoerce、trim、backfill、deduplicate、日付やJSONの暗黙変換は行わない。検査件数やrow番号はdiagnosticに利用できるが、cell値をerror、log、History、Migration Fileへ保存してはいけない。
 
-互換性確認後は対象column dimensionへ`gstack_operation` metadataを単一非retry `spreadsheets.batchUpdate`で作成し、cell値、format、formula、既存metadataは変更しない。response喪失後は同じcolumn位置のmarkerを再readして適用済みを判定する。検査read後からmarker writeまでの同時編集をGoogle Sheets APIだけで排他的に防げないため、D-054のMigration lockを必須とし、batch write直前にもheader／marker状態を再取得する。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict state parser、全型の互換性判定、required／unique／Enum競合、値非露出error、marker idempotency、lock下の標準Runtime接続をtestした後にだけManifestの`alter_column`を`emulated`へ変更する。
+互換性確認後は対象column dimensionへ`gstack_operation` metadataを単一非retry `spreadsheets.batchUpdate`で作成し、cell値、format、formula、既存metadataは変更しない。response喪失後は同じcolumn位置のmarkerを再readして適用済みを判定する。検査read後からmarker writeまでの同時編集をGoogle Sheets APIだけで排他的に防げないため、D-054のMigration lockを必須とし、batch write直前にもheader／marker状態を再取得する。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict state parser、全型の互換性判定、required／unique／Enum競合、値非露出error、marker idempotency、lock下の標準Runtime接続をtestし、Manifestの`alter_column`を`emulated`へ昇格済みである。

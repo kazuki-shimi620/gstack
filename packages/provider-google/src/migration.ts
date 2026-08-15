@@ -7,6 +7,7 @@ import type {
 } from '@gstack/migration';
 
 import { googleProviderManifest } from './provider.js';
+import type { GoogleSheetsAlterColumnService } from './sheets-alter-column.js';
 import type {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
@@ -22,6 +23,7 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
     private readonly renameColumn: GoogleSheetsRenameColumnService,
     private readonly dropColumn: GoogleSheetsDropColumnService,
     private readonly dropModel: GoogleSheetsDropModelService,
+    private readonly alterColumn: GoogleSheetsAlterColumnService,
   ) {}
 
   async execute(
@@ -43,6 +45,9 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
         return;
       case 'drop_model':
         await this.dropModel.execute(operation, context.migrationChecksum);
+        return;
+      case 'alter_column':
+        await this.alterColumn.execute(operation, context.migrationChecksum);
         return;
       default:
         throw new GoogleMigrationOperationError(

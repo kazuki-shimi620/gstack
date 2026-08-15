@@ -10,6 +10,7 @@ import { GoogleMigrationLockHttpGateway } from './migration-lock-http.js';
 import { GoogleSheetsMigrationLock } from './migration-lock.js';
 import { GoogleMigrationOperationExecutor } from './migration.js';
 import { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
+import { GoogleSheetsAlterColumnService } from './sheets-alter-column.js';
 import {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
@@ -69,6 +70,7 @@ export function createDefaultGoogleMigrationComponents(
       new GoogleSheetsRenameColumnService(sheets, config, secrets),
       new GoogleSheetsDropColumnService(sheets, config, secrets),
       new GoogleSheetsDropModelService(sheets, config, secrets),
+      new GoogleSheetsAlterColumnService(sheets, config, secrets),
     ),
   });
 }

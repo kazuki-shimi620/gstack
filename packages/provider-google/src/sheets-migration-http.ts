@@ -131,6 +131,77 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
     };
   }
 
+  async inspectAlterColumn(input: {
+    readonly spreadsheetId: string;
+    readonly sheetTitle: string;
+    readonly columnName: string;
+    readonly credential: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['credential'];
+    readonly secrets: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['secrets'];
+  }): Promise<unknown> {
+    const summary = await this.inspectColumns(input);
+    if (!isRecord(summary) || !Array.isArray(summary.sheets)) {
+      invalidStateResponse();
+    }
+    const target = summary.sheets.find(
+      (sheet) => isRecord(sheet) && sheet.title === input.sheetTitle,
+    );
+    if (
+      !isRecord(target) ||
+      !Array.isArray(target.headers) ||
+      !Number.isSafeInteger(target.rowCount) ||
+      (target.rowCount as number) < 1
+    ) {
+      return summary;
+    }
+    const columnIndex = target.headers.indexOf(input.columnName);
+    if (columnIndex < 0 || target.rowCount === 1) {
+      return {
+        sheets: summary.sheets.map((sheet) =>
+          sheet === target ? { ...target, rows: [] } : sheet,
+        ),
+      };
+    }
+    const credential = await this.authorize(input);
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(input.spreadsheetId)}`,
+    );
+    url.searchParams.set('includeGridData', 'true');
+    url.searchParams.set(
+      'ranges',
+      `${quoteSheetTitle(input.sheetTitle)}!2:${String(target.rowCount)}`,
+    );
+    url.searchParams.set(
+      'fields',
+      'sheets(properties(sheetId,title),data(rowData(values(effectiveValue))))',
+    );
+    const response = await this.http.execute({
+      method: 'GET',
+      url: url.href,
+      headers: {
+        accept: 'application/json',
+        authorization: `Bearer ${credential.accessToken}`,
+      },
+      body: null,
+      retryable: true,
+    });
+    const rows = normalizeAlterColumnRows(
+      parseJson(response.body),
+      target.sheetId,
+      input.sheetTitle,
+      target.headers,
+      columnIndex,
+    );
+    return {
+      sheets: summary.sheets.map((sheet) =>
+        sheet === target ? { ...target, rows } : sheet,
+      ),
+    };
+  }
+
   private async inspectColumns(input: {
     readonly spreadsheetId: string;
     readonly sheetTitle: string;
@@ -149,7 +220,7 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
     url.searchParams.set('ranges', quoteSheetTitle(input.sheetTitle) + '!1:1');
     url.searchParams.set(
       'fields',
-      'sheets(properties(sheetId,title,gridProperties(columnCount)),data(rowData(values(userEnteredValue))),developerMetadata(metadataKey,metadataValue,location(sheetId,dimensionRange(sheetId,dimension,startIndex,endIndex))))',
+      'sheets(properties(sheetId,title,gridProperties(columnCount,rowCount)),data(rowData(values(userEnteredValue))),developerMetadata(metadataKey,metadataValue,location(sheetId,dimensionRange(sheetId,dimension,startIndex,endIndex))))',
     );
     const response = await this.http.execute({
       method: 'GET',
@@ -248,6 +319,9 @@ function normalizeAddColumnState(value: unknown): unknown {
         sheetId: sheet.properties.sheetId,
         title: sheet.properties.title,
         columnCount: sheet.properties.gridProperties.columnCount,
+        ...(sheet.properties.gridProperties.rowCount === undefined
+          ? {}
+          : { rowCount: sheet.properties.gridProperties.rowCount }),
         headers: values.map(headerValue),
         metadata: Array.isArray(sheet.developerMetadata)
           ? sheet.developerMetadata.map(normalizeMetadata)
@@ -255,6 +329,74 @@ function normalizeAddColumnState(value: unknown): unknown {
       };
     }),
   };
+}
+
+function normalizeAlterColumnRows(
+  value: unknown,
+  sheetId: unknown,
+  sheetTitle: string,
+  headers: readonly unknown[],
+  columnIndex: number,
+): readonly Readonly<{ rowNumber: number; value: unknown }>[] {
+  if (!isRecord(value) || !Array.isArray(value.sheets)) {
+    invalidStateResponse();
+  }
+  const sheets = value.sheets;
+  if (sheets.length !== 1) invalidStateResponse();
+  const sheet = sheets[0];
+  if (
+    !isRecord(sheet) ||
+    !isRecord(sheet.properties) ||
+    sheet.properties.sheetId !== sheetId ||
+    sheet.properties.title !== sheetTitle
+  ) {
+    invalidStateResponse();
+  }
+  const data = sheet.data ?? [];
+  if (!Array.isArray(data) || data.length > 1) invalidStateResponse();
+  const grid = data[0];
+  if (grid !== undefined && !isRecord(grid)) invalidStateResponse();
+  const rowData = grid?.rowData ?? [];
+  if (!Array.isArray(rowData)) invalidStateResponse();
+  return Object.freeze(
+    rowData.flatMap((row, index) => {
+      if (!isRecord(row)) invalidStateResponse();
+      const cells = row.values ?? [];
+      if (!Array.isArray(cells) || cells.length > headers.length) {
+        invalidStateResponse();
+      }
+      const values = cells.map(effectiveCellValue);
+      if (values.every((item) => item === undefined)) return [];
+      return [
+        Object.freeze({
+          rowNumber: index + 2,
+          value: values[columnIndex],
+        }),
+      ];
+    }),
+  );
+}
+
+function effectiveCellValue(value: unknown): unknown {
+  if (!isRecord(value)) invalidStateResponse();
+  if (value.effectiveValue === undefined) return undefined;
+  if (!isRecord(value.effectiveValue)) invalidStateResponse();
+  const keys = Object.keys(value.effectiveValue);
+  if (keys.length !== 1) invalidStateResponse();
+  const key = keys[0];
+  if (!['stringValue', 'numberValue', 'boolValue'].includes(key!)) {
+    invalidStateResponse();
+  }
+  const result = value.effectiveValue[key!];
+  if (
+    (key === 'stringValue' && typeof result !== 'string') ||
+    (key === 'numberValue' &&
+      (typeof result !== 'number' || !Number.isFinite(result))) ||
+    (key === 'boolValue' && typeof result !== 'boolean')
+  ) {
+    invalidStateResponse();
+  }
+  return result;
 }
 
 function normalizeDropModelSummary(value: unknown): {

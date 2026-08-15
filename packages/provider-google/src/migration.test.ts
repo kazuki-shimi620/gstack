@@ -18,6 +18,7 @@ describe('Google Migration capability mapping', () => {
       operation('rename:user:name:display_name', 'rename_column'),
       operation('drop:user:legacy', 'drop_column'),
       operation('drop-model:user', 'drop_model'),
+      operation('alter:user:name', 'alter_column'),
       operation('index:user:name', 'add_index'),
     ];
     const results = evaluateGoogleMigrationCapabilities(operations);
@@ -30,6 +31,7 @@ describe('Google Migration capability mapping', () => {
       },
       { operationId: 'drop:user:legacy', capability: 'native' },
       { operationId: 'drop-model:user', capability: 'native' },
+      { operationId: 'alter:user:name', capability: 'emulated' },
       { operationId: 'index:user:name', capability: 'unsupported' },
     ]);
     expect(Object.isFrozen(results)).toBe(true);
@@ -47,12 +49,14 @@ describe('Google Migration capability mapping', () => {
     const renameColumn = vi.fn();
     const dropColumn = vi.fn();
     const dropModel = vi.fn();
+    const alterColumn = vi.fn();
     const executor = new GoogleMigrationOperationExecutor(
       { execute: createModel } as never,
       { execute: addColumn } as never,
       { execute: renameColumn } as never,
       { execute: dropColumn } as never,
       { execute: dropModel } as never,
+      { execute: alterColumn } as never,
     );
     const create = operation('create:user', 'create_model');
     await executor.execute(create, {
@@ -98,6 +102,15 @@ describe('Google Migration capability mapping', () => {
       idempotencyKey: `key:${dropModelOperation.id}`,
     });
     expect(dropModel).toHaveBeenCalledWith(dropModelOperation, 'a'.repeat(64));
+
+    const alter = operation('alter:user:name', 'alter_column');
+    await executor.execute(alter, {
+      migrationVersion: '20260813_000001',
+      migrationChecksum: 'a'.repeat(64),
+      operationId: alter.id,
+      idempotencyKey: `key:${alter.id}`,
+    });
+    expect(alterColumn).toHaveBeenCalledWith(alter, 'a'.repeat(64));
 
     await expect(
       executor.execute(operation('index:user:name', 'add_index'), {

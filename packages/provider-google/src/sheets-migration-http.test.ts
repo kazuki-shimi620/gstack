@@ -11,6 +11,123 @@ const credentialSource = JSON.stringify({
 });
 
 describe('Google Sheets Migration HTTP gateway', () => {
+  it('alter_column用にheader確認後、使用中の全rowから対象列だけを正規化する', async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        body: JSON.stringify({
+          sheets: [
+            {
+              properties: {
+                sheetId: 10,
+                title: 'users',
+                gridProperties: { columnCount: 8, rowCount: 1000 },
+              },
+              data: [
+                {
+                  rowData: [
+                    {
+                      values: [
+                        { userEnteredValue: { stringValue: 'id' } },
+                        { userEnteredValue: { stringValue: 'role' } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              developerMetadata: [
+                {
+                  metadataKey: 'gstack_model',
+                  metadataValue: 'model-marker',
+                  location: { sheetId: 10 },
+                },
+              ],
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        body: JSON.stringify({
+          sheets: [
+            {
+              properties: { sheetId: 10, title: 'users' },
+              data: [
+                {
+                  rowData: [
+                    {
+                      values: [
+                        { effectiveValue: { stringValue: 'id-1' } },
+                        { effectiveValue: { stringValue: 'admin' } },
+                      ],
+                    },
+                    {
+                      values: [{ effectiveValue: { stringValue: 'id-2' } }, {}],
+                    },
+                    {},
+                    {
+                      values: [
+                        { effectiveValue: { stringValue: 'id-4' } },
+                        { effectiveValue: { stringValue: 'member' } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+    const gateway = new GoogleSheetsMigrationHttpGateway(
+      { execute },
+      {
+        refresh: vi.fn().mockResolvedValue({
+          accessToken: 'token',
+          expiresAt: '2026-08-13T01:00:00.000Z',
+          scopes: ['scope'],
+        }),
+      },
+      () => new Date('2026-08-13T00:00:00.000Z'),
+    );
+    await expect(
+      gateway.inspectAlterColumn({
+        spreadsheetId: 'id',
+        sheetTitle: 'users',
+        columnName: 'role',
+        credential: { credentialSecret: 'SECRET', scopes: ['scope'] },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+      }),
+    ).resolves.toEqual({
+      sheets: [
+        {
+          sheetId: 10,
+          title: 'users',
+          columnCount: 8,
+          rowCount: 1000,
+          headers: ['id', 'role'],
+          metadata: [
+            {
+              key: 'gstack_model',
+              value: 'model-marker',
+              location: { sheetId: 10 },
+            },
+          ],
+          rows: [
+            { rowNumber: 2, value: 'admin' },
+            { rowNumber: 3, value: undefined },
+            { rowNumber: 5, value: 'member' },
+          ],
+        },
+      ],
+    });
+    const dataUrl = new URL(execute.mock.calls[1]?.[0].url);
+    expect(dataUrl.searchParams.get('ranges')).toBe("'users'!2:1000");
+    expect(dataUrl.searchParams.get('fields')).toContain('effectiveValue');
+  });
+
   it('write scopeでatomic batchを自動retryせず送信する', async () => {
     const execute = vi.fn().mockResolvedValue({
       status: 200,
