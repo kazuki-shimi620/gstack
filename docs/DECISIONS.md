@@ -468,3 +468,9 @@ list adapterは`nextPageToken`を最後まで辿り、token重複、100 page超�
 実Deployはapproval一致後かつApps Script content更新前に、Google Migration Historyのlatest attemptをreadする。latestが`applied`、全Operation完了、applied Application Model snapshot checksumが現在Schemaから再構築したsnapshot checksumと完全一致する場合だけ続行する。Historyが空、latestがpending／applying／failed／rolled_back、snapshot欠落／不一致、Schemaが不正な場合は`DEPLOY_MIGRATION_NOT_READY`で拒否する。
 
 gateはHistoryのstatusとsnapshotだけを参照し、Provider resource introspectionから適用済み状態を推測しない。Deploy dry-runはD-065どおり外部接続しないためMigration readinessを成功扱いせず、実Deploy時の独立preconditionとする。History read失敗時にcontent更新へ進まず、DeployがMigration ApplyやRollbackを暗黙実行しない。
+
+## D-069 Apps Script Management Initialization Approval
+
+Apps Script管理初期化は`gstack provider initialize google --dry-run`で、configured Script IDのcontentをreadし、D-062のbase manifest 1件だけであることを検証する。previewはScript ID、manifest sourceのSHA-256 checksum、operation／target／manifest checksumに結び付くfingerprintだけを返し、manifest本文、credential、tokenを出力しない。readにはreadonly projects scopeだけを使う。
+
+実初期化は同commandの`--approval <fingerprint>`を必須とし、最新contentを再readしてfingerprintを再計算し、一致した場合だけ既存manifestを保持して管理markerを追加する。dry-runとapprovalの同時指定、approval省略、content変更後の古いapproval、source／HTMLがあるproject、既に管理済みのprojectをwrite前に拒否する。初期化PUTはD-061どおり非retryとし、Deploy、generate、doctorがこの操作を暗黙実行しない。

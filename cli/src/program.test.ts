@@ -232,3 +232,59 @@ describe('migration apply CLI', () => {
     });
   });
 });
+
+describe('project initialization CLI', () => {
+  it('dry-run fingerprintを表示し、承認時だけinitialize serviceへ渡す', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const preview = {
+      scriptId: 'script-id',
+      manifestChecksum: 'a'.repeat(64),
+      fingerprint: 'b'.repeat(64),
+    };
+    const prepareProjectInitialization = vi.fn().mockResolvedValue(preview);
+    const initializeProject = vi.fn().mockResolvedValue(preview);
+    const services = {
+      loadProject: async () => ({ root: '/project' }) as never,
+      prepareMigrationApplyFile: vi.fn(),
+      applyMigrationFile: vi.fn(),
+      prepareMigrationRollbackFile: vi.fn(),
+      prepareProjectInitialization,
+      initializeProject,
+    };
+    await createProgram({ stdout, stderr }, services).parseAsync([
+      'node',
+      'gstack',
+      'provider',
+      'initialize',
+      'google',
+      '--dry-run',
+      '--json',
+    ]);
+    expect(prepareProjectInitialization).toHaveBeenCalledOnce();
+    expect(initializeProject).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      data: { dryRun: true, initialization: preview },
+    });
+
+    stdout.mockClear();
+    await createProgram({ stdout, stderr }, services).parseAsync([
+      'node',
+      'gstack',
+      'provider',
+      'initialize',
+      'google',
+      '--approval',
+      preview.fingerprint,
+      '--json',
+    ]);
+    expect(initializeProject).toHaveBeenCalledWith(
+      expect.objectContaining({ root: '/project' }),
+      preview.fingerprint,
+    );
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      data: { dryRun: false, initialization: preview },
+    });
+    expect(stderr).not.toHaveBeenCalled();
+  });
+});

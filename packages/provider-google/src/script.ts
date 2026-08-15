@@ -1,4 +1,5 @@
 import type { ProviderSecretResolver } from '@gstack/provider';
+import { createHash } from 'node:crypto';
 
 import {
   googleCredentialRequest,
@@ -55,7 +56,8 @@ export class GoogleScriptError extends Error {
       | 'GOOGLE_SCRIPT_METADATA_INVALID'
       | 'GOOGLE_SCRIPT_CONTENT_FAILED'
       | 'GOOGLE_SCRIPT_CONTENT_INVALID'
-      | 'GOOGLE_SCRIPT_PROJECT_UNMANAGED',
+      | 'GOOGLE_SCRIPT_PROJECT_UNMANAGED'
+      | 'GOOGLE_SCRIPT_INITIALIZATION_APPROVAL_INVALID',
     message: string,
     options?: ErrorOptions,
   ) {
@@ -71,22 +73,54 @@ export class GoogleScriptWriteService {
     private readonly secrets: ProviderSecretResolver,
   ) {}
 
-  async initializeManagedProject(): Promise<readonly GoogleScriptFile[]> {
+  async previewManagementInitialization(): Promise<GoogleScriptInitializationPreview> {
     const current = await this.readCurrentContent();
-    if (current.length !== 1 || current[0]?.type !== 'JSON') {
+    return this.initializationPreview(current);
+  }
+
+  async initializeManagedProject(
+    approval: string,
+  ): Promise<readonly GoogleScriptFile[]> {
+    const current = await this.readCurrentContent();
+    const preview = this.initializationPreview(current);
+    if (approval !== preview.fingerprint) {
       throw new GoogleScriptError(
-        'GOOGLE_SCRIPT_PROJECT_UNMANAGED',
-        'Only an empty Apps Script project can be initialized for gstack.',
+        'GOOGLE_SCRIPT_INITIALIZATION_APPROVAL_INVALID',
+        'Google Apps Script initialization approval is invalid.',
       );
     }
     return this.writeContent([
-      current[0],
+      current[0]!,
       Object.freeze({
         name: GSTACK_SCRIPT_MARKER_FILE,
         type: 'SERVER_JS',
         source: GSTACK_SCRIPT_MARKER_SOURCE,
       }),
     ]);
+  }
+
+  private initializationPreview(
+    current: readonly GoogleScriptFile[],
+  ): GoogleScriptInitializationPreview {
+    if (current.length !== 1 || current[0]?.type !== 'JSON') {
+      throw new GoogleScriptError(
+        'GOOGLE_SCRIPT_PROJECT_UNMANAGED',
+        'Only an empty Apps Script project can be initialized for gstack.',
+      );
+    }
+    const manifestChecksum = checksum(current[0].source);
+    return Object.freeze({
+      scriptId: this.config.appsScriptProjectId,
+      manifestChecksum,
+      fingerprint: checksum(
+        JSON.stringify({
+          formatVersion: 1,
+          operation: 'initialize_management',
+          scriptId: this.config.appsScriptProjectId,
+          manifestChecksum,
+        }),
+      ),
+    });
   }
 
   async replaceManagedContent(
@@ -164,6 +198,12 @@ export class GoogleScriptWriteService {
       );
     }
   }
+}
+
+export interface GoogleScriptInitializationPreview {
+  readonly scriptId: string;
+  readonly manifestChecksum: string;
+  readonly fingerprint: string;
 }
 
 export class GoogleScriptReadService {
@@ -300,4 +340,8 @@ function sameFiles(
         file.source === right[index]?.source,
     )
   );
+}
+
+function checksum(value: string): string {
+  return createHash('sha256').update(value, 'utf8').digest('hex');
 }

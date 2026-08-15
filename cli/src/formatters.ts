@@ -134,6 +134,22 @@ export function formatProviderHealthHuman(
   return `Provider ${name}: ${health.status} (${health.code})`;
 }
 
+export function formatProjectInitializationHuman(
+  preview: {
+    readonly scriptId: string;
+    readonly manifestChecksum: string;
+    readonly fingerprint: string;
+  },
+  dryRun: boolean,
+): string {
+  return [
+    dryRun ? 'Project Initialization Dry Run:' : 'Project initialized.',
+    `Script project: ${preview.scriptId}`,
+    `Manifest checksum: ${preview.manifestChecksum}`,
+    `Fingerprint: ${preview.fingerprint}`,
+  ].join('\n');
+}
+
 export function formatMigrationStatusHuman(
   status: MigrationStatusSummary,
 ): string {

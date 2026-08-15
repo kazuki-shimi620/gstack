@@ -64,7 +64,7 @@
 - [x] Generator成果物からGoogle Provider固有Apps Script source bundleへ変換する責務とpath規則を`DECISIONS.md` D-063で確定し、strictなpure変換をGoogle Providerへ実装した。
 - [x] Application Modelから`generated/backend/appsscript/`へprivate Web App用CRUD sourceを生成するProvider非依存producerとtransport規則を`DECISIONS.md` D-064で確定・実装した。
 - [x] 空の未管理Apps Script projectだけを管理marker付きへ明示採用するProvider初期化境界を`DECISIONS.md` D-062で確定した。
-- [ ] Apps Script project初期化のpreview／approval付きCLI commandを設計・実装する。
+- [x] Apps Script project初期化のread-only preview、状態fingerprint、明示approval付きCLIを`DECISIONS.md` D-069で実装した。
 - [x] Apps Script version／deploymentのfingerprint、再listによる再開、単一管理deployment、pagination、公開URLのsafe resultを`DECISIONS.md` D-066で確定しProvider adapterを実装した。
 - [x] Google Deploy buildの無副作用previewとtarget／bundle fingerprintを`DECISIONS.md` D-065で確定し、Runtimeと`gstack deploy --dry-run`へ実装した。
 - [x] fingerprintの再計算と明示approval、管理content全置換、version／deployment公開を`DECISIONS.md` D-067でRuntimeとCLIへ接続した。

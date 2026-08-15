@@ -29,6 +29,8 @@ import {
   prepareStandardGoogleMigrationRollback,
   prepareStandardGoogleDeploy,
   deployStandardGoogle,
+  initializeStandardGoogleProject,
+  prepareStandardGoogleProjectInitialization,
 } from './index.js';
 
 const roots: string[] = [];
@@ -86,6 +88,61 @@ describe('standard runtime', () => {
       ],
     });
     expect(JSON.stringify(first)).not.toContain('GOOGLE_CREDENTIALS');
+  });
+
+  it('空Apps Script projectの初期化をpreviewして明示承認する', async () => {
+    const preview = {
+      scriptId: 'script-id',
+      manifestChecksum: 'a'.repeat(64),
+      fingerprint: 'b'.repeat(64),
+    };
+    const previewManagementInitialization = vi.fn().mockResolvedValue(preview);
+    const initializeManagedProject = vi.fn().mockResolvedValue([]);
+    const components = {
+      content: {
+        previewManagementInitialization,
+        initializeManagedProject,
+      },
+      deployment: {},
+    } as never;
+    await expect(
+      prepareStandardGoogleProjectInitialization({
+        project: deployProject(),
+        components,
+      }),
+    ).resolves.toEqual(preview);
+    await expect(
+      initializeStandardGoogleProject({
+        project: deployProject(),
+        approval: preview.fingerprint,
+        components,
+      }),
+    ).resolves.toEqual(preview);
+    expect(initializeManagedProject).toHaveBeenCalledWith(preview.fingerprint);
+  });
+
+  it('Project初期化の古いapprovalをwrite前に拒否する', async () => {
+    const initializeManagedProject = vi.fn();
+    await expect(
+      initializeStandardGoogleProject({
+        project: deployProject(),
+        approval: 'f'.repeat(64),
+        components: {
+          content: {
+            previewManagementInitialization: vi.fn().mockResolvedValue({
+              scriptId: 'script-id',
+              manifestChecksum: 'a'.repeat(64),
+              fingerprint: 'b'.repeat(64),
+            }),
+            initializeManagedProject,
+          },
+          deployment: {},
+        } as never,
+      }),
+    ).rejects.toMatchObject({
+      details: { code: 'PROJECT_INITIALIZATION_APPROVAL_INVALID' },
+    });
+    expect(initializeManagedProject).not.toHaveBeenCalled();
   });
 
   it('一致するapprovalでcontent更新後にversionとdeploymentを公開する', async () => {

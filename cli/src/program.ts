@@ -12,6 +12,8 @@ import {
   prepareStandardGoogleMigrationRollbackFile,
   prepareStandardGoogleDeploy,
   deployStandardGoogle,
+  initializeStandardGoogleProject,
+  prepareStandardGoogleProjectInitialization,
 } from '@gstack/runtime';
 import { Command } from 'commander';
 
@@ -31,6 +33,7 @@ import {
   formatProviderInfoHuman,
   formatProviderListHuman,
   formatProviderValidationHuman,
+  formatProjectInitializationHuman,
   formatValidationHuman,
 } from './formatters.js';
 
@@ -65,6 +68,13 @@ export interface ProgramServices {
     project: GstackProject,
     approval: string,
   ) => ReturnType<typeof deployStandardGoogle>;
+  readonly prepareProjectInitialization?: (
+    project: GstackProject,
+  ) => ReturnType<typeof prepareStandardGoogleProjectInitialization>;
+  readonly initializeProject?: (
+    project: GstackProject,
+    approval: string,
+  ) => ReturnType<typeof initializeStandardGoogleProject>;
 }
 
 const defaultServices: ProgramServices = {
@@ -78,6 +88,10 @@ const defaultServices: ProgramServices = {
   prepareDeploy: (project) => prepareStandardGoogleDeploy({ project }),
   executeDeploy: (project, approval) =>
     deployStandardGoogle({ project, approval }),
+  prepareProjectInitialization: (project) =>
+    prepareStandardGoogleProjectInitialization({ project }),
+  initializeProject: (project, approval) =>
+    initializeStandardGoogleProject({ project, approval }),
 };
 
 export function createProgram(
@@ -329,6 +343,81 @@ export function createProgram(
         };
       });
     });
+
+  provider
+    .command('initialize <name>')
+    .description('Initialize an empty Provider project for gstack management')
+    .option(
+      '--dry-run',
+      'inspect initialization without changing Provider state',
+    )
+    .option(
+      '--approval <fingerprint>',
+      'approve the exact initialization state',
+    )
+    .option('--json', 'output structured JSON')
+    .action(
+      async (
+        name: string,
+        options: { dryRun?: boolean; approval?: string; json?: boolean },
+      ) => {
+        await withProjectOutput(
+          io,
+          options.json,
+          async (project) => {
+            if (name !== 'google') {
+              throw new GstackError({
+                code: 'PROJECT_INITIALIZATION_NOT_AVAILABLE',
+                category: 'provider',
+                message: `Project Initialization is not available for Provider: ${name}`,
+              });
+            }
+            if (options.dryRun && options.approval) {
+              throw new GstackError({
+                code: 'PROJECT_INITIALIZATION_APPROVAL_INVALID',
+                category: 'provider',
+                message: 'Initialization dry-run cannot include approval.',
+              });
+            }
+            if (!options.dryRun && !options.approval) {
+              throw new GstackError({
+                code: 'PROJECT_INITIALIZATION_APPROVAL_REQUIRED',
+                category: 'provider',
+                message: 'Project Initialization requires explicit approval.',
+                hint: 'Run provider initialize google --dry-run first.',
+              });
+            }
+            const preview = options.dryRun
+              ? await (
+                  services.prepareProjectInitialization ??
+                  ((selected) =>
+                    prepareStandardGoogleProjectInitialization({
+                      project: selected,
+                    }))
+                )(project)
+              : await (
+                  services.initializeProject ??
+                  ((selected, approval) =>
+                    initializeStandardGoogleProject({
+                      project: selected,
+                      approval,
+                    }))
+                )(project, options.approval as string);
+            return {
+              data: {
+                dryRun: Boolean(options.dryRun),
+                initialization: preview,
+              },
+              human: formatProjectInitializationHuman(
+                preview,
+                Boolean(options.dryRun),
+              ),
+            };
+          },
+          services.loadProject,
+        );
+      },
+    );
 
   schema
     .command('validate')

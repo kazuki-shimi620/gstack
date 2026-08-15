@@ -53,12 +53,15 @@ describe('Google Apps Script managed content write', () => {
       getProjectContent: vi.fn().mockResolvedValue({ files: [manifest] }),
       updateProjectContent: vi.fn().mockResolvedValue({ files: initialized }),
     };
+    const service = new GoogleScriptWriteService(gateway, config, secrets);
+    const preview = await service.previewManagementInitialization();
+    expect(preview).toMatchObject({
+      scriptId: 'script-id',
+      manifestChecksum: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
     await expect(
-      new GoogleScriptWriteService(
-        gateway,
-        config,
-        secrets,
-      ).initializeManagedProject(),
+      service.initializeManagedProject(preview.fingerprint),
     ).resolves.toEqual(initialized);
     expect(gateway.updateProjectContent).toHaveBeenCalledWith(
       expect.objectContaining({ files: initialized }),
@@ -80,8 +83,30 @@ describe('Google Apps Script managed content write', () => {
         gateway,
         config,
         secrets,
-      ).initializeManagedProject(),
+      ).initializeManagedProject('a'.repeat(64)),
     ).rejects.toMatchObject({ code: 'GOOGLE_SCRIPT_PROJECT_UNMANAGED' });
+    expect(gateway.updateProjectContent).not.toHaveBeenCalled();
+  });
+
+  it('rejects stale initialization approval before write', async () => {
+    const manifest = {
+      name: 'appsscript',
+      type: 'JSON' as const,
+      source: '{}',
+    };
+    const gateway: GoogleScriptContentGateway = {
+      getProjectContent: vi.fn().mockResolvedValue({ files: [manifest] }),
+      updateProjectContent: vi.fn(),
+    };
+    await expect(
+      new GoogleScriptWriteService(
+        gateway,
+        config,
+        secrets,
+      ).initializeManagedProject('f'.repeat(64)),
+    ).rejects.toMatchObject({
+      code: 'GOOGLE_SCRIPT_INITIALIZATION_APPROVAL_INVALID',
+    });
     expect(gateway.updateProjectContent).not.toHaveBeenCalled();
   });
 

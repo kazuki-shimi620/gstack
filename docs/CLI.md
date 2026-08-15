@@ -395,7 +395,18 @@ gstack provider health google
 gstack provider health google --json
 ```
 
-`list`、`info`、`validate`、`health`だけが現在実装済みである。`install`、`remove`、`use`はpackage管理と状態変更の安全契約が確定するまで未実装とする。
+### initialize
+
+空のApps Script projectをgstack管理対象にする。必ずpreview後に同じ状態のfingerprintを明示承認する。
+
+```bash
+gstack provider initialize google --dry-run
+gstack provider initialize google --approval <fingerprint>
+```
+
+手書きsourceが存在するprojectや既に管理済みのprojectは変更しない。
+
+`list`、`info`、`validate`、`health`、Google向け`initialize`が現在実装済みである。`install`、`remove`、`use`はpackage管理と状態変更の安全契約が確定するまで未実装とする。
 
 ---
 

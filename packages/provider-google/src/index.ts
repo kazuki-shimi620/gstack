@@ -102,6 +102,7 @@ export type {
   GoogleScriptContentGateway,
   GoogleScriptFile,
   GoogleScriptFileType,
+  GoogleScriptInitializationPreview,
   GoogleScriptMetadataGateway,
   GoogleScriptProjectMetadata,
 } from './script.js';

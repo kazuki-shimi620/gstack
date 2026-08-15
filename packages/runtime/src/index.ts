@@ -47,6 +47,7 @@ import {
   type DefaultGoogleDeployComponents,
   type GoogleScriptFile,
   type GoogleDeploymentResult,
+  type GoogleScriptInitializationPreview,
 } from '@gstack/provider-google';
 
 export interface StandardGoogleDeployPreview {
@@ -63,6 +64,89 @@ export interface StandardGoogleDeployPreview {
 export interface StandardGoogleDeployResult {
   readonly fingerprint: string;
   readonly deployment: GoogleDeploymentResult;
+}
+
+export async function prepareStandardGoogleProjectInitialization(input: {
+  readonly project: GstackProject;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly components?: DefaultGoogleDeployComponents;
+}): Promise<GoogleScriptInitializationPreview> {
+  const { config, secrets } = await resolveGoogleWriteContext(
+    input.project,
+    input.environment,
+  );
+  try {
+    const components =
+      input.components ?? createDefaultGoogleDeployComponents(config, secrets);
+    return await components.content.previewManagementInitialization();
+  } catch (error: unknown) {
+    throw projectInitializationError(error);
+  }
+}
+
+export async function initializeStandardGoogleProject(input: {
+  readonly project: GstackProject;
+  readonly approval: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly components?: DefaultGoogleDeployComponents;
+}): Promise<GoogleScriptInitializationPreview> {
+  const { config, secrets } = await resolveGoogleWriteContext(
+    input.project,
+    input.environment,
+  );
+  try {
+    const components =
+      input.components ?? createDefaultGoogleDeployComponents(config, secrets);
+    const preview = await components.content.previewManagementInitialization();
+    if (input.approval !== preview.fingerprint) {
+      throw new GstackError({
+        code: 'PROJECT_INITIALIZATION_APPROVAL_INVALID',
+        category: 'provider',
+        message:
+          'Project initialization approval does not match current state.',
+      });
+    }
+    await components.content.initializeManagedProject(input.approval);
+    return preview;
+  } catch (error: unknown) {
+    throw projectInitializationError(error);
+  }
+}
+
+async function resolveGoogleWriteContext(
+  project: GstackProject,
+  environment?: Readonly<Record<string, string | undefined>>,
+) {
+  const projectConfig = await project.getConfig();
+  const google = projectConfig.providers.find(
+    ({ name, enabled }) => name === 'google' && enabled,
+  );
+  const config = google
+    ? parseGoogleProviderConfig(google.configuration).config
+    : null;
+  if (!config) {
+    throw new GstackError({
+      code: 'PROJECT_INITIALIZATION_NOT_AVAILABLE',
+      category: 'provider',
+      message: 'Google Project Initialization is not configured.',
+    });
+  }
+  return Object.freeze({
+    config,
+    secrets: new EnvironmentSecretResolver(environment ?? process.env),
+  });
+}
+
+function projectInitializationError(error: unknown): unknown {
+  if (error instanceof GstackError) return error;
+  return new GstackError(
+    {
+      code: 'PROJECT_INITIALIZATION_FAILED',
+      category: 'provider',
+      message: 'Google Project Initialization failed.',
+    },
+    { cause: error },
+  );
 }
 
 export async function prepareStandardGoogleDeploy(input: {
