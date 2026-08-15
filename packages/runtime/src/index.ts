@@ -42,6 +42,11 @@ import {
   type ProviderSecretResolver,
 } from '@gstack/provider';
 import {
+  loadPlugins,
+  registerProviderPlugins,
+  type PluginModuleImporter,
+} from '@gstack/plugin';
+import {
   createDefaultGoogleMigrationComponents,
   createDefaultGoogleDeployComponents,
   createDefaultGoogleProvider,
@@ -355,6 +360,7 @@ export interface LoadStandardProjectOptions {
   readonly root?: string;
   readonly startDirectory?: string;
   readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly pluginImporter?: PluginModuleImporter;
 }
 
 export interface StandardGoogleMigrationRuntime extends DefaultGoogleMigrationComponents {
@@ -580,17 +586,25 @@ export async function loadStandardProject(
   }
   const config = await loadProjectConfig(root);
   const enabled = config.providers.filter((provider) => provider.enabled);
-  const unknown = enabled.find(({ name }) => name !== 'google');
+  const registry = new ProviderRegistry();
+  if (enabled.some(({ name }) => name === 'google')) {
+    registry.register(createDefaultGoogleProvider());
+  }
+  const plugins = await loadPlugins({
+    packageNames: config.plugins?.packages ?? [],
+    gstackVersion: '0.0.0',
+    ...(options.pluginImporter === undefined
+      ? {}
+      : { importer: options.pluginImporter }),
+  });
+  registerProviderPlugins(plugins, registry);
+  const unknown = enabled.find(({ name }) => registry.get(name) === null);
   if (unknown) {
     throw new GstackError({
       code: 'PROVIDER_NOT_AVAILABLE',
       category: 'provider',
       message: `Provider is not available in the standard runtime: ${unknown.name}`,
     });
-  }
-  const registry = new ProviderRegistry();
-  if (enabled.some(({ name }) => name === 'google')) {
-    registry.register(createDefaultGoogleProvider());
   }
   const catalog = new ProviderCatalog(registry);
   const google = enabled.find(({ name }) => name === 'google');

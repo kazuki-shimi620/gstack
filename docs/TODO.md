@@ -75,5 +75,6 @@
 - [x] loopback限定in-memory APIによる初期Local Development serverと`gstack dev`を`DECISIONS.md` D-072で実装した。
 - [x] Provider／Generator共通Plugin Manifest、Registry、明示package Loader、Generator namespaceを`DECISIONS.md` D-073で実装した。
 - [x] Plugin package allowlistとPlugin固有configurationのProject Config永続形式を`DECISIONS.md` D-074で確定・実装した。
-- [ ] 標準Runtimeでallowlist packageをloadしProvider Registry／Generation Planへ接続する。
+- [x] 標準Runtimeでallowlist packageをloadしProvider Pluginを既存Provider Registryへ接続した（`DECISIONS.md` D-075）。
+- [ ] Generator Plugin成果物をbuilt-in成果物と単一Generation Plan／Manifestへ合成する。
 - [ ] Plugin install／remove CLIはpackage manager変更と供給網確認の安全契約を確定してから実装する。

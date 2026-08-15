@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GstackProject } from '@gstack/core';
+import { googleProviderManifest } from '@gstack/provider-google';
 
 import {
   applyCapabilityResults,
@@ -300,6 +301,42 @@ providers:
     await expect(loadStandardProject({ root: unknown })).rejects.toMatchObject({
       details: { code: 'PROVIDER_NOT_AVAILABLE', category: 'provider' },
     });
+  });
+
+  it('allowlistのProvider Pluginを注入ImporterからRegistryへ接続する', async () => {
+    const root = await project(`
+plugins:
+  packages: ['@example/provider']
+  configuration: {}
+providers:
+  example:
+    enabled: true
+    configuration: {}
+`);
+    const providerManifest = {
+      ...googleProviderManifest,
+      name: 'example',
+      packageName: '@example/provider',
+    };
+    const loaded = await loadStandardProject({
+      root,
+      pluginImporter: vi.fn().mockResolvedValue({
+        gstackPlugin: {
+          manifest: {
+            formatVersion: 1,
+            id: 'example',
+            kind: 'provider',
+            packageName: '@example/provider',
+            version: providerManifest.version,
+            minimumGstackVersion: providerManifest.minimumGstackVersion,
+          },
+          provider: { manifest: providerManifest, initialize: vi.fn() },
+        },
+      }),
+    });
+    await expect(loaded.listProviders()).resolves.toEqual([
+      expect.objectContaining({ name: 'example' }),
+    ]);
   });
 
   it('Environment Secret Resolverは安全な変数名だけを解決する', async () => {

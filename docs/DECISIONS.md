@@ -514,3 +514,9 @@ Generator Plugin成果物は`generated/plugins/<plugin-id>/`配下だけを許�
 `gstack.yaml`のoptional `plugins` sectionは必須子key `packages`と`configuration`だけを持つ。`packages`は利用者が明示した重複なしnpm package name sequenceで、relative／absolute path、URL、空値を拒否する。section未指定は空allowlistと空configurationへ正規化し、filesystemやdependenciesからpackageを自動発見しない。
 
 `configuration`はPlugin IDをkey、JSON-compatible mappingを値とし、credential値やtokenを置く場所として扱わない。Config Loaderは構文、package name、ID、JSON互換性だけを検証・freezeし、package import、Manifest解釈、Plugin実行を行わない。packageとPlugin IDの対応、未使用configuration、互換性はPlugin Loader／Runtime接続時に検証する。
+
+## D-075 Standard Runtime Provider Plugin Loading
+
+標準RuntimeはProject Config読込後、D-074の明示package allowlistだけをD-073 Plugin Loaderへ渡し、互換性検証済みProvider PluginのFactoryを既存Provider Registryへ登録する。公式Google Providerも同じRegistryへcomposition rootで登録し、Projectのenabled Provider名が最終Registryに存在しない場合はProject loadを拒否する。
+
+Runtime optionはtest／埋込みhost向けにImporter portを注入できるが、Config、Core、CLIがimportを直接行わない。Provider Pluginのconfiguration／Secret Resolverは既存Provider Runtime contractを再利用し、Plugin Loaderへcredentialを渡さない。Generator PluginのGeneration Plan統合はArtifact Manifestとの単一Plan合成を確定してから別途接続する。

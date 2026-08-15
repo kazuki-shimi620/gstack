@@ -55,6 +55,7 @@ const allowedInternalDependencies = {
     '@gstack/config',
     '@gstack/core',
     '@gstack/migration',
+    '@gstack/plugin',
     '@gstack/provider',
     '@gstack/provider-google',
   ],
