@@ -20,6 +20,14 @@ export type {
   GstackErrorIssue,
 } from './error.js';
 export { failureResult, successResult } from './result.js';
+export { createGstackLogger, noopGstackLogger } from './logging.js';
+export type {
+  GstackLogger,
+  GstackLogEvent,
+  GstackLogInput,
+  GstackLogLevel,
+  GstackLogSink,
+} from './logging.js';
 export type { FailureResult, MachineResult, SuccessResult } from './result.js';
 export type { LoadProjectOptions } from './project.js';
 export type {

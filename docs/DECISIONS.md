@@ -395,3 +395,11 @@ Generated Artifact inventoryのSingle Source of TruthはD-026の`generated/.gsta
 Manifestが存在しない場合は`manifestPresent: false`と空配列を正常結果として返す。Generator Configが現在無効でもRead APIのcapabilityは`available`とし、残存Manifestがあれば所有情報を返す。filesystemを走査して未記録fileを追加したり、各Artifact本文を読んでchecksum一致やdriftを暗黙検証したりしない。Manifestが不正、symlink境界に違反、または安全に読めない場合は既存のsafe Generation errorへ変換し、部分的inventoryを返さない。
 
 MCPはCore APIへ委譲する`list_generated_artifacts` read-only Toolと`gstack://generated-artifacts` Resourceを公開する。MCP AdapterがManifestを直接parseしたり、generated directoryを走査したりしてはいけない。Artifact本文取得、drift検証、再生成、削除はこのinventory契約に含めない。
+
+## D-060 Core Logging Contract
+
+MVPのCore Loggingは注入可能な同期`GstackLogSink`とLoggerだけを定義し、global logger、console直接出力、filesystem sink、network sinkをCoreへ持たない。Log Eventは注入clockから得るUTC timestamp、`debug | info | warn | error` level、Core errorと同じcategory、uppercase snake-caseのstable codeだけを持つ。
+
+任意message、error object、stack、path、subject、metadata、context map、Provider response、Schema値、environment、credential、tokenをLog Event入力に含めない。これによりredaction対象を後追い推測せず、secretや利用者dataが構造上混入できない最小契約とする。不正level／category／code、無効clockはeventを破棄する。
+
+Loggingは観測専用であり、clock／sinkのthrowによってDomain操作の成否を変えてはいけない。公式Runtimeのdefaultはno-op Loggerとし、CLI stdoutのmachine-readable envelopeやMCP protocol contentへLog Eventを混在させない。stderr sink、event code catalog、sampling、永続化、相関ID、duration／metricは、安全なfieldとAdapter境界を別途確定してから追加する。

@@ -59,4 +59,4 @@
 
 ## Core Foundationの残判断
 
-- [ ] Logging contractを確定する。現在はlevelだけが定義されており、event構造、sink、secret redaction、CLI／MCPとの境界が未定義である。契約確定前にloggerをCoreへ導入しない。
+- [x] Logging contractを`DECISIONS.md` D-060で確定し、任意message／metadataを持たない最小Event、注入可能Sink／clock、no-op既定、secret-safeなCLI／MCP境界をCoreへ実装した。

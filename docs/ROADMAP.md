@@ -80,6 +80,8 @@ Application Modelまで完成させる。
 - CLI以外からCore Read APIを呼び出せる
 - AI Agentがstdio MCP経由でProject・Schema・Validationを読み取れる
 
+Status: Config／Schema Loader、YAML Parser、AST、Semantic Analyzer、Application Model、Error／Structured Result、CLI、Programmatic Core Read API、read-only MCP、D-060のsecret-safeな構造化Logging contractを実装済み。Core FoundationのMVP Taskは完了。
+
 ---
 
 # 5. Version 0.2 - Migration Engine

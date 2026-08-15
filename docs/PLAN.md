@@ -162,6 +162,8 @@ Semantic Analysis前でも未確定semanticsを推測しない範囲で先行で
 
 CoreをCLIなしで呼び出せ、MCP ToolがCoreへ委譲し、構造化errorがtestされ、危険な操作が存在せず、`MCP.md`と実装が一致すれば完了とする。
 
+Status: 完了。Project／Schema／Application Model／Provider／Migration／Generatorのread-only Core APIとMCP Adapterを実装し、D-060の任意message／metadataを受け取らない構造化Logger、注入可能Sink／clock、no-op既定もCoreへ追加した。Loggerの具体的stderr／永続化Sinkとevent instrumentationは別契約まで追加しない。
+
 ## 6. Test計画
 
 - Unit test: Config／Schema Loader、YAMLからASTへの変換、各semantic rule、normalization、diagnostic順序、CLI formatter。
