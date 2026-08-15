@@ -77,8 +77,8 @@ describe('diffApplicationModels', () => {
     const plan = diffApplicationModels(previous, target);
 
     expect(plan.operations.map(({ id }) => id)).toEqual([
-      'add_column:users:email',
       'create_model:accounts:accounts',
+      'add_column:users:email',
       'drop_column:users:temp',
       'drop_model:legacy:legacy',
     ]);
@@ -172,10 +172,10 @@ describe('diffApplicationModels', () => {
     expect(
       diffApplicationModels(previous, target).operations.map(({ id }) => id),
     ).toEqual([
+      'drop_relation:users:account',
+      'drop_index:users:users_id',
       'add_index:users:users_id',
       'add_relation:users:account',
-      'drop_index:users:users_id',
-      'drop_relation:users:account',
     ]);
   });
 
@@ -190,8 +190,8 @@ describe('diffApplicationModels', () => {
       renameColumns: [{ model: 'users', from: 'old_name', to: 'name' }],
     });
     expect(plan.operations.map(({ id }) => id)).toEqual([
-      'alter_column:users:name',
       'rename_column:users:old_name->name',
+      'alter_column:users:name',
     ]);
   });
 

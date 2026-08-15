@@ -608,3 +608,9 @@ Google SheetsにはgstackのIndexに対応するquery planner用native indexが�
 MVPの`belongs_to` Relationはlocal Fieldからtarget Modelのreference Fieldへの参照整合性として`emulated`実装する。`add_relation`前に両方の管理対象Sheet、決定的なSheet ID／title、Model marker、local／reference headerを検証する。target referenceの全非空effective valueを集合化し、local Fieldの全非空値が存在することを要求する。空local値の可否はFieldの`required`変更で扱い、Relation単体では空値を許可する。参照値をcoerce、backfill、削除せず、error、log、Historyへ値を公開しない。
 
 生成Apps Script runtimeはcreate／update時に非空local値の参照先存在を同じSpreadsheetから確認する。target recordのdeleteは参照中のlocal recordが1件でもあれば`409`のsafe conflictとして拒否するRESTRICT semanticsとし、cascade、set-null、orphan化を暗黙実行しない。`drop_relation`は将来write時の参照検証をApplication Modelから除くが、既存dataを変更しない。各Operationはsource Sheet直下へchecksum＋Operation IDのmarkerを単一非retry batchで記録し、response喪失後の再readで適用済みを判定する。検査とmarker writeはD-054のMigration lock下で行い、write直前に再readする。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict cross-Sheet state parser、既存参照検査、生成runtimeのcreate／update／delete、値非露出error、marker idempotency、標準Runtime接続をtestした後にだけManifestを`emulated`へ変更する。
+
+## D-088 Migration Operation Dependency Order
+
+Migration Planのcanonical順序はOperation ID全体の単純な辞書順ではなく、Provider非依存の構造依存順とする。`drop_relation`、`drop_index`を最初に実行して参照／制約を解除し、`create_model`、`rename_column`、`add_column`、`alter_column`、`add_index`、`add_relation`の順で構造と制約を作り、最後に`drop_column`、`drop_model`を実行する。同じOperation type内はstable IDの辞書順とする。
+
+これにより、削除対象Column／Modelの検証前に依存Relation／Indexを解除し、追加・rename後のheaderに対してIndex／Relationを検証できる。Providerは順序不備を欠落済みとして黙認せず、各Operation時点の期待状態をstrictに検証する。Migration File、fingerprint、History resumeはこの順序を保持し、順序規則を変更する場合は既存file互換性を明示的に評価する。

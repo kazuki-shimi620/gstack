@@ -10,12 +10,27 @@ const RISK_ORDER: Readonly<Record<MigrationRisk, number>> = {
   destructive: 2,
 };
 
+const OPERATION_ORDER: Readonly<Record<MigrationOperation['type'], number>> = {
+  drop_relation: 0,
+  drop_index: 1,
+  create_model: 2,
+  rename_column: 3,
+  add_column: 4,
+  alter_column: 5,
+  add_index: 6,
+  add_relation: 7,
+  drop_column: 8,
+  drop_model: 9,
+};
+
 export function createMigrationPlan(
   operations: readonly MigrationOperation[],
   warnings: readonly string[] = [],
 ): MigrationPlan {
-  const ordered = [...operations].sort((left, right) =>
-    left.id.localeCompare(right.id),
+  const ordered = [...operations].sort(
+    (left, right) =>
+      OPERATION_ORDER[left.type] - OPERATION_ORDER[right.type] ||
+      left.id.localeCompare(right.id),
   );
   return createMigrationPlanPreservingOrder(ordered, warnings);
 }
