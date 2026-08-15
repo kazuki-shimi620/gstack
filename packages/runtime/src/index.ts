@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 import {
   findProjectRoot,
@@ -37,10 +38,91 @@ import {
 import {
   createDefaultGoogleMigrationComponents,
   createDefaultGoogleProvider,
+  createGoogleScriptSourceBundle,
   evaluateGoogleMigrationCapabilities,
   parseGoogleProviderConfig,
   type DefaultGoogleMigrationComponents,
 } from '@gstack/provider-google';
+
+export interface StandardGoogleDeployPreview {
+  readonly provider: 'google';
+  readonly scriptId: string;
+  readonly fingerprint: string;
+  readonly files: readonly {
+    readonly name: string;
+    readonly type: 'SERVER_JS' | 'HTML' | 'JSON';
+    readonly checksum: string;
+  }[];
+}
+
+export async function prepareStandardGoogleDeploy(input: {
+  readonly project: GstackProject;
+}): Promise<StandardGoogleDeployPreview> {
+  const config = await input.project.getConfig();
+  const google = config.providers.find(
+    ({ name, enabled }) => name === 'google' && enabled,
+  );
+  if (!google) {
+    throw new GstackError({
+      code: 'DEPLOY_NOT_AVAILABLE',
+      category: 'deploy',
+      message: 'Google Deploy is not configured for this project.',
+    });
+  }
+  const parsed = parseGoogleProviderConfig(google.configuration);
+  if (!parsed.config) {
+    throw new GstackError({
+      code: 'CONFIG_INVALID',
+      category: 'provider',
+      message: 'Google Provider configuration is invalid.',
+    });
+  }
+  try {
+    const plan = await input.project.previewGeneration();
+    const artifacts = plan.writes.filter(({ path: artifactPath }) =>
+      artifactPath.startsWith('generated/backend/appsscript/'),
+    );
+    const bundle = createGoogleScriptSourceBundle(artifacts, parsed.config);
+    const files = Object.freeze(
+      bundle.map((file) =>
+        Object.freeze({
+          name: file.name,
+          type: file.type,
+          checksum: createHash('sha256')
+            .update(file.source, 'utf8')
+            .digest('hex'),
+        }),
+      ),
+    );
+    const fingerprint = createHash('sha256')
+      .update(
+        JSON.stringify({
+          formatVersion: 1,
+          provider: 'google',
+          scriptId: parsed.config.appsScriptProjectId,
+          files,
+        }),
+        'utf8',
+      )
+      .digest('hex');
+    return Object.freeze({
+      provider: 'google',
+      scriptId: parsed.config.appsScriptProjectId,
+      fingerprint,
+      files,
+    });
+  } catch (error: unknown) {
+    if (error instanceof GstackError) throw error;
+    throw new GstackError(
+      {
+        code: 'DEPLOY_BUILD_INVALID',
+        category: 'deploy',
+        message: 'Apps Script Deploy build is invalid.',
+      },
+      { cause: error },
+    );
+  }
+}
 
 export interface LoadStandardProjectOptions {
   readonly root?: string;

@@ -167,6 +167,44 @@ test('generate dry-runと明示的writeを分離する', (t) => {
   );
 });
 
+test('Deployはdry-runでtargetとfingerprintだけを表示する', (t) => {
+  const root = project(
+    'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+    `providers:
+  google:
+    enabled: true
+    configuration:
+      spreadsheetId: spreadsheet-id
+      appsScriptProjectId: script-id
+      driveFolderId: folder-id
+      authentication:
+        mode: user_oauth
+        credentialSecret: GOOGLE_CREDENTIALS
+`,
+  );
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const rejected = run(['deploy', '--json'], root);
+  assert.equal(rejected.status, 1);
+  assert.equal(
+    JSON.parse(rejected.stderr).error.code,
+    'DEPLOY_DRY_RUN_REQUIRED',
+  );
+
+  const result = run(['deploy', '--dry-run', '--json'], root);
+  assert.equal(result.status, 0);
+  assert.equal(result.stderr, '');
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.data.dryRun, true);
+  assert.equal(output.data.deploy.scriptId, 'script-id');
+  assert.match(output.data.deploy.fingerprint, /^[a-f0-9]{64}$/u);
+  assert.deepEqual(
+    output.data.deploy.files.map(({ name }) => name),
+    ['appsscript', 'gstack_config', 'gstack_managed', 'main'],
+  );
+  assert.equal(result.stdout.includes('GOOGLE_CREDENTIALS'), false);
+});
+
 test('Provider list／info／validateを標準Runtime経由で実行する', (t) => {
   const root = project(
     'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',

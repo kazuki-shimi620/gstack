@@ -55,6 +55,22 @@ export function formatGenerationHuman(
   ].join('\n');
 }
 
+export function formatDeployPreviewHuman(preview: {
+  readonly provider: string;
+  readonly scriptId: string;
+  readonly fingerprint: string;
+  readonly files: readonly { readonly name: string; readonly type: string }[];
+}): string {
+  return [
+    'Deploy Dry Run:',
+    `Provider: ${preview.provider}`,
+    `Script project: ${preview.scriptId}`,
+    `Fingerprint: ${preview.fingerprint}`,
+    ...preview.files.map(({ name, type }) => `${type} ${name}`),
+    `Summary: ${preview.files.length} file(s).`,
+  ].join('\n');
+}
+
 export function formatProviderListHuman(
   providers: readonly ProviderSummary[],
 ): string {

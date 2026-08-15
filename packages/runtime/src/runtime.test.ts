@@ -26,6 +26,7 @@ import {
   prepareStandardGoogleMigrationApply,
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollback,
+  prepareStandardGoogleDeploy,
 } from './index.js';
 
 const roots: string[] = [];
@@ -37,6 +38,54 @@ afterEach(async () => {
 });
 
 describe('standard runtime', () => {
+  it('生成PlanとProvider設定から副作用なしのDeploy fingerprintを作る', async () => {
+    const configuration = {
+      spreadsheetId: 'spreadsheet-id',
+      appsScriptProjectId: 'script-id',
+      driveFolderId: 'folder-id',
+      authentication: {
+        mode: 'user_oauth',
+        credentialSecret: 'GOOGLE_CREDENTIALS',
+      },
+    };
+    const project = {
+      getConfig: async () => ({
+        providers: [{ name: 'google', enabled: true, configuration }],
+      }),
+      previewGeneration: async () => ({
+        writes: [
+          {
+            path: 'generated/backend/appsscript/appsscript.json',
+            content: '{}\n',
+          },
+          {
+            path: 'generated/backend/appsscript/main.gs',
+            content: 'function doGet() {}\n',
+          },
+          { path: 'generated/types/users.ts', content: 'ignored' },
+        ],
+      }),
+    } as never;
+    const first = await prepareStandardGoogleDeploy({ project });
+    const second = await prepareStandardGoogleDeploy({ project });
+    expect(first).toEqual(second);
+    expect(first).toMatchObject({
+      provider: 'google',
+      scriptId: 'script-id',
+      fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      files: [
+        {
+          name: 'appsscript',
+          checksum: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        },
+        { name: 'gstack_config' },
+        { name: 'gstack_managed' },
+        { name: 'main' },
+      ],
+    });
+    expect(JSON.stringify(first)).not.toContain('GOOGLE_CREDENTIALS');
+  });
+
   it('enabledな公式Google ProviderをCatalogとInspectionへ接続する', async () => {
     const root = await project(`
 providers:

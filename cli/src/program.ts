@@ -10,11 +10,13 @@ import {
   loadStandardProject,
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollbackFile,
+  prepareStandardGoogleDeploy,
 } from '@gstack/runtime';
 import { Command } from 'commander';
 
 import {
   formatErrorHuman,
+  formatDeployPreviewHuman,
   formatGenerationHuman,
   formatJson,
   formatMigrationHistoryHuman,
@@ -54,6 +56,9 @@ export interface ProgramServices {
     project: GstackProject,
     filePath: string,
   ) => ReturnType<typeof prepareStandardGoogleMigrationRollbackFile>;
+  readonly prepareDeploy?: (
+    project: GstackProject,
+  ) => ReturnType<typeof prepareStandardGoogleDeploy>;
 }
 
 const defaultServices: ProgramServices = {
@@ -64,6 +69,7 @@ const defaultServices: ProgramServices = {
     applyStandardGoogleMigrationFile({ project, ...input }),
   prepareMigrationRollbackFile: (project, filePath) =>
     prepareStandardGoogleMigrationRollbackFile({ project, filePath }),
+  prepareDeploy: (project) => prepareStandardGoogleDeploy({ project }),
 };
 
 export function createProgram(
@@ -370,6 +376,37 @@ export function createProgram(
         );
         process.exitCode = details.category === 'configuration' ? 3 : 1;
       }
+    });
+
+  program
+    .command('deploy')
+    .description('Build and deploy the configured application')
+    .option('--dry-run', 'build and preview without changing Provider state')
+    .option('--json', 'output structured JSON')
+    .action(async (options: { dryRun?: boolean; json?: boolean }) => {
+      await withProjectOutput(
+        io,
+        options.json,
+        async (project) => {
+          if (!options.dryRun) {
+            throw new GstackError({
+              code: 'DEPLOY_DRY_RUN_REQUIRED',
+              category: 'deploy',
+              message: 'Deploy is available as dry-run only.',
+              hint: 'Pass --dry-run to inspect the exact Deploy build.',
+            });
+          }
+          const preview = await (
+            services.prepareDeploy ??
+            ((selected) => prepareStandardGoogleDeploy({ project: selected }))
+          )(project);
+          return {
+            data: { dryRun: true, deploy: preview },
+            human: formatDeployPreviewHuman(preview),
+          };
+        },
+        services.loadProject,
+      );
     });
 
   program.configureOutput({

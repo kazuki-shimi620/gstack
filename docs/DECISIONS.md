@@ -436,3 +436,11 @@ MVP Generator Configに独立した`backend` booleanを必須追加し、有効�
 初期Web App manifestは意図しない公開を避けるため`access: MYSELF`、`executeAs: USER_DEPLOYING`とし、V8 runtimeを使う。匿名公開やdomain公開へ暗黙拡張しない。Apps Script Web AppがGET／POST entry pointだけを提供する制約に合わせ、listはGET、createはPOST、update／deleteはPOST parameter `__gstack_method=PATCH|DELETE`による明示overrideとする。通常のAPI contractが示すPATCH／DELETEとのtransport変換は将来のclient adapterが担当する。
 
 runtimeはSchema由来のresource、Model、Primary Key、Field allowlist、operation flagだけを含み、unknown resource／operation／fieldを拒否する。writeはScript Lockで直列化し、configured Spreadsheetのgstack管理SheetだけをModel名で取得し、headerがApplication ModelのField順と完全一致しなければdriftとして拒否する。ResponseはJSONの`ok`と`data | error.code`だけを返し、生error、stack、credential、tokenを返さない。型・required・permissionの完全な実行時検証、HTTP status表現、認証role mappingはDeploy公開範囲を広げる前に追加する。
+
+## D-065 Google Deploy Build Preview
+
+`gstack deploy --dry-run`は現在のApplication ModelとGenerator Configからmemory上でGeneration Planを再生成し、D-063のbackend pathだけをGoogle source bundleへ変換する。filesystemへ生成物を書かず、Google API、Secret Resolver、OAuth gatewayを呼ばない。通常のGenerated Artifactやmanual fileをupload対象へ推測追加しない。
+
+previewはProvider名、target Apps Script project ID、file名／type／source checksumの決定的な配列、targetと完全なbundleに結び付くSHA-256 fingerprintだけを返し、source本文、Spreadsheet ID、Drive folder ID、credential参照名、credential、tokenを出力しない。同じSchema、Config、Generatorから同じfingerprintを作り、source、runtime injection、target projectのいずれかが変わればfingerprintを変える。
+
+fingerprintは将来の明示Deploy approvalに使用する候補であり、この段階ではwrite権限を与えない。`gstack deploy`の非dry-runは、管理projectのstate照合、version／deploymentの冪等性、明示approvalが実装されるまで`DEPLOY_DRY_RUN_REQUIRED`で拒否する。MCPへDeployを追加しない。

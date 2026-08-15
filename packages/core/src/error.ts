@@ -40,6 +40,9 @@ export type GstackErrorCode =
   | 'GENERATOR_NOT_CONFIGURED'
   | 'GENERATOR_SCHEMA_INVALID'
   | 'GENERATION_FAILED'
+  | 'DEPLOY_NOT_AVAILABLE'
+  | 'DEPLOY_DRY_RUN_REQUIRED'
+  | 'DEPLOY_BUILD_INVALID'
   | 'INTERNAL_ERROR';
 
 export type GstackErrorCategory =
@@ -48,6 +51,7 @@ export type GstackErrorCategory =
   | 'provider'
   | 'migration'
   | 'generator'
+  | 'deploy'
   | 'internal';
 
 export interface GstackErrorDetails {
