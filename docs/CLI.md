@@ -444,7 +444,10 @@ gstack auth status
 
 ```bash
 gstack dev
+gstack dev --port 3000
 ```
+
+loopback専用のin-memory APIを起動する。終了するとdataは破棄され、Google Providerやlocal filesystemは変更しない。
 
 ---
 

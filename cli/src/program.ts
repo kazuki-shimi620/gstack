@@ -15,6 +15,7 @@ import {
   deployStandardGoogle,
   initializeStandardGoogleProject,
   prepareStandardGoogleProjectInitialization,
+  startStandardDevServer,
 } from '@gstack/runtime';
 import { Command } from 'commander';
 
@@ -81,6 +82,10 @@ export interface ProgramServices {
     project: GstackProject,
     dryRun: boolean,
   ) => ReturnType<typeof buildStandardGoogle>;
+  readonly startDev?: (
+    project: GstackProject,
+    port: number,
+  ) => ReturnType<typeof startStandardDevServer>;
 }
 
 const defaultServices: ProgramServices = {
@@ -99,6 +104,7 @@ const defaultServices: ProgramServices = {
   initializeProject: (project, approval) =>
     initializeStandardGoogleProject({ project, approval }),
   build: (project, dryRun) => buildStandardGoogle({ project, dryRun }),
+  startDev: (project, port) => startStandardDevServer({ project, port }),
 };
 
 export function createProgram(
@@ -561,6 +567,37 @@ export function createProgram(
         );
       },
     );
+
+  program
+    .command('dev')
+    .description('Start the loopback-only in-memory development API')
+    .option('--port <port>', 'loopback port', '3000')
+    .action(async (options: { port: string }) => {
+      const port = Number(options.port);
+      if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
+        throw new GstackError({
+          code: 'CONFIG_INVALID',
+          category: 'configuration',
+          message: 'Development server port is invalid.',
+        });
+      }
+      const project = await services.loadProject();
+      const server = await (
+        services.startDev ??
+        ((selected, selectedPort) =>
+          startStandardDevServer({ project: selected, port: selectedPort }))
+      )(project, port);
+      io.stdout(`Development server: ${server.url}`);
+      await new Promise<void>((resolve) => {
+        const stop = (): void => {
+          process.off('SIGINT', stop);
+          process.off('SIGTERM', stop);
+          void server.close().finally(resolve);
+        };
+        process.once('SIGINT', stop);
+        process.once('SIGTERM', stop);
+      });
+    });
 
   program.configureOutput({
     writeOut: (message) => io.stdout(message.trimEnd()),

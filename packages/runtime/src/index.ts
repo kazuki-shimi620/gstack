@@ -55,6 +55,9 @@ import {
   type GoogleScriptInitializationPreview,
 } from '@gstack/provider-google';
 
+export { startStandardDevServer } from './dev.js';
+export type { StandardDevServer } from './dev.js';
+
 export interface StandardGoogleDeployPreview {
   readonly provider: 'google';
   readonly scriptId: string;

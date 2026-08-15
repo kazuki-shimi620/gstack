@@ -490,3 +490,11 @@ Apps Script backend definitionは各公開ModelについてField名、type、req
 `gstack build`は同じGeneration PlanをGenerator Writerで`generated/`所有領域だけへ反映した後、その同一Planからbundleとfingerprintを検証する。manual領域、Provider content、Migration、deploymentを変更しない。Build結果はdry-run flag、artifact path／checksum、delete path、Deploy previewを持ち、artifact本文、credential、tokenをCLI JSONへ含めない。同じ入力のdry-runとwriteで同じDeploy fingerprintを返す。
 
 `generate`はProvider非依存の全生成物作成、`build`は生成物作成と標準Google Deploy bundleの成立確認、`deploy`はapproval付きProvider公開を担当する。BuildがProject Initialization、Migration Apply、Deployを暗黙実行してはいけない。
+
+## D-072 Local Development Server
+
+`gstack dev`は有効なApplication Modelからloopback `127.0.0.1`専用のNode HTTP serverを起動し、公開API Modelをin-memory storeで実行する。既定portは3000、明示portは1〜65535とし、外部interface bind、Google Provider、credential、Migration History、generated／manual filesystemへ接続・書込しない。process終了で全dataを破棄し、本番dataやMigration stateの代替にしない。
+
+local transportはAPI contractどおりcollection GET／POST、item PATCH／DELETEを使用し、JSON request最大1 MiB、no-store JSON response、Schema由来のtype／required／enum／validation／unique／Primary Key不変を適用する。unknown resourceは404、invalid requestは400、unique conflictは409、無効operationは405のsafe codeを返し、生errorやstackを返さない。
+
+server lifecycleはRuntimeが開始／closeを所有し、CLIはURL表示とSIGINT／SIGTERMによるgraceful closeだけを担当する。UI bundling、hot reload、persistent fixture、Provider emulator、permission role simulationはこの初期Local Development sliceに含めず、対応したように表示しない。

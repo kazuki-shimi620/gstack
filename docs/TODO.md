@@ -72,3 +72,4 @@
 - [x] Apps Script runtimeへField型、required、enum、validation、unique、Primary Key不変の実行時検証を`DECISIONS.md` D-070で追加した。
 - [ ] Schema permission roleとApps Scriptアクセスidentityの対応を確定し、role enforcement後にPublish access拡張を検討する。
 - [x] generated writeとGoogle Deploy bundle検証を分離するBuild CLI契約を`DECISIONS.md` D-071で実装した。
+- [x] loopback限定in-memory APIによる初期Local Development serverと`gstack dev`を`DECISIONS.md` D-072で実装した。
