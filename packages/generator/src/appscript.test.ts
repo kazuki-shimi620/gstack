@@ -24,7 +24,9 @@ describe('Apps Script backend generator', () => {
     expect(artifacts[1]!.content).toContain(
       '"model":"users","resource":"users","primaryKey":"id"',
     );
-    expect(artifacts[1]!.content).not.toContain('internal');
+    expect(artifacts[1]!.content).toContain(
+      '"model":"internal","resource":null',
+    );
     expect(artifacts[1]!.content).not.toContain('credential');
     expect(artifacts[1]!.content).toContain('"type":"uuid"');
     expect(artifacts[1]!.content).toContain('gstackValueValid_');
@@ -57,6 +59,80 @@ describe('Apps Script backend generator', () => {
         {},
       ),
     ).toThrow('INVALID');
+  });
+
+  it('generated runtime enforces composite unique indexes without coercion', () => {
+    const indexed = {
+      ...model('users', 'users'),
+      indexes: [
+        { name: 'by_tenant_email', columns: ['tenant', 'email'], unique: true },
+      ],
+    };
+    const source = generateAppsScriptBackendArtifacts({
+      schemaVersion: 1,
+      name: 'sample',
+      metadata: {},
+      models: [indexed],
+    })[1]!.content;
+    expect(() =>
+      runInNewContext(
+        `${source}\ngstackUnique_(GSTACK_MODELS[0], [{ tenant: 'a', email: 'x' }], { tenant: 'a', email: 'x' }, null);`,
+        {},
+      ),
+    ).toThrow('DUPLICATE');
+    expect(() =>
+      runInNewContext(
+        `${source}\ngstackUnique_(GSTACK_MODELS[0], [{ tenant: 1, email: 'x' }], { tenant: '1', email: 'x' }, null);`,
+        {},
+      ),
+    ).not.toThrow();
+    expect(() =>
+      runInNewContext(
+        `${source}\ngstackUnique_(GSTACK_MODELS[0], [{ tenant: 'a', email: '' }], { tenant: 'a', email: '' }, null);`,
+        {},
+      ),
+    ).not.toThrow();
+  });
+
+  it('generated runtime validates relations and restricts referenced deletes', () => {
+    const accounts = model('accounts', null);
+    const users = {
+      ...model('users', 'users'),
+      relations: [
+        {
+          name: 'account',
+          type: 'belongs_to' as const,
+          field: 'account_id',
+          targetModel: 'accounts',
+          references: 'id',
+        },
+      ],
+    };
+    const source = generateAppsScriptBackendArtifacts({
+      schemaVersion: 1,
+      name: 'sample',
+      metadata: {},
+      models: [users, accounts],
+    })[1]!.content;
+    const setup = `${source}\nconst accounts_ = GSTACK_MODELS.find(function (item) { return item.model === 'accounts'; });\nconst users_ = GSTACK_MODELS.find(function (item) { return item.model === 'users'; });`;
+    expect(() =>
+      runInNewContext(
+        `${setup}\ngstackList_ = function (definition) { return definition.model === 'accounts' ? [{ id: 'account-1' }] : []; };\ngstackRelations_(users_, { account_id: 'account-1' });`,
+        {},
+      ),
+    ).not.toThrow();
+    expect(() =>
+      runInNewContext(
+        `${setup}\ngstackList_ = function () { return []; };\ngstackRelations_(users_, { account_id: 'missing' });`,
+        {},
+      ),
+    ).toThrow('REFERENCE_MISSING');
+    expect(() =>
+      runInNewContext(
+        `${setup}\ngstackList_ = function (definition) { return definition.model === 'users' ? [{ account_id: 'account-1' }] : []; };\ngstackRestrictDelete_(accounts_, { id: 'account-1' }, 0);`,
+        {},
+      ),
+    ).toThrow('REFERENCE_CONFLICT');
   });
 
   it('is deterministic regardless of model order', () => {

@@ -477,7 +477,7 @@ Apps Script管理初期化は`gstack provider initialize google --dry-run`で、
 
 ## D-070 Apps Script Runtime Field Validation
 
-Apps Script backend definitionは各公開ModelについてField名、type、required、unique、enum values、minLength／maxLength／pattern／min／maxをApplication Modelから決定的に埋め込む。createはrequired Fieldの存在、create／updateはunknown Field拒否と指定値の全ruleをSheets write前に検証する。Primary Keyはupdate pathと同値の場合以外変更を拒否する。
+Apps Script backend definitionは全ModelについてModel名、Field名、type、required、unique、enum values、minLength／maxLength／pattern／min／maxをApplication Modelから決定的に埋め込む。API routeは`api.resource`がある公開Modelだけに解決し、非公開Model定義はD-087のRelation参照検証にのみ利用してrouteとして公開しない。createはrequired Fieldの存在、create／updateはunknown Field拒否と指定値の全ruleをSheets write前に検証する。Primary Keyはupdate pathと同値の場合以外変更を拒否する。
 
 型mappingはstring／textをstring、uuidを標準hyphen形式、integerをsafe integer、numberをfinite number、booleanをboolean、dateを`YYYY-MM-DD`の有効日、datetimeをparse可能なstring、enumを定義値、jsonをJSON requestで表現可能な値とする。string／number validationを該当型にだけ適用する。unique FieldはScript Lock内で既存rowを検査し、createでは全row、updateでは対象row以外との重複を拒否する。optionalなnull／空値は複数rowで許可する。
 

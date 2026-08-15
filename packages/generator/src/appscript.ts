@@ -8,7 +8,6 @@ export function generateAppsScriptBackendArtifacts(
   application: ApplicationModel,
 ): readonly GeneratedArtifactInput[] {
   const models = [...application.models]
-    .filter(({ api }) => api.resource !== null)
     .sort((left, right) => left.name.localeCompare(right.name))
     .map((model) => ({
       model: model.name,
@@ -26,6 +25,21 @@ export function generateAppsScriptBackendArtifacts(
         enumValues: field.enumValues,
         validation: field.validation,
       })),
+      indexes: [...model.indexes]
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((index) => ({
+          name: index.name,
+          columns: [...index.columns],
+          unique: index.unique,
+        })),
+      relations: [...model.relations]
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((relation) => ({
+          name: relation.name,
+          field: relation.field,
+          targetModel: relation.targetModel,
+          references: relation.references,
+        })),
       create: model.api.create,
       update: model.api.update,
       delete: model.api.delete,
@@ -76,7 +90,10 @@ function gstackHandle_(method, event) {
     if (method === 'DELETE' && parts.length === 2 && definition.delete) { gstackDelete_(definition, parts[1]); return gstackJson_({ ok: true, data: null }); }
     return gstackJson_({ ok: false, error: { code: 'OPERATION_NOT_ALLOWED' } });
   } catch (error) {
-    return gstackJson_({ ok: false, error: { code: error && error.message === 'NOT_FOUND' ? 'RECORD_NOT_FOUND' : 'REQUEST_INVALID' } });
+    const code = error && error.message === 'NOT_FOUND' ? 'RECORD_NOT_FOUND'
+      : error && error.message === 'REFERENCE_CONFLICT' ? 'CONFLICT'
+      : 'REQUEST_INVALID';
+    return gstackJson_({ ok: false, error: { code: code } });
   }
 }
 
@@ -107,6 +124,7 @@ function gstackCreate_(definition, body) {
   try {
     const existing = gstackList_(definition);
     gstackUnique_(definition, existing, record, null);
+    gstackRelations_(definition, record);
     gstackSheet_(definition).appendRow(definition.fields.map(function (name) { return record[name] === undefined ? '' : record[name]; }));
   } finally { lock.releaseLock(); }
   return record;
@@ -127,6 +145,7 @@ function gstackUpdate_(definition, key, body) {
     Object.keys(changes).forEach(function (name) { current[name] = changes[name]; });
     const existing = table.rows.map(function (row) { return Object.fromEntries(table.header.map(function (name, index) { return [name, row[index]]; })); });
     gstackUnique_(definition, existing, current, rowIndex);
+    gstackRelations_(definition, current);
     sheet.getRange(rowIndex + 2, 1, 1, table.header.length).setValues([table.header.map(function (name) { return current[name]; })]);
     return current;
   } finally { lock.releaseLock(); }
@@ -141,6 +160,8 @@ function gstackDelete_(definition, key) {
     const keyIndex = table.header.indexOf(definition.primaryKey);
     const rowIndex = table.rows.findIndex(function (row) { return String(row[keyIndex]) === key; });
     if (rowIndex < 0) throw new Error('NOT_FOUND');
+    const current = Object.fromEntries(table.header.map(function (name, index) { return [name, table.rows[rowIndex][index]]; }));
+    gstackRestrictDelete_(definition, current, rowIndex);
     sheet.deleteRow(rowIndex + 2);
   } finally { lock.releaseLock(); }
 }
@@ -189,6 +210,34 @@ function gstackUnique_(definition, existing, record, excludedIndex) {
     if (existing.some(function (item, index) {
       return index !== excludedIndex && String(item[rule.name]) === String(record[rule.name]);
     })) throw new Error('DUPLICATE');
+  });
+  definition.indexes.filter(function (index) { return index.unique; }).forEach(function (index) {
+    if (index.columns.some(function (name) { return !Object.prototype.hasOwnProperty.call(record, name) || record[name] === null || record[name] === undefined || record[name] === ''; })) return;
+    if (existing.some(function (item, itemIndex) {
+      return itemIndex !== excludedIndex && index.columns.every(function (name) { return item[name] === record[name]; });
+    })) throw new Error('DUPLICATE');
+  });
+}
+
+function gstackRelations_(definition, record) {
+  definition.relations.forEach(function (relation) {
+    const value = record[relation.field];
+    if (value === null || value === undefined || value === '') return;
+    const target = GSTACK_MODELS.find(function (item) { return item.model === relation.targetModel; });
+    if (!target) throw new Error('DRIFT');
+    if (!gstackList_(target).some(function (item) { return item[relation.references] === value; })) throw new Error('REFERENCE_MISSING');
+  });
+}
+
+function gstackRestrictDelete_(definition, record, deletedIndex) {
+  GSTACK_MODELS.forEach(function (source) {
+    source.relations.filter(function (relation) { return relation.targetModel === definition.model; }).forEach(function (relation) {
+      const value = record[relation.references];
+      if (value === null || value === undefined || value === '') return;
+      if (gstackList_(source).some(function (item, itemIndex) {
+        return !(source.model === definition.model && itemIndex === deletedIndex) && item[relation.field] === value;
+      })) throw new Error('REFERENCE_CONFLICT');
+    });
   });
 }
 
