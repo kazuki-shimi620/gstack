@@ -369,3 +369,11 @@ Google Sheetsの`add_column`は、gstack管理対象Sheetの既存header末尾�
 strict mapper／state parser、header／marker conflict、atomic request、response検証、OAuth `database_write` scope、response喪失後のskipをtestした後にだけ、Google Providerの`add_column` capabilityを`native`へ変更する。`add_column`のrollbackは、追加後の業務dataを削除し得るため、別途明示的なrollback確認とmarker照合契約が確定するまでProviderへ公開しない。
 
 参考: [Google Sheets `spreadsheets.batchUpdate`](https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate)、[Requests / InsertDimensionRequest](https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request)
+
+## D-057 Standard Environment Secret Resolver
+
+公式CLI／MCPの標準Runtimeは、local shellとCIの双方でprocess environmentをSecret sourceとして使用する。`authentication.credentialSecret`はuppercase snake-caseの環境変数名だけを参照し、値はD-041のstrictなauthorized user JSON payloadとする。Project Configへcredential値を置かず、環境変数名だけを保存する。
+
+標準Runtimeは`.env` fileの探索／自動読込、Project内credential file、OS keychain操作、OAuth browser flow、refresh／access token cache、environmentの列挙やlog出力を行わない。localでは利用者のshellまたは外部secret managerがprocess起動時に環境変数を注入し、CIではCI platformのmasked secretから同名環境変数を注入する。missing、空、不正JSON、未知key、保存済みaccess tokenをsafe credential errorとして拒否する。
+
+testおよび埋込みhostは同じ`ProviderSecretResolver` portへ明示的な環境mappingまたは別adapterを注入できる。ただし公式entry pointがsecret storageを推測してfallbackしてはならない。gstackは解決したpayloadと短命access tokenをfilesystem、Config、Schema、Migration、History、generated artifact、通常出力へ永続化しない。

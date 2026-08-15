@@ -1007,9 +1007,36 @@ Providerは以下を担当しない。
 
 `DECISIONS.md` D-011 and D-012 clarify that Core may know Provider interfaces/registry abstractions but not concrete implementations. Providers declare Database/API/Authentication/Storage/Deploy capabilities and Migration support per abstract Operation as `native`, `emulated`, or `unsupported`.
 
-Google Sheetsへの最初のMigration writeは`DECISIONS.md` D-053を規範とする。`create_model`だけをatomicなbatchUpdate、管理用Developer Metadata、明示resumeによるidempotency確認で実装する。Google固有request、quota、markerはGoogle Provider内に閉じ込め、Migration EngineやMigration Fileへ書かない。
+Google Sheetsへの最初のMigration writeは`DECISIONS.md` D-053を規範とする。`create_model`をatomicなbatchUpdate、管理用Developer Metadata、明示resumeによるidempotency確認で実装する。Google固有request、quota、markerはGoogle Provider内に閉じ込め、Migration EngineやMigration Fileへ書かない。
+
+Google Sheetsの`add_column`は`DECISIONS.md` D-056を規範とする。連続headerの末尾へ既存dataを削除せず列を追加し、列範囲の管理marker、atomic batch、非retry write、明示resume時のstate再照合を使う。`create_model`と`add_column`以外のGoogle Migration Operationは、個別契約が確定するまで`unsupported`とする。
 
 MVPのProvider Manifest、factory／session lifecycle、Secret Resolver境界、safe health、memory Registryは`DECISIONS.md` D-036を規範とする。package install、dynamic import、credential storageはこのFoundationに含めない。
+
+## Standard Google Credential Injection
+
+公式Runtimeは`DECISIONS.md` D-057に従い、local／CIとも環境変数をSecret sourceとして使用する。`gstack.yaml`にはcredentialそのものではなく参照名だけを書く。
+
+```yaml
+providers:
+  google:
+    enabled: true
+    configuration:
+      spreadsheetId: spreadsheet-id
+      appsScriptProjectId: script-id
+      driveFolderId: folder-id
+      authentication:
+        mode: user_oauth
+        credentialSecret: GSTACK_GOOGLE_CREDENTIAL
+```
+
+参照先の値は次のkeyだけを持つ1行JSONである。以下は形式説明用の明らかなplaceholderであり、実credentialをrepositoryへ保存してはいけない。
+
+```json
+{"formatVersion":1,"type":"authorized_user","clientId":"example-client-id","clientSecret":"example-client-secret","refreshToken":"example-refresh-token"}
+```
+
+local shellではsessionまたは利用中のsecret managerから`GSTACK_GOOGLE_CREDENTIAL`を注入し、CIではmasked secretを同名の環境変数へ割り当てる。gstackは`.env`を自動読込せず、credential fileやtoken cacheをProject内へ作らない。`provider validate`はoffline検証なのでsecretを読まず、実接続を伴う`provider health`、Migration read／applyなどで初めて解決する。
 
 | Document        | Purpose                      |
 | --------------- | ---------------------------- |
