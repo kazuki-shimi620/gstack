@@ -498,3 +498,13 @@ Apps Script backend definitionは各公開ModelについてField名、type、req
 local transportはAPI contractどおりcollection GET／POST、item PATCH／DELETEを使用し、JSON request最大1 MiB、no-store JSON response、Schema由来のtype／required／enum／validation／unique／Primary Key不変を適用する。unknown resourceは404、invalid requestは400、unique conflictは409、無効operationは405のsafe codeを返し、生errorやstackを返さない。
 
 server lifecycleはRuntimeが開始／closeを所有し、CLIはURL表示とSIGINT／SIGTERMによるgraceful closeだけを担当する。UI bundling、hot reload、persistent fixture、Provider emulator、permission role simulationはこの初期Local Development sliceに含めず、対応したように表示しない。
+
+## D-073 Plugin Manifest, Registry, and Loader
+
+共通`@gstack/plugin` packageはCoreへ具体Pluginを持ち込まず、`provider | generator` kindのPlugin contractだけを所有する。Plugin Manifestは`formatVersion: 1`、stable ID、kind、npm package name、Plugin version、minimum gstack versionを必須とし、未知key、path／URL package、invalid semverを拒否する。互換性はSemVer coreとprerelease順序を含め、実行gstack versionがminimum以上の場合だけ認める。
+
+Plugin Registryはmemory上でIDとpackage nameの双方を一意に登録し、ID順で決定的に列挙する。Provider Pluginは共通Manifestと既存Provider Manifestのname／package／version／minimum version完全一致を必須とし、既存Provider RegistryへFactoryだけを橋渡しする。Generator PluginはApplication ModelとPlugin固有のJSON-compatible configurationだけを受け、Provider、filesystem、Runtimeを入力にしない。
+
+Plugin Loaderは呼出側が明示したnpm package specifierだけを注入可能Importerでdynamic importし、moduleのnamed export `gstackPlugin`、package identity、version互換性、definitionを検証してからRegistryへ登録する。relative／absolute path、URL、重複specifier、filesystem探索、node_modules scan、package install、credential解決を行わない。load／validation errorはpackage内部や生import errorを通常結果へ含めない。
+
+Generator Plugin成果物は`generated/plugins/<plugin-id>/`配下だけを許可し、共通Artifact path／checksum／重複検証を通す。他Plugin、built-in generated、manual領域へ出力できない。Plugin configurationのProject Config永続形式、公式Runtimeへの明示package allowlist接続、CLI install／removeは別契約で追加する。

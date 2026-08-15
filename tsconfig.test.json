@@ -15,6 +15,7 @@
       "@gstack/parser": ["./packages/parser/src/index.ts"],
       "@gstack/provider": ["./packages/provider/src/index.ts"],
       "@gstack/provider-google": ["./packages/provider-google/src/index.ts"],
+      "@gstack/plugin": ["./packages/plugin/src/index.ts"],
       "@gstack/runtime": ["./packages/runtime/src/index.ts"],
       "@gstack/schema": ["./packages/schema/src/index.ts"]
     }

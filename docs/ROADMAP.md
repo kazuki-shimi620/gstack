@@ -222,6 +222,8 @@ Coreを変更せずに拡張できる構造を完成させる。
 - Plugin Loader
 - Plugin Manifest
 
+Status: 共通Plugin Manifest、SemVer互換性、memory Registry、明示npm specifier限定Loader、Provider Registry bridge、Generator Plugin namespace／Artifact検証まで実装済み。Project Config永続形式、標準Runtime接続、CLI install／remove、配布package検証は未実装。
+
 ---
 
 # 10. Version 0.7 - AI Support

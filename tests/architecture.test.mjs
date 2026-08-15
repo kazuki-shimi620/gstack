@@ -17,6 +17,7 @@ const packages = {
   '@gstack/generator': 'packages/generator',
   '@gstack/provider': 'packages/provider',
   '@gstack/provider-google': 'packages/provider-google',
+  '@gstack/plugin': 'packages/plugin',
   '@gstack/runtime': 'packages/runtime',
   '@gstack/cli': 'cli',
 };
@@ -45,6 +46,11 @@ const allowedInternalDependencies = {
   '@gstack/generator': ['@gstack/application'],
   '@gstack/provider': ['@gstack/migration'],
   '@gstack/provider-google': ['@gstack/migration', '@gstack/provider'],
+  '@gstack/plugin': [
+    '@gstack/application',
+    '@gstack/generator',
+    '@gstack/provider',
+  ],
   '@gstack/runtime': [
     '@gstack/config',
     '@gstack/core',
