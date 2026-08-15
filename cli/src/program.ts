@@ -8,6 +8,7 @@ import {
 import {
   applyStandardGoogleMigrationFile,
   buildStandardGoogle,
+  listStandardPlugins,
   loadStandardProject,
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollbackFile,
@@ -36,6 +37,7 @@ import {
   formatProviderInfoHuman,
   formatProviderListHuman,
   formatProviderValidationHuman,
+  formatPluginListHuman,
   formatProjectInitializationHuman,
   formatValidationHuman,
 } from './formatters.js';
@@ -86,6 +88,7 @@ export interface ProgramServices {
     project: GstackProject,
     port: number,
   ) => ReturnType<typeof startStandardDevServer>;
+  readonly listPlugins?: () => ReturnType<typeof listStandardPlugins>;
 }
 
 const defaultServices: ProgramServices = {
@@ -105,6 +108,7 @@ const defaultServices: ProgramServices = {
     initializeStandardGoogleProject({ project, approval }),
   build: (project, dryRun) => buildStandardGoogle({ project, dryRun }),
   startDev: (project, port) => startStandardDevServer({ project, port }),
+  listPlugins: () => listStandardPlugins(),
 };
 
 export function createProgram(
@@ -123,6 +127,9 @@ export function createProgram(
   const provider = program
     .command('provider')
     .description('Inspect configured Providers');
+  const plugin = program
+    .command('plugin')
+    .description('Inspect allowlisted Plugins');
   const migration = program
     .command('migration')
     .description('Inspect Migration state and plans');
@@ -141,6 +148,20 @@ export function createProgram(
         return {
           data: { providers },
           human: formatProviderListHuman(providers),
+        };
+      });
+    });
+
+  plugin
+    .command('list')
+    .description('List validated allowlisted Plugins')
+    .option('--json', 'output structured JSON')
+    .action(async (options: { json?: boolean }) => {
+      await withOutput(io, options.json, async () => {
+        const plugins = await (services.listPlugins ?? listStandardPlugins)();
+        return {
+          data: { plugins },
+          human: formatPluginListHuman(plugins),
         };
       });
     });
@@ -616,6 +637,28 @@ async function withProviderOutput(
   }>,
 ): Promise<void> {
   return withProjectOutput(io, json, operation);
+}
+
+async function withOutput(
+  io: ProgramIO,
+  json: boolean | undefined,
+  operation: () => Promise<{
+    readonly data: Record<string, unknown>;
+    readonly human: string;
+    readonly failed?: boolean;
+  }>,
+): Promise<void> {
+  try {
+    const result = await operation();
+    io.stdout(json ? formatJson(successResult(result.data)) : result.human);
+    if (result.failed) process.exitCode = 2;
+  } catch (error: unknown) {
+    const details = getErrorDetails(error);
+    io.stderr(
+      json ? formatJson(failureResult(details)) : formatErrorHuman(details),
+    );
+    process.exitCode = details.category === 'configuration' ? 3 : 1;
+  }
 }
 
 async function withProjectOutput(

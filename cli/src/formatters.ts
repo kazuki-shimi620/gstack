@@ -120,6 +120,25 @@ export function formatProviderListHuman(
         .join('\n');
 }
 
+export function formatPluginListHuman(
+  plugins: readonly {
+    readonly id: string;
+    readonly kind: string;
+    readonly packageName: string;
+    readonly version: string;
+    readonly configured: boolean;
+  }[],
+): string {
+  return plugins.length === 0
+    ? 'No Plugins are allowlisted.'
+    : plugins
+        .map(
+          ({ id, kind, packageName, version, configured }) =>
+            `${id} ${kind} ${packageName}@${version}${configured ? ' configured' : ''}`,
+        )
+        .join('\n');
+}
+
 export function formatProviderInfoHuman(provider: ProviderSummary): string {
   return [
     `Provider: ${provider.name}`,

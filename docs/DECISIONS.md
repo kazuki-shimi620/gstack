@@ -528,3 +528,9 @@ Runtime optionはtest／埋込みhost向けにImporter portを注入できるが
 全成果物は共通のpath正規化、checksum、重複検出を通り、単一Generated Artifact Manifest、stale削除、atomic Writerを共有する。Generator Pluginは`generated/plugins/<plugin-id>/`外へ出力できず、built-inや他Pluginの成果物を上書きできない。allowlistでloadされていないPlugin ID向けconfigurationはProject load時に拒否し、Plugin失敗時はPlan作成を中止してfilesystemへ書き込まない。
 
 Google Deploy bundleはD-063のbuilt-in Apps Script pathだけを入力とし、Plugin成果物を暗黙にProvider sourceへ混入させない。Pluginのinstall／remove、情報表示、配布package検証は別契約で扱う。
+
+## D-077 Plugin Inspection CLI
+
+`gstack plugin list`はProject Configの明示allowlistからRuntimeがload・検証したPluginをID順で表示するread-only commandとする。結果はPlugin ID、kind、npm package name、version、minimum gstack version、Plugin IDに対応するconfigurationの有無だけを含み、configuration本文、credential、token、module export、filesystem pathを含めない。
+
+commandはpackage install／remove、Config変更、Plugin実行、Provider接続、generated writeを行わない。load／Manifest／互換性／未使用configurationの検証失敗は通常のProject errorとして返し、不正Pluginを「利用可能」と表示しない。install／removeはpackage managerと供給網の安全契約を別途確定してから追加する。

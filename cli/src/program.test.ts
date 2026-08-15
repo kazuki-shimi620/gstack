@@ -233,6 +233,49 @@ describe('migration apply CLI', () => {
   });
 });
 
+describe('plugin CLI', () => {
+  it('検証済みPlugin ManifestをJSONで表示する', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const listPlugins = vi.fn(async () => [
+      {
+        formatVersion: 1 as const,
+        id: 'example',
+        kind: 'generator' as const,
+        packageName: '@example/generator',
+        version: '1.2.3',
+        minimumGstackVersion: '0.0.0',
+        configured: true,
+      },
+    ]);
+    await createProgram(
+      { stdout, stderr },
+      {
+        loadProject: vi.fn(),
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile: vi.fn(),
+        prepareMigrationRollbackFile: vi.fn(),
+        listPlugins,
+      },
+    ).parseAsync(['node', 'gstack', 'plugin', 'list', '--json']);
+    expect(listPlugins).toHaveBeenCalledOnce();
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        plugins: [
+          {
+            id: 'example',
+            kind: 'generator',
+            packageName: '@example/generator',
+            configured: true,
+          },
+        ],
+      },
+    });
+  });
+});
+
 describe('project initialization CLI', () => {
   it('dry-run fingerprintを表示し、承認時だけinitialize serviceへ渡す', async () => {
     const stdout = vi.fn();

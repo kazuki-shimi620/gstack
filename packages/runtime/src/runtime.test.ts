@@ -26,6 +26,7 @@ import {
   EnvironmentSecretResolver,
   applyStandardGoogleMigration,
   buildStandardGoogle,
+  listStandardPlugins,
   loadStandardProject,
   prepareStandardGoogleMigrationApply,
   prepareStandardGoogleMigrationApplyFile,
@@ -422,6 +423,44 @@ plugins:
     await expect(loadStandardProject({ root })).rejects.toMatchObject({
       details: { code: 'CONFIG_INVALID', category: 'configuration' },
     });
+  });
+
+  it('Plugin Manifest一覧にconfiguration本文を含めない', async () => {
+    const root = await project(`
+plugins:
+  packages: ['@example/generator']
+  configuration:
+    example:
+      secretLikeValue: hidden
+`);
+    const plugins = await listStandardPlugins({
+      root,
+      pluginImporter: vi.fn().mockResolvedValue({
+        gstackPlugin: {
+          manifest: {
+            formatVersion: 1,
+            id: 'example',
+            kind: 'generator',
+            packageName: '@example/generator',
+            version: '1.2.3',
+            minimumGstackVersion: '0.0.0',
+          },
+          generate: vi.fn(() => []),
+        },
+      }),
+    });
+    expect(plugins).toEqual([
+      {
+        formatVersion: 1,
+        id: 'example',
+        kind: 'generator',
+        packageName: '@example/generator',
+        version: '1.2.3',
+        minimumGstackVersion: '0.0.0',
+        configured: true,
+      },
+    ]);
+    expect(JSON.stringify(plugins)).not.toContain('hidden');
   });
 
   it('Environment Secret Resolverは安全な変数名だけを解決する', async () => {

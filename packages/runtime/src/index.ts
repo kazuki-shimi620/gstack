@@ -90,6 +90,43 @@ export interface StandardGoogleBuildResult {
   readonly deploy: StandardGoogleDeployPreview;
 }
 
+export interface StandardPluginSummary {
+  readonly id: string;
+  readonly kind: 'provider' | 'generator';
+  readonly packageName: string;
+  readonly version: string;
+  readonly minimumGstackVersion: string;
+  readonly configured: boolean;
+}
+
+export async function listStandardPlugins(
+  options: LoadStandardProjectOptions = {},
+): Promise<readonly StandardPluginSummary[]> {
+  const root = options.root
+    ? path.resolve(options.root)
+    : await findProjectRoot(options.startDirectory ?? process.cwd());
+  if (!root) {
+    throw new GstackError({
+      code: 'PROJECT_NOT_FOUND',
+      category: 'configuration',
+      message: 'No gstack project was found.',
+    });
+  }
+  const config = await loadProjectConfig(root);
+  const plugins = await loadConfiguredPlugins(config, options.pluginImporter);
+  return Object.freeze(
+    plugins.list().map(({ manifest }) =>
+      Object.freeze({
+        ...manifest,
+        configured: Object.hasOwn(
+          config.plugins?.configuration ?? {},
+          manifest.id,
+        ),
+      }),
+    ),
+  );
+}
+
 export async function buildStandardGoogle(input: {
   readonly project: GstackProject;
   readonly dryRun: boolean;
@@ -591,24 +628,7 @@ export async function loadStandardProject(
   if (enabled.some(({ name }) => name === 'google')) {
     registry.register(createDefaultGoogleProvider());
   }
-  const plugins = await loadPlugins({
-    packageNames: config.plugins?.packages ?? [],
-    gstackVersion: '0.0.0',
-    ...(options.pluginImporter === undefined
-      ? {}
-      : { importer: options.pluginImporter }),
-  });
-  const unknownPluginConfiguration = Object.keys(
-    config.plugins?.configuration ?? {},
-  ).find((id) => plugins.get(id) === null);
-  if (unknownPluginConfiguration) {
-    throw new GstackError({
-      code: 'CONFIG_INVALID',
-      category: 'configuration',
-      message: `Plugin configuration does not match a loaded Plugin: ${unknownPluginConfiguration}`,
-      hint: 'Add the Plugin package to plugins.packages or remove the unused configuration.',
-    });
-  }
+  const plugins = await loadConfiguredPlugins(config, options.pluginImporter);
   registerProviderPlugins(plugins, registry);
   const unknown = enabled.find(({ name }) => registry.get(name) === null);
   if (unknown) {
@@ -674,6 +694,29 @@ export async function loadStandardProject(
         }),
     ...(inspection === undefined ? {} : { providerInspector: inspection }),
   });
+}
+
+async function loadConfiguredPlugins(
+  config: GstackConfig,
+  importer?: PluginModuleImporter,
+) {
+  const plugins = await loadPlugins({
+    packageNames: config.plugins?.packages ?? [],
+    gstackVersion: '0.0.0',
+    ...(importer === undefined ? {} : { importer }),
+  });
+  const unknownPluginConfiguration = Object.keys(
+    config.plugins?.configuration ?? {},
+  ).find((id) => plugins.get(id) === null);
+  if (unknownPluginConfiguration) {
+    throw new GstackError({
+      code: 'CONFIG_INVALID',
+      category: 'configuration',
+      message: `Plugin configuration does not match a loaded Plugin: ${unknownPluginConfiguration}`,
+      hint: 'Add the Plugin package to plugins.packages or remove the unused configuration.',
+    });
+  }
+  return plugins;
 }
 
 export class EnvironmentSecretResolver implements ProviderSecretResolver {

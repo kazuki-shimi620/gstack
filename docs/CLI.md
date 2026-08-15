@@ -343,6 +343,19 @@ gstack generate docs
 
 ---
 
+## plugin
+
+明示allowlistからload・検証されたPlugin Manifestを読み取り専用で表示する。Plugin configurationの値は表示しない。
+
+### list
+
+```bash
+gstack plugin list
+gstack plugin list --json
+```
+
+---
+
 ## provider
 
 Providerを管理する。

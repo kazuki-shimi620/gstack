@@ -222,7 +222,7 @@ Coreを変更せずに拡張できる構造を完成させる。
 - Plugin Loader
 - Plugin Manifest
 
-Status: 共通Plugin Manifest、SemVer互換性、memory Registry、明示npm specifier限定Loader、Project Config永続形式、Provider Registry bridge、標準RuntimeでのProvider／Generator Plugin接続、Generator Plugin成果物の単一Generation Plan／Manifest統合まで実装済み。CLI install／remove、Plugin情報表示、配布package検証は未実装。
+Status: 共通Plugin Manifest、SemVer互換性、memory Registry、明示npm specifier限定Loader、Project Config永続形式、Provider Registry bridge、標準RuntimeでのProvider／Generator Plugin接続、Generator Plugin成果物の単一Generation Plan／Manifest統合、read-onlyな`plugin list`まで実装済み。CLI install／remove、配布package検証は未実装。
 
 ---
 
