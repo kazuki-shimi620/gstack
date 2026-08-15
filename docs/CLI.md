@@ -257,8 +257,12 @@ MVPではFileを明示し、最初に`--dry-run`でchecksum、現在Schemaとの
 Migrationを取り消す。
 
 ```bash
-gstack migration rollback
+gstack migration rollback \
+  --file migrations/20260813_000001_initial.yaml \
+  --dry-run
 ```
+
+MVPではlatest applied Historyと明示Fileが一致する場合のread-only previewだけを提供する。実RollbackはProvider固有の逆操作と承認契約が確定するまで公開しない。規範は`DECISIONS.md` D-058とする。
 
 ---
 

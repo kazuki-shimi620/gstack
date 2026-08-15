@@ -377,3 +377,13 @@ strict mapper／state parser、header／marker conflict、atomic request、respo
 標準Runtimeは`.env` fileの探索／自動読込、Project内credential file、OS keychain操作、OAuth browser flow、refresh／access token cache、environmentの列挙やlog出力を行わない。localでは利用者のshellまたは外部secret managerがprocess起動時に環境変数を注入し、CIではCI platformのmasked secretから同名環境変数を注入する。missing、空、不正JSON、未知key、保存済みaccess tokenをsafe credential errorとして拒否する。
 
 testおよび埋込みhostは同じ`ProviderSecretResolver` portへ明示的な環境mappingまたは別adapterを注入できる。ただし公式entry pointがsecret storageを推測してfallbackしてはならない。gstackは解決したpayloadと短命access tokenをfilesystem、Config、Schema、Migration、History、generated artifact、通常出力へ永続化しない。
+
+## D-058 Migration Rollback Preview Selection
+
+MVPのRollback previewは`gstack migration rollback --file <path> --dry-run`で単一の適用時Migration Fileを明示指定する。File path、strict parse、checksumの安全規則はD-055 Applyと同じとし、暗黙の最新File選択、複数Migration一括Rollback、MCP Rollbackを提供しない。
+
+選択したFileと同じversion／name／checksum／Operation数を持つHistory entryが存在し、そのentryがHistory全体のlatest attemptかつ`applied`で全Operation完了している場合だけpreviewできる。後続のpending／applying／applied／failed／rolled_back entryが1件でもある場合、依存関係を推測して飛び越えず拒否する。対象以前で最後に`applied`のまま残るentryのApplication Model snapshotをrollback targetとし、存在しない初回Migrationでは`null`を維持する。
+
+Rollback PlannerはD-051に従って完了済みforward Operationを逆順変換し、Provider Manifestでinverse Operationのcapabilityを評価する。`--dry-run`はsource version／checksum、rollback target version、評価済みRollback Plan、risk、destructive、applicability、source Fileと評価済みPlanに結び付くfingerprintを表示するが、approval、lock、History write、Provider writeを行わない。irreversible forward Operation、History不整合、unsupported inverse Operationを隠さない。
+
+実Rollbackは、Providerごとの逆操作、drift照合、追加後に生じた業務dataの破壊確認、rollback専用History実行状態、response喪失時のidempotencyが確定するまで公開しない。previewで生成したfingerprintだけをもってApply Engineへ流用してはならず、将来の実Rollbackには別の明示承認契約を必要とする。
