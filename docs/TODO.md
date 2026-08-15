@@ -29,6 +29,7 @@
 - [x] D-085に従い、Google Sheets `alter_column`の全row互換性検査、値を露出しないdiagnostic、column markerによるresume、標準Runtime接続を実装し、Manifestを`emulated`へ変更した。
 - [x] D-086に従い、Google Sheets Index marker、複合unique既存data検査、生成Apps Script runtimeのtuple一意性保証を実装し、`add_index`／`drop_index`を`emulated`へ変更した。
 - [x] D-087に従い、Google Sheets Relation marker、既存参照検査、生成Apps Script runtimeの参照先確認／RESTRICT deleteを実装し、`add_relation`／`drop_relation`を`emulated`へ変更した。
+- [ ] D-089に従い、Google Provider Configのrole binding、Apps Script `USER_ACCESSING` identity、全CRUDのfail-closed permission検証、binding非露出Deploy bundleを実装する。`MYSELF`以外の公開範囲は拡張しない。
 - [x] Google Migration History Storage／LockはD-054で確定し、Drive管理JSON adapterとSheets Named Range lock adapterを実装した。明示unlockは診断契約を別途確定してから公開する。
 - [x] Migration Apply CLIのfile選択、Schema一致、approval UXはD-055で確定。安全なfilesystem loader、`--dry-run`、同じ準備結果を使う明示承認付き実Applyを実装した。
 

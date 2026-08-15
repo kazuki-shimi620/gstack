@@ -433,7 +433,7 @@ bundle変換だけではbuild／deploy成功を意味しない。Generator produ
 
 MVP Generator Configに独立した`backend` booleanを必須追加し、有効時だけ`generated/backend/appsscript/appsscript.json`と`main.gs`をApplication Modelから決定的に生成する。GeneratorはProvider configurationやGoogle Provider packageを参照せず、Spreadsheet IDはD-063のbundle段階で注入する。API公開対象でないModelはruntime definitionへ含めない。
 
-初期Web App manifestは意図しない公開を避けるため`access: MYSELF`、`executeAs: USER_DEPLOYING`とし、V8 runtimeを使う。匿名公開やdomain公開へ暗黙拡張しない。Apps Script Web AppがGET／POST entry pointだけを提供する制約に合わせ、listはGET、createはPOST、update／deleteはPOST parameter `__gstack_method=PATCH|DELETE`による明示overrideとする。通常のAPI contractが示すPATCH／DELETEとのtransport変換は将来のclient adapterが担当する。
+初期Web App manifestは意図しない公開を避けるため`access: MYSELF`とし、V8 runtimeを使う。D-089のidentity／role検証に必要なため`executeAs: USER_ACCESSING`を使い、アクセス者自身の明示OAuth authorizationなしに実行しない。匿名公開やdomain公開へ暗黙拡張しない。Apps Script Web AppがGET／POST entry pointだけを提供する制約に合わせ、listはGET、createはPOST、update／deleteはPOST parameter `__gstack_method=PATCH|DELETE`による明示overrideとする。通常のAPI contractが示すPATCH／DELETEとのtransport変換は将来のclient adapterが担当する。
 
 runtimeはSchema由来のresource、Model、Primary Key、Field allowlist、operation flagだけを含み、unknown resource／operation／fieldを拒否する。writeはScript Lockで直列化し、configured Spreadsheetのgstack管理SheetだけをModel名で取得し、headerがApplication ModelのField順と完全一致しなければdriftとして拒否する。ResponseはJSONの`ok`と`data | error.code`だけを返し、生error、stack、credential、tokenを返さない。型・required・permissionの完全な実行時検証、HTTP status表現、認証role mappingはDeploy公開範囲を広げる前に追加する。
 
@@ -481,7 +481,7 @@ Apps Script backend definitionは全ModelについてModel名、Field名、type�
 
 型mappingはstring／textをstring、uuidを標準hyphen形式、integerをsafe integer、numberをfinite number、booleanをboolean、dateを`YYYY-MM-DD`の有効日、datetimeをparse可能なstring、enumを定義値、jsonをJSON requestで表現可能な値とする。string／number validationを該当型にだけ適用する。unique FieldはScript Lock内で既存rowを検査し、createでは全row、updateでは対象row以外との重複を拒否する。optionalなnull／空値は複数rowで許可する。
 
-検証失敗はsafeな`REQUEST_INVALID`、重複も内部詳細を公開せず同じsafe errorへ変換する。Schema permission roleとApps Script利用者identityの対応は未確定のため推測せず、Web App accessは引き続き`MYSELF`に限定する。role enforcementが確定するまでPublish accessを拡張しない。
+検証失敗はsafeな`REQUEST_INVALID`、重複も内部詳細を公開せず同じsafe errorへ変換する。Schema permission roleとApps Script利用者identityの対応はD-089に従い、Web App accessは引き続き`MYSELF`に限定する。role enforcementを実装しても、それ自体をPublish access拡張の承認として扱わない。
 
 ## D-071 Build CLI Contract
 
@@ -614,3 +614,13 @@ MVPの`belongs_to` Relationはlocal Fieldからtarget Modelのreference Fieldへ
 Migration Planのcanonical順序はOperation ID全体の単純な辞書順ではなく、Provider非依存の構造依存順とする。`drop_relation`、`drop_index`を最初に実行して参照／制約を解除し、`create_model`、`rename_column`、`add_column`、`alter_column`、`add_index`、`add_relation`の順で構造と制約を作り、最後に`drop_column`、`drop_model`を実行する。同じOperation type内はstable IDの辞書順とする。
 
 これにより、削除対象Column／Modelの検証前に依存Relation／Indexを解除し、追加・rename後のheaderに対してIndex／Relationを検証できる。Providerは順序不備を欠落済みとして黙認せず、各Operation時点の期待状態をstrictに検証する。Migration File、fingerprint、History resumeはこの順序を保持し、順序規則を変更する場合は既存file互換性を明示的に評価する。
+
+## D-089 Google Apps Script Permission Role Mapping
+
+Schemaの`permissions.read | create | update | delete`は、そのOperationを許可するrole名の明示allowlistとする。空sequenceは許可roleなし、すなわちdenyとし、permission省略を全許可へ推測しない。Google Provider Configにはoptionalな`authorization.roleBindings`を追加し、role名からGoogle Account email sequenceへの非secret mappingを保持する。role名はSchemaと同じlower snake case、emailはtrim後のlowercase ASCII形式へ正規化し、role内重複を拒否する。同じemailが複数roleを持つことは許可する。bindingにないrole／emailはdenyする。
+
+Apps Script manifestは`access: MYSELF`を維持し、`executeAs: USER_ACCESSING`へ固定する。runtimeは各route解決後かつSpreadsheet read／write前に`Session.getActiveUser().getEmail()`を取得し、空文字、不正形式、bindingなし、Operation permissionとのrole共通部分なしをsafeな`PERMISSION_DENIED`として拒否する。email、role binding、必要role、Session errorをresponse、log、Historyへ含めない。`getEffectiveUser()`はdeployer identityとなり得るためauthorization判断に使用しない。
+
+GeneratorはApplication ModelからModelごとのpermission role allowlistだけを生成し、Google emailやProvider Configを入力にしない。Google Providerのsource bundle adapterがstrictに正規化したbindingを`gstack_config`へ注入し、GeneratorからProviderへの依存を作らない。role bindingはcredential／secretではないが個人情報になり得るため、生成artifact、CLI preview、Deploy result、fingerprint表示へ本文を出さない。bundle checksumには含めてbinding変更を新しいDeployとして扱う。
+
+MVPでは`MYSELF`のままなので実アクセス者はdeployerに限定されるが、permission検証を省略しない。`DOMAIN`／`ANYONE`／`ANYONE_ANONYMOUS`への変更、group／domain role、request headerやbodyによるrole自己申告、temporary user keyによるrole推測を実装しない。公式仕様上active user emailが利用できない状況は存在するため、identity取得不能時はfallbackせずdenyする。参考: [Apps Script Web Apps](https://developers.google.com/apps-script/guides/web)、[Session](https://developers.google.com/apps-script/reference/base/session)、[Web app manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable)
