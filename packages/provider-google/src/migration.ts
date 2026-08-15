@@ -9,6 +9,7 @@ import type {
 import { googleProviderManifest } from './provider.js';
 import type { GoogleSheetsAlterColumnService } from './sheets-alter-column.js';
 import type { GoogleSheetsIndexService } from './sheets-index.js';
+import type { GoogleSheetsRelationService } from './sheets-relation.js';
 import type {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
@@ -26,6 +27,7 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
     private readonly dropModel: GoogleSheetsDropModelService,
     private readonly alterColumn: GoogleSheetsAlterColumnService,
     private readonly index: GoogleSheetsIndexService,
+    private readonly relation: GoogleSheetsRelationService,
   ) {}
 
   async execute(
@@ -55,11 +57,10 @@ export class GoogleMigrationOperationExecutor implements MigrationOperationExecu
       case 'drop_index':
         await this.index.execute(operation, context.migrationChecksum);
         return;
-      default:
-        throw new GoogleMigrationOperationError(
-          'GOOGLE_MIGRATION_OPERATION_UNSUPPORTED',
-          `Google Provider does not support Migration Operation: ${operation.type}`,
-        );
+      case 'add_relation':
+      case 'drop_relation':
+        await this.relation.execute(operation, context.migrationChecksum);
+        return;
     }
   }
 }

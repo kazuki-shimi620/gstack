@@ -12,6 +12,7 @@ import { GoogleMigrationOperationExecutor } from './migration.js';
 import { GoogleSheetsMigrationHttpGateway } from './sheets-migration-http.js';
 import { GoogleSheetsAlterColumnService } from './sheets-alter-column.js';
 import { GoogleSheetsIndexService } from './sheets-index.js';
+import { GoogleSheetsRelationService } from './sheets-relation.js';
 import {
   GoogleSheetsAddColumnService,
   GoogleSheetsCreateModelService,
@@ -73,6 +74,7 @@ export function createDefaultGoogleMigrationComponents(
       new GoogleSheetsDropModelService(sheets, config, secrets),
       new GoogleSheetsAlterColumnService(sheets, config, secrets),
       new GoogleSheetsIndexService(sheets, config, secrets),
+      new GoogleSheetsRelationService(sheets, config, secrets),
     ),
   });
 }

@@ -281,6 +281,107 @@ export class GoogleSheetsMigrationHttpGateway implements GoogleSheetsBatchUpdate
     };
   }
 
+  async inspectRelation(input: {
+    readonly spreadsheetId: string;
+    readonly sourceSheetTitle: string;
+    readonly localField: string;
+    readonly targetSheetTitle: string;
+    readonly referenceField: string;
+    readonly includeValues: boolean;
+    readonly credential: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['credential'];
+    readonly secrets: Parameters<
+      GoogleSheetsBatchUpdateGateway['batchUpdate']
+    >[0]['secrets'];
+  }): Promise<unknown> {
+    const sourceSummary = await this.inspectColumns({
+      ...input,
+      sheetTitle: input.sourceSheetTitle,
+    });
+    const targetSummary =
+      input.targetSheetTitle === input.sourceSheetTitle
+        ? sourceSummary
+        : await this.inspectColumns({
+            ...input,
+            sheetTitle: input.targetSheetTitle,
+          });
+    const source = findSummarySheet(sourceSummary, input.sourceSheetTitle);
+    const target = findSummarySheet(targetSummary, input.targetSheetTitle);
+    const localValues =
+      input.includeValues && source
+        ? await this.readColumnValues(input, source, input.localField)
+        : [];
+    const referenceValues =
+      input.includeValues && target
+        ? await this.readColumnValues(input, target, input.referenceField)
+        : [];
+    if (!source || !target) {
+      return mergeRelationSummaries(sourceSummary, targetSummary, null, null);
+    }
+    return mergeRelationSummaries(
+      sourceSummary,
+      targetSummary,
+      { sheetId: source.sheetId, values: localValues },
+      { sheetId: target.sheetId, values: referenceValues },
+    );
+  }
+
+  private async readColumnValues(
+    input: {
+      readonly spreadsheetId: string;
+      readonly credential: Parameters<
+        GoogleSheetsBatchUpdateGateway['batchUpdate']
+      >[0]['credential'];
+      readonly secrets: Parameters<
+        GoogleSheetsBatchUpdateGateway['batchUpdate']
+      >[0]['secrets'];
+    },
+    sheet: Record<string, unknown>,
+    columnName: string,
+  ): Promise<readonly Readonly<{ rowNumber: number; value: unknown }>[]> {
+    if (
+      !Array.isArray(sheet.headers) ||
+      !Number.isSafeInteger(sheet.rowCount) ||
+      (sheet.rowCount as number) < 1 ||
+      typeof sheet.title !== 'string'
+    ) {
+      return [];
+    }
+    const columnIndex = sheet.headers.indexOf(columnName);
+    if (columnIndex < 0 || sheet.rowCount === 1) return [];
+    const credential = await this.authorize(input);
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(input.spreadsheetId)}`,
+    );
+    url.searchParams.set('includeGridData', 'true');
+    url.searchParams.set(
+      'ranges',
+      `${quoteSheetTitle(sheet.title)}!2:${String(sheet.rowCount)}`,
+    );
+    url.searchParams.set(
+      'fields',
+      'sheets(properties(sheetId,title),data(rowData(values(effectiveValue))))',
+    );
+    const response = await this.http.execute({
+      method: 'GET',
+      url: url.href,
+      headers: {
+        accept: 'application/json',
+        authorization: `Bearer ${credential.accessToken}`,
+      },
+      body: null,
+      retryable: true,
+    });
+    return normalizeAlterColumnRows(
+      parseJson(response.body),
+      sheet.sheetId,
+      sheet.title,
+      sheet.headers,
+      columnIndex,
+    );
+  }
+
   private async inspectColumns(input: {
     readonly spreadsheetId: string;
     readonly sheetTitle: string;
@@ -512,6 +613,67 @@ function normalizeGridRows(
       return [Object.freeze({ rowNumber: index + 2, values })];
     }),
   );
+}
+
+function findSummarySheet(
+  value: unknown,
+  title: string,
+): Record<string, unknown> | null {
+  if (!isRecord(value) || !Array.isArray(value.sheets)) {
+    invalidStateResponse();
+  }
+  const matches = value.sheets.filter(
+    (sheet) => isRecord(sheet) && sheet.title === title,
+  );
+  if (matches.length > 1) invalidStateResponse();
+  return (matches[0] as Record<string, unknown> | undefined) ?? null;
+}
+
+function mergeRelationSummaries(
+  sourceValue: unknown,
+  targetValue: unknown,
+  local: {
+    readonly sheetId: unknown;
+    readonly values: readonly unknown[];
+  } | null,
+  reference: {
+    readonly sheetId: unknown;
+    readonly values: readonly unknown[];
+  } | null,
+): unknown {
+  if (
+    !isRecord(sourceValue) ||
+    !Array.isArray(sourceValue.sheets) ||
+    !isRecord(targetValue) ||
+    !Array.isArray(targetValue.sheets)
+  ) {
+    invalidStateResponse();
+  }
+  const byId = new Map<unknown, Record<string, unknown>>();
+  for (const sheet of [...sourceValue.sheets, ...targetValue.sheets]) {
+    if (!isRecord(sheet)) invalidStateResponse();
+    const current = byId.get(sheet.sheetId);
+    if (
+      current &&
+      (current.title !== sheet.title ||
+        JSON.stringify(current.headers) !== JSON.stringify(sheet.headers) ||
+        JSON.stringify(current.metadata) !== JSON.stringify(sheet.metadata))
+    ) {
+      invalidStateResponse();
+    }
+    byId.set(sheet.sheetId, current ?? sheet);
+  }
+  return {
+    sheets: [...byId.values()].map((sheet) => ({
+      ...sheet,
+      ...(local && local.sheetId === sheet.sheetId
+        ? { localValues: local.values }
+        : {}),
+      ...(reference && reference.sheetId === sheet.sheetId
+        ? { referenceValues: reference.values }
+        : {}),
+    })),
+  };
 }
 
 function effectiveCellValue(value: unknown): unknown {

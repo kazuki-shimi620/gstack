@@ -59,6 +59,8 @@ describe('Google Provider foundation', () => {
         googleProviderManifest.migrationSupport.alter_column === 'emulated' &&
         googleProviderManifest.migrationSupport.add_index === 'emulated' &&
         googleProviderManifest.migrationSupport.drop_index === 'emulated' &&
+        googleProviderManifest.migrationSupport.add_relation === 'emulated' &&
+        googleProviderManifest.migrationSupport.drop_relation === 'emulated' &&
         Object.entries(googleProviderManifest.migrationSupport)
           .filter(
             ([operation]) =>
@@ -69,7 +71,9 @@ describe('Google Provider foundation', () => {
               operation !== 'drop_model' &&
               operation !== 'alter_column' &&
               operation !== 'add_index' &&
-              operation !== 'drop_index',
+              operation !== 'drop_index' &&
+              operation !== 'add_relation' &&
+              operation !== 'drop_relation',
           )
           .every(([, support]) => support === 'unsupported'),
     ).toBe(true);

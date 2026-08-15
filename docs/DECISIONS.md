@@ -311,7 +311,7 @@ MVP Runtimeはenabledな`google`だけを明示的allowlistで登録し、未知
 
 Google ProviderのMigration capability結果はManifestのoperation type別supportを唯一のsourceとして、入力Planの全Operation IDへ順序を保持して射影する。結果をMigration packageの共通`applyCapabilityResults`へ渡し、欠落／重複／未知IDの検証とPlan集約を再利用する。Google Provider側で独自Planや独自applicability規則を実装しない。
 
-初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`、D-084の`drop_model`は各条件を満たして`native`へ、D-085の`alter_column`とD-086の`add_index`／`drop_index`は`emulated`へ昇格済みであり、他Operationは`unsupported`を維持する。概念上実現可能なOperationを先に`native`／`emulated`と表示してはいけない。
+初期状態では全Operationを`unsupported`とし、Google Sheets write adapter、Operationごとのidempotency、lock、resume、approval、rollbackが実装・検証されるまでManifest supportを変更しない。D-053の`create_model`、D-056の`add_column`、D-082の`rename_column`、D-083の`drop_column`、D-084の`drop_model`は各条件を満たして`native`へ、D-085の`alter_column`、D-086の`add_index`／`drop_index`、D-087の`add_relation`／`drop_relation`は`emulated`へ昇格済みである。概念上実現可能なOperationを実装・検証前に`native`／`emulated`と表示してはいけない。
 
 ## D-051 Migration Rollback Plan
 
@@ -607,7 +607,7 @@ Google SheetsにはgstackのIndexに対応するquery planner用native indexが�
 
 MVPの`belongs_to` Relationはlocal Fieldからtarget Modelのreference Fieldへの参照整合性として`emulated`実装する。`add_relation`前に両方の管理対象Sheet、決定的なSheet ID／title、Model marker、local／reference headerを検証する。target referenceの全非空effective valueを集合化し、local Fieldの全非空値が存在することを要求する。空local値の可否はFieldの`required`変更で扱い、Relation単体では空値を許可する。参照値をcoerce、backfill、削除せず、error、log、Historyへ値を公開しない。
 
-生成Apps Script runtimeはcreate／update時に非空local値の参照先存在を同じSpreadsheetから確認する。target recordのdeleteは参照中のlocal recordが1件でもあれば`409`のsafe conflictとして拒否するRESTRICT semanticsとし、cascade、set-null、orphan化を暗黙実行しない。`drop_relation`は将来write時の参照検証をApplication Modelから除くが、既存dataを変更しない。各Operationはsource Sheet直下へchecksum＋Operation IDのmarkerを単一非retry batchで記録し、response喪失後の再readで適用済みを判定する。検査とmarker writeはD-054のMigration lock下で行い、write直前に再readする。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict cross-Sheet state parser、既存参照検査、生成runtimeのcreate／update／delete、値非露出error、marker idempotency、標準Runtime接続をtestした後にだけManifestを`emulated`へ変更する。
+生成Apps Script runtimeはcreate／update時に非空local値の参照先存在を同じSpreadsheetから確認する。target recordのdeleteは参照中のlocal recordが1件でもあれば`409`のsafe conflictとして拒否するRESTRICT semanticsとし、cascade、set-null、orphan化を暗黙実行しない。`drop_relation`は将来write時の参照検証をApplication Modelから除くが、既存dataを変更しない。各Operationはsource Sheet直下へchecksum＋Operation IDのmarkerを単一非retry batchで記録し、response喪失後の再readで適用済みを判定する。検査とmarker writeはD-054のMigration lock下で行い、write直前に再readする。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict cross-Sheet state parser、既存参照検査、生成runtimeのcreate／update／delete、値非露出error、marker idempotency、標準Runtime接続をtestし、Manifestの`add_relation`／`drop_relation`を`emulated`へ昇格済みである。
 
 ## D-088 Migration Operation Dependency Order
 

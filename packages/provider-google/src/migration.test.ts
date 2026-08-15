@@ -8,7 +8,6 @@ import {
 
 import { evaluateGoogleMigrationCapabilities } from './migration.js';
 import { GoogleMigrationOperationExecutor } from './migration.js';
-import type { GoogleMigrationOperationError } from './migration.js';
 
 describe('Google Migration capability mapping', () => {
   it('Manifest supportを全Operationへ過不足なく反映する', () => {
@@ -21,6 +20,8 @@ describe('Google Migration capability mapping', () => {
       operation('alter:user:name', 'alter_column'),
       operation('drop-index:user:name', 'drop_index'),
       operation('index:user:name', 'add_index'),
+      operation('relation:user:account', 'add_relation'),
+      operation('drop-relation:user:account', 'drop_relation'),
     ];
     const results = evaluateGoogleMigrationCapabilities(operations);
     expect(results).toEqual([
@@ -35,6 +36,8 @@ describe('Google Migration capability mapping', () => {
       { operationId: 'alter:user:name', capability: 'emulated' },
       { operationId: 'drop-index:user:name', capability: 'emulated' },
       { operationId: 'index:user:name', capability: 'emulated' },
+      { operationId: 'relation:user:account', capability: 'emulated' },
+      { operationId: 'drop-relation:user:account', capability: 'emulated' },
     ]);
     expect(Object.isFrozen(results)).toBe(true);
     expect(
@@ -53,6 +56,7 @@ describe('Google Migration capability mapping', () => {
     const dropModel = vi.fn();
     const alterColumn = vi.fn();
     const index = vi.fn();
+    const relation = vi.fn();
     const executor = new GoogleMigrationOperationExecutor(
       { execute: createModel } as never,
       { execute: addColumn } as never,
@@ -61,6 +65,7 @@ describe('Google Migration capability mapping', () => {
       { execute: dropModel } as never,
       { execute: alterColumn } as never,
       { execute: index } as never,
+      { execute: relation } as never,
     );
     const create = operation('create:user', 'create_model');
     await executor.execute(create, {
@@ -125,18 +130,14 @@ describe('Google Migration capability mapping', () => {
     });
     expect(index).toHaveBeenCalledWith(addIndex, 'a'.repeat(64));
 
-    await expect(
-      executor.execute(operation('relation:user:account', 'add_relation'), {
-        migrationVersion: '20260813_000001',
-        migrationChecksum: 'a'.repeat(64),
-        operationId: 'relation:user:account',
-        idempotencyKey: 'key:relation:user:account',
-      }),
-    ).rejects.toEqual(
-      expect.objectContaining<Partial<GoogleMigrationOperationError>>({
-        code: 'GOOGLE_MIGRATION_OPERATION_UNSUPPORTED',
-      }),
-    );
+    const addRelation = operation('relation:user:account', 'add_relation');
+    await executor.execute(addRelation, {
+      migrationVersion: '20260813_000001',
+      migrationChecksum: 'a'.repeat(64),
+      operationId: addRelation.id,
+      idempotencyKey: `key:${addRelation.id}`,
+    });
+    expect(relation).toHaveBeenCalledWith(addRelation, 'a'.repeat(64));
   });
 });
 

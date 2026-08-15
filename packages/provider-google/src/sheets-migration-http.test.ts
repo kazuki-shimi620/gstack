@@ -11,6 +11,101 @@ const credentialSource = JSON.stringify({
 });
 
 describe('Google Sheets Migration HTTP gateway', () => {
+  it('Relation用にsource／target headerと対象値を別々に取得する', async () => {
+    const headerResponse = (
+      sheetId: number,
+      title: string,
+      headers: string[],
+    ) => ({
+      status: 200,
+      headers: {},
+      body: JSON.stringify({
+        sheets: [
+          {
+            properties: {
+              sheetId,
+              title,
+              gridProperties: { columnCount: 8, rowCount: 1000 },
+            },
+            data: [
+              {
+                rowData: [
+                  {
+                    values: headers.map((value) => ({
+                      userEnteredValue: { stringValue: value },
+                    })),
+                  },
+                ],
+              },
+            ],
+            developerMetadata: [],
+          },
+        ],
+      }),
+    });
+    const valueResponse = (
+      sheetId: number,
+      title: string,
+      values: readonly string[],
+    ) => ({
+      status: 200,
+      headers: {},
+      body: JSON.stringify({
+        sheets: [
+          {
+            properties: { sheetId, title },
+            data: [
+              {
+                rowData: [
+                  {
+                    values: values.map((value) => ({
+                      effectiveValue: { stringValue: value },
+                    })),
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce(headerResponse(10, 'users', ['id', 'account_id']))
+      .mockResolvedValueOnce(headerResponse(20, 'accounts', ['id']))
+      .mockResolvedValueOnce(
+        valueResponse(10, 'users', ['user-1', 'account-1']),
+      )
+      .mockResolvedValueOnce(valueResponse(20, 'accounts', ['account-1']));
+    const gateway = migrationGateway(execute);
+    await expect(
+      gateway.inspectRelation({
+        spreadsheetId: 'id',
+        sourceSheetTitle: 'users',
+        localField: 'account_id',
+        targetSheetTitle: 'accounts',
+        referenceField: 'id',
+        includeValues: true,
+        credential: { credentialSecret: 'SECRET', scopes: ['scope'] },
+        secrets: { get: vi.fn().mockResolvedValue(credentialSource) },
+      }),
+    ).resolves.toEqual({
+      sheets: [
+        expect.objectContaining({
+          sheetId: 10,
+          title: 'users',
+          localValues: [{ rowNumber: 2, value: 'account-1' }],
+        }),
+        expect.objectContaining({
+          sheetId: 20,
+          title: 'accounts',
+          referenceValues: [{ rowNumber: 2, value: 'account-1' }],
+        }),
+      ],
+    });
+    expect(execute).toHaveBeenCalledTimes(4);
+  });
+
   it('unique Index用に論理rowの対象tupleだけを正規化する', async () => {
     const execute = vi
       .fn()

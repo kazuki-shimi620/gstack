@@ -36,8 +36,8 @@ export const googleProviderManifest: ProviderManifest = Object.freeze({
     alter_column: 'emulated',
     add_index: 'emulated',
     drop_index: 'emulated',
-    add_relation: 'unsupported',
-    drop_relation: 'unsupported',
+    add_relation: 'emulated',
+    drop_relation: 'emulated',
   }),
 });
 

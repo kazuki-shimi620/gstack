@@ -71,6 +71,19 @@ export {
   inspectIndexState,
   validateUniqueIndexRows,
 } from './sheets-index.js';
+export {
+  GoogleSheetsRelationService,
+  inspectRelationState,
+  relationBatchRequests,
+  validateRelationValues,
+} from './sheets-relation.js';
+export type {
+  GoogleSheetsRelationGateway,
+  GoogleSheetsRelationOperation,
+  RelationAbsentState,
+  RelationAppliedState,
+  RelationMigrationState,
+} from './sheets-relation.js';
 export type {
   GoogleSheetsIndexGateway,
   GoogleSheetsIndexOperation,
