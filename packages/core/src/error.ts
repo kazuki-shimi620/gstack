@@ -46,6 +46,7 @@ export type GstackErrorCode =
   | 'DEPLOY_APPROVAL_REQUIRED'
   | 'DEPLOY_APPROVAL_INVALID'
   | 'DEPLOY_FAILED'
+  | 'DEPLOY_MIGRATION_NOT_READY'
   | 'INTERNAL_ERROR';
 
 export type GstackErrorCategory =

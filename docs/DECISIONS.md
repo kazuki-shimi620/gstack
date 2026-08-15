@@ -462,3 +462,9 @@ list adapterは`nextPageToken`を最後まで辿り、token重複、100 page超�
 実行順は、管理markerを再確認したApps Script content全置換、fingerprint versionの解決／作成、単一`gstack-managed` deploymentの解決／作成／更新とする。未管理projectをdeployが暗黙初期化せず、content更新失敗後にversionを作らない。content更新後のversion／deployment失敗は自動rollbackせず、同じSchema／Configの明示再実行でD-061とD-066のstate再照合から回復する。
 
 成功結果はfingerprint、`created | updated | unchanged` outcome、version number、deployment ID、Web App URLだけを返す。source本文、Spreadsheet ID、credential参照名、credential、access／refresh token、生Google errorを含めない。MCPには実Deployを公開しない。Deploy前のMigration適用済み状態確認、runtimeの完全な型／permission検証、Project Initialization CLIはFirst Deploy完了前の独立gateとして残す。
+
+## D-068 Deploy Migration Readiness Gate
+
+実Deployはapproval一致後かつApps Script content更新前に、Google Migration Historyのlatest attemptをreadする。latestが`applied`、全Operation完了、applied Application Model snapshot checksumが現在Schemaから再構築したsnapshot checksumと完全一致する場合だけ続行する。Historyが空、latestがpending／applying／failed／rolled_back、snapshot欠落／不一致、Schemaが不正な場合は`DEPLOY_MIGRATION_NOT_READY`で拒否する。
+
+gateはHistoryのstatusとsnapshotだけを参照し、Provider resource introspectionから適用済み状態を推測しない。Deploy dry-runはD-065どおり外部接続しないためMigration readinessを成功扱いせず、実Deploy時の独立preconditionとする。History read失敗時にcontent更新へ進まず、DeployがMigration ApplyやRollbackを暗黙実行しない。

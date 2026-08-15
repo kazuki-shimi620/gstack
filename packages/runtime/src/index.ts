@@ -9,6 +9,7 @@ import {
 import { GstackError, loadProject, type GstackProject } from '@gstack/core';
 import {
   applyCapabilityResults,
+  createApplicationModelSnapshot,
   applyMigration,
   loadMigrationFile,
   MigrationApplyError,
@@ -75,6 +76,9 @@ export async function deployStandardGoogle(input: {
   readonly approval: string;
   readonly environment?: Readonly<Record<string, string | undefined>>;
   readonly components?: DefaultGoogleDeployComponents;
+  readonly migrationHistory?: {
+    list(): Promise<readonly MigrationHistoryEntry[]>;
+  };
 }): Promise<StandardGoogleDeployResult> {
   const build = await prepareGoogleDeployBuild(input.project);
   if (input.approval !== build.preview.fingerprint) {
@@ -88,6 +92,11 @@ export async function deployStandardGoogle(input: {
   try {
     const secrets = new EnvironmentSecretResolver(
       input.environment ?? process.env,
+    );
+    await requireDeployMigrationReady(
+      input.project,
+      input.migrationHistory ??
+        createDefaultGoogleMigrationComponents(build.config, secrets).history,
     );
     const components =
       input.components ??
@@ -110,6 +119,36 @@ export async function deployStandardGoogle(input: {
       },
       { cause: error },
     );
+  }
+}
+
+async function requireDeployMigrationReady(
+  project: GstackProject,
+  history: { list(): Promise<readonly MigrationHistoryEntry[]> },
+): Promise<void> {
+  const application = await project.getApplicationModel();
+  if (!application) {
+    throw new GstackError({
+      code: 'DEPLOY_MIGRATION_NOT_READY',
+      category: 'deploy',
+      message: 'Deploy requires a valid Application Model.',
+    });
+  }
+  const entries = await history.list();
+  const latest = entries.at(-1);
+  const checksum = createApplicationModelSnapshot(application).checksum;
+  if (
+    !latest ||
+    latest.status !== 'applied' ||
+    latest.completedOperationCount !== latest.operationCount ||
+    latest.appliedSnapshot?.checksum !== checksum
+  ) {
+    throw new GstackError({
+      code: 'DEPLOY_MIGRATION_NOT_READY',
+      category: 'deploy',
+      message: 'Deploy requires the latest Schema Migration to be applied.',
+      hint: 'Preview and apply the current Migration before deploying.',
+    });
   }
 }
 

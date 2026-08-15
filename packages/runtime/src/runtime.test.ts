@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   applyCapabilityResults,
   createMigrationFile,
+  createApplicationModelSnapshot,
   createMigrationPlan,
   migrationPlanFingerprint,
   MigrationHistoryRepository,
@@ -101,6 +102,9 @@ describe('standard runtime', () => {
       deployStandardGoogle({
         project,
         approval: preview.fingerprint,
+        migrationHistory: {
+          list: async () => [deployAppliedHistory()],
+        },
         components: {
           content: { replaceManagedContent } as never,
           deployment: { publish } as never,
@@ -132,6 +136,26 @@ describe('standard runtime', () => {
     ).rejects.toMatchObject({ details: { code: 'DEPLOY_APPROVAL_INVALID' } });
     expect(replaceManagedContent).not.toHaveBeenCalled();
     expect(publish).not.toHaveBeenCalled();
+  });
+
+  it('未適用Schemaをcontent更新前に拒否する', async () => {
+    const project = deployProject();
+    const preview = await prepareStandardGoogleDeploy({ project });
+    const replaceManagedContent = vi.fn();
+    await expect(
+      deployStandardGoogle({
+        project,
+        approval: preview.fingerprint,
+        migrationHistory: { list: async () => [] },
+        components: {
+          content: { replaceManagedContent } as never,
+          deployment: { publish: vi.fn() } as never,
+        },
+      }),
+    ).rejects.toMatchObject({
+      details: { code: 'DEPLOY_MIGRATION_NOT_READY' },
+    });
+    expect(replaceManagedContent).not.toHaveBeenCalled();
   });
 
   it('enabledな公式Google ProviderをCatalogとInspectionへ接続する', async () => {
@@ -491,5 +515,24 @@ function deployProject() {
         },
       ],
     }),
+    getApplicationModel: async () => deployApplication(),
   } as never;
+}
+
+function deployApplication() {
+  return {
+    schemaVersion: 1 as const,
+    name: 'app',
+    models: [],
+    metadata: {},
+  };
+}
+
+function deployAppliedHistory(): MigrationHistoryEntry {
+  return {
+    status: 'applied',
+    operationCount: 0,
+    completedOperationCount: 0,
+    appliedSnapshot: createApplicationModelSnapshot(deployApplication()),
+  } as MigrationHistoryEntry;
 }
