@@ -381,6 +381,54 @@ describe('plugin CLI', () => {
       data: { dryRun: false, pluginChange: { action: 'install' } },
     });
   });
+
+  it('publish前のPlugin package検証結果を表示する', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const validatePluginPackage = vi.fn(async () => ({
+      valid: true as const,
+      packageName: '@example/generator',
+      version: '1.2.3',
+      pluginId: 'example',
+      kind: 'generator' as const,
+      minimumGstackVersion: '0.0.0',
+      entry: 'dist/index.js',
+      types: 'dist/index.d.ts',
+      fileCount: 3,
+      unpackedSize: 100,
+    }));
+    await createProgram(
+      { stdout, stderr },
+      {
+        loadProject: vi.fn(),
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile: vi.fn(),
+        prepareMigrationRollbackFile: vi.fn(),
+        validatePluginPackage,
+      },
+    ).parseAsync([
+      'node',
+      'gstack',
+      'plugin',
+      'package',
+      'validate',
+      '--directory',
+      '/plugin',
+      '--json',
+    ]);
+    expect(validatePluginPackage).toHaveBeenCalledWith('/plugin');
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        pluginPackage: {
+          valid: true,
+          packageName: '@example/generator',
+          pluginId: 'example',
+        },
+      },
+    });
+  });
 });
 
 describe('project initialization CLI', () => {

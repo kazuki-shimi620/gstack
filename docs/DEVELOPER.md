@@ -656,6 +656,18 @@ Documentation Update
 
 ---
 
+## Plugin packageの公開前確認
+
+Plugin packageはbuild後、publish前に次を実行する。
+
+```bash
+gstack plugin package validate --directory <plugin-package>
+```
+
+この検証はManifestとpackage identity、root export、型宣言、実際のnpm pack収録物を確認する。検証成功はpublishを実行せず、registry上のpackage安全性や第三者コードの信頼性を保証するものではない。
+
+---
+
 # 29. Relationship with Other Documents
 
 ## Accepted MVP Contract

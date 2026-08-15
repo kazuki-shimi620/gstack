@@ -367,6 +367,17 @@ gstack plugin remove @example/generator --approval <fingerprint>
 
 Planは現在の`gstack.yaml`と`package.json`に結び付くfingerprint、npm command、変更前後のallowlistを返す。dry-runはpackageやfilesystemを変更しない。実変更は同じPlanのfingerprintを必須とし、npm lifecycle scriptを無効化する。
 
+### package validate
+
+Plugin packageをpublishする前に、package directoryでread-only検証を行う。
+
+```bash
+gstack plugin package validate
+gstack plugin package validate --directory ./packages/my-plugin --json
+```
+
+package.json、root export、型宣言、`gstackPlugin`、Manifest identity／version／互換性、`npm pack --dry-run --ignore-scripts`の収録物を検証する。entryや型宣言がpackageに含まれない場合と、`.env`、`.npmrc`、credential JSON、秘密鍵らしいfileが含まれる場合は失敗する。publish自体は実行しない。
+
 ---
 
 ## provider

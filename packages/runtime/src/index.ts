@@ -74,6 +74,11 @@ export type {
   StandardPluginChangeOptions,
   StandardPluginChangePlan,
 } from './plugin-management.js';
+export { validateStandardPluginPackage } from './plugin-package.js';
+export type {
+  PluginPackInspector,
+  StandardPluginPackageValidation,
+} from './plugin-package.js';
 
 export interface StandardGoogleDeployPreview {
   readonly provider: 'google';

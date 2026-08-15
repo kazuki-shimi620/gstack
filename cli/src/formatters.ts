@@ -161,6 +161,23 @@ export function formatPluginChangePlanHuman(
   ].join('\n');
 }
 
+export function formatPluginPackageValidationHuman(result: {
+  readonly packageName: string;
+  readonly version: string;
+  readonly pluginId: string;
+  readonly kind: string;
+  readonly fileCount: number;
+  readonly unpackedSize: number;
+}): string {
+  return [
+    'Plugin package is valid.',
+    `Package: ${result.packageName}@${result.version}`,
+    `Plugin: ${result.pluginId} (${result.kind})`,
+    `Packed files: ${result.fileCount}`,
+    `Unpacked size: ${result.unpackedSize} byte(s)`,
+  ].join('\n');
+}
+
 export function formatProviderInfoHuman(provider: ProviderSummary): string {
   return [
     `Provider: ${provider.name}`,

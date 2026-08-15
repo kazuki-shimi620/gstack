@@ -550,3 +550,11 @@ removeはallowlistとdependenciesの両方に存在し、Manifestをload・検�
 installはnpm成功後にinstalled packageのnamed export、Manifest、package identity、gstack互換性、要求したexact Plugin versionを検証し、すべて成功した場合だけ`gstack.yaml` allowlistへ追加する。検証またはConfig更新が失敗した場合、dependencyが残ることは許容するがallowlistへ追加せず、未検証PluginをRuntimeでloadしない。自動uninstallは追加のpackage変更となるため暗黙rollbackしない。
 
 removeはManifest検証、configuration削除、Provider無効化を再確認後、先にallowlistからatomicに削除してからnpm uninstallする。npm失敗時はdependencyが残ってもRuntimeから無効な安全側状態とする。Config更新はYAML commentと無関係な設定を保持し、regular fileだけを同一directoryのtemporary fileからrenameする。Plan後のchecksum不一致を上書きせず、install／removeはMCPへ公開しない。
+
+## D-080 Plugin Package Publication Validation
+
+`gstack plugin package validate [--directory <path>]`はPlugin作者がlocal packageをpublish前に検査するread-only commandとする。regular fileの`package.json`を読み、publish可能なpackage name／version、root `exports`、`types`を必須とし、entryと型宣言がpackage directory外を参照する場合、存在しない場合、symlinkの場合を拒否する。private packageは配布対象として扱わない。
+
+export entryは専用のlocal importerで読み、既存Plugin Loaderを通してnamed `gstackPlugin`、Manifest、definition、package identity、gstack互換性を検証し、Manifest versionとpackage.json versionを完全一致させる。このlocal path importは作者向け検証だけに閉じ、Project Runtimeのallowlist Loaderへpath／URLを許可しない。
+
+収録物はpackage directoryで`npm pack --dry-run --json --ignore-scripts`をshellなしで実行して取得し、単一packageのidentity、正規化された相対path、root entry、型宣言、package.jsonの収録を確認する。`.env`／`.env.*`、`.npmrc`、`credentials.json`、`service-account*.json`、`.pem`、`.key`が含まれる場合はpublish前errorとする。結果はManifest概要、entry／types、file count、unpacked sizeだけを返し、file本文やmodule内部値を返さない。commandは`npm publish`、pack file作成、lifecycle script、Project Config変更を行わない。

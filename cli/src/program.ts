@@ -21,6 +21,7 @@ import {
   initializeStandardGoogleProject,
   prepareStandardGoogleProjectInitialization,
   startStandardDevServer,
+  validateStandardPluginPackage,
 } from '@gstack/runtime';
 import { Command } from 'commander';
 
@@ -43,6 +44,7 @@ import {
   formatProviderValidationHuman,
   formatPluginListHuman,
   formatPluginChangePlanHuman,
+  formatPluginPackageValidationHuman,
   formatProjectInitializationHuman,
   formatValidationHuman,
 } from './formatters.js';
@@ -108,6 +110,9 @@ export interface ProgramServices {
     packageName: string,
     approval: string,
   ) => ReturnType<typeof applyStandardPluginRemove>;
+  readonly validatePluginPackage?: (
+    directory: string,
+  ) => ReturnType<typeof validateStandardPluginPackage>;
 }
 
 const defaultServices: ProgramServices = {
@@ -136,6 +141,8 @@ const defaultServices: ProgramServices = {
     applyStandardPluginInstall({ packageSpec, approval }),
   applyPluginRemove: (packageName, approval) =>
     applyStandardPluginRemove({ packageName, approval }),
+  validatePluginPackage: (directory) =>
+    validateStandardPluginPackage({ directory }),
 };
 
 export function createProgram(
@@ -157,6 +164,9 @@ export function createProgram(
   const plugin = program
     .command('plugin')
     .description('Inspect allowlisted Plugins');
+  const pluginPackage = plugin
+    .command('package')
+    .description('Validate a Plugin package before publishing');
   const migration = program
     .command('migration')
     .description('Inspect Migration state and plans');
@@ -264,6 +274,24 @@ export function createProgram(
         });
       },
     );
+
+  pluginPackage
+    .command('validate')
+    .description('Validate local package metadata and npm pack contents')
+    .option('--directory <path>', 'Plugin package directory', process.cwd())
+    .option('--json', 'output structured JSON')
+    .action(async (options: { directory: string; json?: boolean }) => {
+      await withOutput(io, options.json, async () => {
+        const validation = await (
+          services.validatePluginPackage ??
+          ((directory) => validateStandardPluginPackage({ directory }))
+        )(options.directory);
+        return {
+          data: { pluginPackage: validation },
+          human: formatPluginPackageValidationHuman(validation),
+        };
+      });
+    });
 
   migration
     .command('status')
