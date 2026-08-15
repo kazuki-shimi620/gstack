@@ -27,6 +27,8 @@
 - [x] Google認証方式とoperation別最小scopeは`DECISIONS.md` D-039、credential payload／refresh境界はD-041、local／CI共通のEnvironment Secret ResolverはD-057で確定・実装済み。credential値やtokenをProject Configへ保存しない。
 - [ ] Google Sheets metadata read、HTTP retry、Migration Operation mapping、`create_model`／`add_column`／`rename_column`／`drop_column`／`drop_model` write契約はD-040／D-042／D-050／D-053／D-056／D-082／D-083／D-084で確定し、各adapterを実装済み。残りのwrite Operationごとにデータ保持、rollback、idempotencyを確定する。
 - [x] D-085に従い、Google Sheets `alter_column`の全row互換性検査、値を露出しないdiagnostic、column markerによるresume、標準Runtime接続を実装し、Manifestを`emulated`へ変更した。
+- [ ] D-086に従い、Google Sheets Index marker、複合unique既存data検査、生成Apps Script runtimeのtuple一意性保証を実装し、検証後に`add_index`／`drop_index`を`emulated`へ変更する。
+- [ ] D-087に従い、Google Sheets Relation marker、既存参照検査、生成Apps Script runtimeの参照先確認／RESTRICT deleteを実装し、検証後に`add_relation`／`drop_relation`を`emulated`へ変更する。
 - [x] Google Migration History Storage／LockはD-054で確定し、Drive管理JSON adapterとSheets Named Range lock adapterを実装した。明示unlockは診断契約を別途確定してから公開する。
 - [x] Migration Apply CLIのfile選択、Schema一致、approval UXはD-055で確定。安全なfilesystem loader、`--dry-run`、同じ準備結果を使う明示承認付き実Applyを実装した。
 

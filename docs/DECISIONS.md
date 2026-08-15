@@ -596,3 +596,15 @@ Google SheetsのcellにはgstackのField type、required、unique、Enumを一�
 ProviderはOperationの`previous`、`target`、`changes`が同じ列名に対する完全で矛盾のない差分であり、D-017のriskと一致することを再検証する。write前には決定的なSheet ID／title、Model marker、header内の対象列位置を検証する。対象列はheaderを除く全rowのeffective valueをreadし、空cellを未設定として扱う。`required: false -> true`では空cellを拒否し、`unique: false -> true`では空cellを除く重複を拒否し、type変更とEnum value削除では全ての非空値がtarget Fieldの型／Enumに適合することを要求する。formulaは計算結果を検査する。値のcoerce、trim、backfill、deduplicate、日付やJSONの暗黙変換は行わない。検査件数やrow番号はdiagnosticに利用できるが、cell値をerror、log、History、Migration Fileへ保存してはいけない。
 
 互換性確認後は対象column dimensionへ`gstack_operation` metadataを単一非retry `spreadsheets.batchUpdate`で作成し、cell値、format、formula、既存metadataは変更しない。response喪失後は同じcolumn位置のmarkerを再readして適用済みを判定する。検査read後からmarker writeまでの同時編集をGoogle Sheets APIだけで排他的に防げないため、D-054のMigration lockを必須とし、batch write直前にもheader／marker状態を再取得する。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict state parser、全型の互換性判定、required／unique／Enum競合、値非露出error、marker idempotency、lock下の標準Runtime接続をtestし、Manifestの`alter_column`を`emulated`へ昇格済みである。
+
+## D-086 Google Sheets Index Migration
+
+Google SheetsにはgstackのIndexに対応するquery planner用native indexがないため、`add_index`／`drop_index`は`emulated` Operationとする。非unique IndexはApplication Modelと生成物がquery intentを保持するが、Spreadsheet構造やcellを変更しない。unique Indexは列単位の`Field.unique`とは別に、定義された複数列の組合せを一意制約として扱う。`add_index`前に管理対象Sheet、Model marker、全対象headerを検証し、全論理rowのeffective valueを走査する。構成値のいずれかが空のrowは一意性比較から除外し、全構成値がある同一tupleが複数存在する場合は値を公開せずrow番号だけで競合を返す。値のcoerce、trim、deduplicateは行わない。
+
+生成Apps Script runtimeはApplication Modelのunique Indexを埋め込み、createでは既存全row、updateでは更新対象row以外とtuple重複しないことをScript Lock内で検証する。非unique Indexを性能最適化済みと表明してはいけない。`drop_index`は将来write時の制約／query intentをApplication Modelから除くが、既存dataやSheet構造を変更しない。各Operationは対象Sheet直下へchecksum＋Operation IDのmarkerを単一非retry batchで記録し、response喪失後の再readで適用済みを判定する。strict state／Operation parser、複合unique検査、生成runtime、marker idempotency、標準Runtime接続をtestした後にだけManifestを`emulated`へ変更する。
+
+## D-087 Google Sheets Relation Migration
+
+MVPの`belongs_to` Relationはlocal Fieldからtarget Modelのreference Fieldへの参照整合性として`emulated`実装する。`add_relation`前に両方の管理対象Sheet、決定的なSheet ID／title、Model marker、local／reference headerを検証する。target referenceの全非空effective valueを集合化し、local Fieldの全非空値が存在することを要求する。空local値の可否はFieldの`required`変更で扱い、Relation単体では空値を許可する。参照値をcoerce、backfill、削除せず、error、log、Historyへ値を公開しない。
+
+生成Apps Script runtimeはcreate／update時に非空local値の参照先存在を同じSpreadsheetから確認する。target recordのdeleteは参照中のlocal recordが1件でもあれば`409`のsafe conflictとして拒否するRESTRICT semanticsとし、cascade、set-null、orphan化を暗黙実行しない。`drop_relation`は将来write時の参照検証をApplication Modelから除くが、既存dataを変更しない。各Operationはsource Sheet直下へchecksum＋Operation IDのmarkerを単一非retry batchで記録し、response喪失後の再readで適用済みを判定する。検査とmarker writeはD-054のMigration lock下で行い、write直前に再readする。適用後のSpreadsheet直接編集まで永続的に制約するとは表明しない。strict cross-Sheet state parser、既存参照検査、生成runtimeのcreate／update／delete、値非露出error、marker idempotency、標準Runtime接続をtestした後にだけManifestを`emulated`へ変更する。
