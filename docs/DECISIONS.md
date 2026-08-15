@@ -520,3 +520,11 @@ Generator Plugin成果物は`generated/plugins/<plugin-id>/`配下だけを許�
 標準RuntimeはProject Config読込後、D-074の明示package allowlistだけをD-073 Plugin Loaderへ渡し、互換性検証済みProvider PluginのFactoryを既存Provider Registryへ登録する。公式Google Providerも同じRegistryへcomposition rootで登録し、Projectのenabled Provider名が最終Registryに存在しない場合はProject loadを拒否する。
 
 Runtime optionはtest／埋込みhost向けにImporter portを注入できるが、Config、Core、CLIがimportを直接行わない。Provider Pluginのconfiguration／Secret Resolverは既存Provider Runtime contractを再利用し、Plugin Loaderへcredentialを渡さない。Generator PluginのGeneration Plan統合はArtifact Manifestとの単一Plan合成を確定してから別途接続する。
+
+## D-076 Standard Runtime Generator Plugin Integration
+
+標準Runtimeは互換性検証済みGenerator PluginをApplication ModelとPlugin IDごとのconfigurationで実行し、その成果物をbuilt-in producerの成果物と合わせて1つのGeneration Planへ渡す。CoreはPlugin Manifest／Registry／Loaderへ依存せず、Application Modelから追加Artifactを返す注入portだけを持つ。Plugin実行とconfiguration解決はcomposition rootであるRuntimeが所有する。
+
+全成果物は共通のpath正規化、checksum、重複検出を通り、単一Generated Artifact Manifest、stale削除、atomic Writerを共有する。Generator Pluginは`generated/plugins/<plugin-id>/`外へ出力できず、built-inや他Pluginの成果物を上書きできない。allowlistでloadされていないPlugin ID向けconfigurationはProject load時に拒否し、Plugin失敗時はPlan作成を中止してfilesystemへ書き込まない。
+
+Google Deploy bundleはD-063のbuilt-in Apps Script pathだけを入力とし、Plugin成果物を暗黙にProvider sourceへ混入させない。Pluginのinstall／remove、情報表示、配布package検証は別契約で扱う。

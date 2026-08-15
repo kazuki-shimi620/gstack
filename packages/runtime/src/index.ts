@@ -44,6 +44,7 @@ import {
 import {
   loadPlugins,
   registerProviderPlugins,
+  runGeneratorPlugins,
   type PluginModuleImporter,
 } from '@gstack/plugin';
 import {
@@ -597,6 +598,17 @@ export async function loadStandardProject(
       ? {}
       : { importer: options.pluginImporter }),
   });
+  const unknownPluginConfiguration = Object.keys(
+    config.plugins?.configuration ?? {},
+  ).find((id) => plugins.get(id) === null);
+  if (unknownPluginConfiguration) {
+    throw new GstackError({
+      code: 'CONFIG_INVALID',
+      category: 'configuration',
+      message: `Plugin configuration does not match a loaded Plugin: ${unknownPluginConfiguration}`,
+      hint: 'Add the Plugin package to plugins.packages or remove the unused configuration.',
+    });
+  }
   registerProviderPlugins(plugins, registry);
   const unknown = enabled.find(({ name }) => registry.get(name) === null);
   if (unknown) {
@@ -630,6 +642,12 @@ export async function loadStandardProject(
   return loadProject({
     root,
     loadConfig: async (): Promise<GstackConfig> => config,
+    generateExtensionArtifacts: (application) =>
+      runGeneratorPlugins({
+        plugins,
+        application,
+        configuration: config.plugins?.configuration ?? {},
+      }),
     providerReader: {
       listProviders: async () => catalog.listProviders(),
       getProvider: async (name) => catalog.getProvider(name),

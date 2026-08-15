@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -337,6 +337,91 @@ providers:
     await expect(loaded.listProviders()).resolves.toEqual([
       expect.objectContaining({ name: 'example' }),
     ]);
+  });
+
+  it('Generator Plugin成果物をbuilt-inと同じGeneration Planへ統合する', async () => {
+    const root = await project(`
+generator:
+  formatVersion: 1
+  types: false
+  validation: false
+  api: false
+  backend: false
+  frontend: false
+  openapi: false
+  documentation: false
+  aiDocumentation: false
+plugins:
+  packages: ['@example/generator']
+  configuration:
+    example:
+      label: sample
+`);
+    await mkdir(path.join(root, 'schema'));
+    await writeFile(
+      path.join(root, 'schema', 'users.yaml'),
+      `name: users
+model: { displayName: Users }
+database:
+  primaryKey: id
+  columns:
+    id: { type: uuid }
+`,
+    );
+    const generate = vi.fn(() => [
+      {
+        path: 'generated/plugins/example/context.txt',
+        content: 'plugin\n',
+      },
+    ]);
+    const loaded = await loadStandardProject({
+      root,
+      pluginImporter: vi.fn().mockResolvedValue({
+        gstackPlugin: {
+          manifest: {
+            formatVersion: 1,
+            id: 'example',
+            kind: 'generator',
+            packageName: '@example/generator',
+            version: '0.0.0',
+            minimumGstackVersion: '0.0.0',
+          },
+          generate,
+        },
+      }),
+    });
+    const preview = await loaded.previewGeneration();
+    expect(
+      preview.writes.map(({ path: artifactPath }) => artifactPath),
+    ).toEqual(['generated/plugins/example/context.txt']);
+    expect(preview.manifest.artifacts).toEqual([
+      expect.objectContaining({
+        path: 'generated/plugins/example/context.txt',
+      }),
+    ]);
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({ configuration: { label: 'sample' } }),
+    );
+
+    await loaded.generate();
+    await expect(
+      readFile(
+        path.join(root, 'generated/plugins/example/context.txt'),
+        'utf8',
+      ),
+    ).resolves.toBe('plugin\n');
+  });
+
+  it('未load Plugin向けconfigurationを拒否する', async () => {
+    const root = await project(`
+plugins:
+  packages: []
+  configuration:
+    example: {}
+`);
+    await expect(loadStandardProject({ root })).rejects.toMatchObject({
+      details: { code: 'CONFIG_INVALID', category: 'configuration' },
+    });
   });
 
   it('Environment Secret Resolverは安全な変数名だけを解決する', async () => {

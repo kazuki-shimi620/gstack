@@ -15,6 +15,7 @@ import {
   loadGeneratedManifest,
   writeGenerationPlan,
   type GenerationPlan,
+  type GeneratedArtifactInput,
 } from '@gstack/generator';
 
 import type {
@@ -42,6 +43,11 @@ export interface LoadProjectOptions {
   readonly migrationReader?: MigrationReader;
   readonly providerReader?: ProviderReader;
   readonly providerInspector?: ProviderInspector;
+  readonly generateExtensionArtifacts?: (
+    application: ApplicationModel,
+  ) =>
+    | readonly GeneratedArtifactInput[]
+    | Promise<readonly GeneratedArtifactInput[]>;
 }
 
 export async function loadProject(
@@ -70,6 +76,7 @@ export async function loadProject(
     options.migrationReader ?? null,
     options.providerReader ?? null,
     options.providerInspector ?? null,
+    options.generateExtensionArtifacts ?? null,
   );
 }
 
@@ -81,6 +88,13 @@ class Project implements GstackProject {
     private readonly migrationReader: MigrationReader | null,
     private readonly providerReader: ProviderReader | null,
     private readonly providerInspector: ProviderInspector | null,
+    private readonly generateExtensionArtifacts:
+      | ((
+          application: ApplicationModel,
+        ) =>
+          | readonly GeneratedArtifactInput[]
+          | Promise<readonly GeneratedArtifactInput[]>)
+      | null,
   ) {}
 
   public async getConfig(): Promise<GstackConfig> {
@@ -244,7 +258,10 @@ class Project implements GstackProject {
     }
     try {
       const previous = await loadGeneratedManifest(this.root);
-      return generateApplication(application, config, previous);
+      const extensions = this.generateExtensionArtifacts
+        ? await this.generateExtensionArtifacts(application)
+        : [];
+      return generateApplication(application, config, previous, extensions);
     } catch (error: unknown) {
       throw generationError(error);
     }

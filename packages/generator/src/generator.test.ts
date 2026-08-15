@@ -66,6 +66,18 @@ describe('Generator orchestration', () => {
       generateApplication(application, allEnabled),
     );
   });
+
+  it('拡張Artifactをbuilt-inと同じPlan／Manifestへ統合する', () => {
+    const plan = generateApplication(application, allEnabled, null, [
+      { path: 'generated/plugins/example/output.txt', content: 'plugin\n' },
+    ]);
+    expect(plan.writes.map(({ path }) => path)).toContain(
+      'generated/plugins/example/output.txt',
+    );
+    expect(plan.manifest.artifacts.map(({ path }) => path)).toContain(
+      'generated/plugins/example/output.txt',
+    );
+  });
 });
 
 const allEnabled: GeneratorConfig = {

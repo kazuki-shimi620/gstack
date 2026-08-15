@@ -28,6 +28,7 @@ export function generateApplication(
   application: ApplicationModel,
   config: GeneratorConfig,
   previousManifest: GeneratedArtifactManifest | null = null,
+  extensionArtifacts: readonly GeneratedArtifactInput[] = [],
 ): GenerationPlan {
   const outputs: GeneratedArtifactInput[] = [];
   if (config.types) outputs.push(...generateTypeArtifacts(application));
@@ -42,5 +43,6 @@ export function generateApplication(
     outputs.push(generateDocumentationArtifact(application));
   if (config.aiDocumentation)
     outputs.push(...generateAiDocumentationArtifacts(application));
+  outputs.push(...extensionArtifacts);
   return createGenerationPlan(outputs, previousManifest);
 }
