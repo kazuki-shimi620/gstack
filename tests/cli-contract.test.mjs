@@ -302,7 +302,7 @@ test('Migration Applyはdry-runなしのProvider変更を拒否する', (t) => {
   );
 });
 
-test('Migration Rollbackはdry-run以外を公開しない', (t) => {
+test('Migration Rollbackはapprovalなしの実行を拒否する', (t) => {
   const root = project(
     'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
   );

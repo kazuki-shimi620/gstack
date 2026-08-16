@@ -119,6 +119,7 @@ describe('CLI formatters', () => {
       status: 'pending' as const,
       operationCount: 1,
       completedOperationCount: 0,
+      completedRollbackOperationCount: 0,
       startedAt: null,
       completedAt: null,
       rolledBackAt: null,

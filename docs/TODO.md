@@ -32,7 +32,7 @@
 - [x] D-089に従い、Google Provider Configのrole binding、Apps Script `USER_ACCESSING` identity、全CRUDのfail-closed permission検証、binding本文をpreview／結果へ出さないDeploy bundleを実装した。`MYSELF`以外の公開範囲は拡張しない。
 - [x] Google Migration History Storage／LockはD-054で確定し、Drive管理JSON adapterとSheets Named Range lock adapterを実装した。明示unlockは診断契約を別途確定してから公開する。
 - [x] Migration Apply CLIのfile選択、Schema一致、approval UXはD-055で確定。安全なfilesystem loader、`--dry-run`、同じ準備結果を使う明示承認付き実Applyを実装した。
-- [ ] D-090に従い、Google ProviderのRollback実行、専用History状態、fingerprint／destructive承認、失敗後の明示resumeを実装する。
+- [x] D-090に従い、Google ProviderのRollback実行、専用History状態、fingerprint／destructive承認、失敗後の明示resumeを実装した。
 
 ## MCP／AI supportの後続作業
 

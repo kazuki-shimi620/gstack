@@ -3,7 +3,13 @@ import { verifyMigrationChecksum } from './file.js';
 import type { ApplicationModelSnapshot } from './snapshot.js';
 
 export type MigrationStatus =
-  'pending' | 'applying' | 'applied' | 'failed' | 'rolled_back';
+  | 'pending'
+  | 'applying'
+  | 'applied'
+  | 'failed'
+  | 'rolling_back'
+  | 'rollback_failed'
+  | 'rolled_back';
 
 export interface MigrationHistoryEntry {
   readonly version: string;
@@ -12,6 +18,7 @@ export interface MigrationHistoryEntry {
   readonly status: MigrationStatus;
   readonly operationCount: number;
   readonly completedOperationCount: number;
+  readonly completedRollbackOperationCount: number;
   readonly startedAt: string | null;
   readonly completedAt: string | null;
   readonly rolledBackAt: string | null;
@@ -37,6 +44,7 @@ export function createPendingHistory(
     status: 'pending',
     operationCount: file.operations.length,
     completedOperationCount: 0,
+    completedRollbackOperationCount: 0,
     startedAt: null,
     completedAt: null,
     rolledBackAt: null,
@@ -162,9 +170,78 @@ export function recordRollback(
   entry: MigrationHistoryEntry,
   completedAt: string,
 ): MigrationHistoryEntry {
-  requireStatus(entry, 'applied');
+  requireStatus(entry, 'rolling_back');
   isoUtc(completedAt);
+  if (entry.completedRollbackOperationCount !== entry.operationCount) {
+    throw new MigrationHistoryError(
+      'Migration cannot be rolled back before all inverse Operations complete.',
+    );
+  }
   return freeze({ ...entry, status: 'rolled_back', rolledBackAt: completedAt });
+}
+
+export function startRollback(
+  entry: MigrationHistoryEntry,
+): MigrationHistoryEntry {
+  requireStatus(entry, 'applied');
+  return freeze({
+    ...entry,
+    status: 'rolling_back',
+    completedRollbackOperationCount: 0,
+    failedOperationId: null,
+    errorCode: null,
+  });
+}
+
+export function resumeRollback(
+  entry: MigrationHistoryEntry,
+): MigrationHistoryEntry {
+  requireStatus(entry, 'rollback_failed');
+  if (entry.completedRollbackOperationCount >= entry.operationCount) {
+    throw new MigrationHistoryError(
+      'Failed Rollback has no remaining Operation to resume.',
+    );
+  }
+  return freeze({
+    ...entry,
+    status: 'rolling_back',
+    failedOperationId: null,
+    errorCode: null,
+  });
+}
+
+export function recordRollbackOperationCompleted(
+  entry: MigrationHistoryEntry,
+): MigrationHistoryEntry {
+  requireStatus(entry, 'rolling_back');
+  if (entry.completedRollbackOperationCount >= entry.operationCount) {
+    throw new MigrationHistoryError(
+      'All Rollback Operations are already complete.',
+    );
+  }
+  return freeze({
+    ...entry,
+    completedRollbackOperationCount: entry.completedRollbackOperationCount + 1,
+  });
+}
+
+export function failRollback(
+  entry: MigrationHistoryEntry,
+  failedOperationId: string,
+  errorCode: string,
+): MigrationHistoryEntry {
+  requireStatus(entry, 'rolling_back');
+  if (!failedOperationId || !errorCode) {
+    throw new MigrationHistoryError(
+      'Failed Rollback requires an Operation ID and safe error code.',
+    );
+  }
+  return freeze({
+    ...entry,
+    status: 'rollback_failed',
+    failedOperationId,
+    errorCode,
+  });
 }
 
 function requireStatus(

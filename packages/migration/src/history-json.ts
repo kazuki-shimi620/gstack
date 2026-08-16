@@ -6,6 +6,7 @@ const KEYS = [
   'checksum',
   'completedAt',
   'completedOperationCount',
+  'completedRollbackOperationCount',
   'errorCode',
   'failedOperationId',
   'name',
@@ -20,6 +21,8 @@ const STATUSES = new Set<MigrationStatus>([
   'applying',
   'applied',
   'failed',
+  'rolling_back',
+  'rollback_failed',
   'rolled_back',
 ]);
 const UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/u;
@@ -73,6 +76,7 @@ function validate(value: unknown): asserts value is MigrationHistoryEntry {
     !STATUSES.has(value.status as MigrationStatus) ||
     !integer(value.operationCount) ||
     !integer(value.completedOperationCount) ||
+    !integer(value.completedRollbackOperationCount) ||
     (value.completedOperationCount as number) >
       (value.operationCount as number) ||
     !nullableUtc(value.startedAt) ||
@@ -85,6 +89,7 @@ function validate(value: unknown): asserts value is MigrationHistoryEntry {
   const status = value.status as MigrationStatus;
   const count = value.operationCount as number;
   const completed = value.completedOperationCount as number;
+  const rollbackCompleted = value.completedRollbackOperationCount as number;
   if (value.appliedSnapshot !== null) {
     try {
       parseApplicationModelSnapshot(JSON.stringify(value.appliedSnapshot));
@@ -98,11 +103,13 @@ function validate(value: unknown): asserts value is MigrationHistoryEntry {
     status === 'pending' &&
     !(
       completed === 0 &&
+      rollbackCompleted === 0 &&
       value.startedAt === null &&
       value.completedAt === null &&
       value.rolledBackAt === null &&
       noFailure &&
-      value.appliedSnapshot === null
+      value.appliedSnapshot === null &&
+      rollbackCompleted === 0
     )
   )
     invalid();
@@ -126,7 +133,8 @@ function validate(value: unknown): asserts value is MigrationHistoryEntry {
       value.failedOperationId !== null &&
       value.errorCode !== null &&
       value.appliedSnapshot === null &&
-      completed < count
+      completed < count &&
+      rollbackCompleted === 0
     )
   )
     invalid();
@@ -138,7 +146,35 @@ function validate(value: unknown): asserts value is MigrationHistoryEntry {
       value.rolledBackAt === null &&
       noFailure &&
       value.appliedSnapshot !== null &&
-      completed === count
+      completed === count &&
+      rollbackCompleted === 0
+    )
+  )
+    invalid();
+  if (
+    status === 'rolling_back' &&
+    !(
+      value.startedAt !== null &&
+      value.completedAt !== null &&
+      value.rolledBackAt === null &&
+      noFailure &&
+      value.appliedSnapshot !== null &&
+      completed === count &&
+      rollbackCompleted <= count
+    )
+  )
+    invalid();
+  if (
+    status === 'rollback_failed' &&
+    !(
+      value.startedAt !== null &&
+      value.completedAt !== null &&
+      value.rolledBackAt === null &&
+      value.failedOperationId !== null &&
+      value.errorCode !== null &&
+      value.appliedSnapshot !== null &&
+      completed === count &&
+      rollbackCompleted < count
     )
   )
     invalid();
@@ -150,7 +186,8 @@ function validate(value: unknown): asserts value is MigrationHistoryEntry {
       value.rolledBackAt !== null &&
       noFailure &&
       value.appliedSnapshot !== null &&
-      completed === count
+      completed === count &&
+      rollbackCompleted === count
     )
   )
     invalid();

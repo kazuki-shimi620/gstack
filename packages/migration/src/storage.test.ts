@@ -16,6 +16,7 @@ const entry = (
   status: 'pending',
   operationCount: 0,
   completedOperationCount: 0,
+  completedRollbackOperationCount: 0,
   startedAt: null,
   completedAt: null,
   rolledBackAt: null,

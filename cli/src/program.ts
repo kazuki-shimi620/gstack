@@ -16,6 +16,7 @@ import {
   prepareStandardPluginRemove,
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollbackFile,
+  rollbackStandardGoogleMigrationFile,
   prepareStandardGoogleDeploy,
   deployStandardGoogle,
   initializeStandardGoogleProject,
@@ -37,6 +38,7 @@ import {
   formatMigrationApplyHuman,
   formatMigrationPlanHuman,
   formatMigrationRollbackDryRunHuman,
+  formatMigrationRollbackHuman,
   formatMigrationStatusHuman,
   formatProviderHealthHuman,
   formatProviderInfoHuman,
@@ -73,6 +75,15 @@ export interface ProgramServices {
     project: GstackProject,
     filePath: string,
   ) => ReturnType<typeof prepareStandardGoogleMigrationRollbackFile>;
+  readonly rollbackMigrationFile?: (
+    project: GstackProject,
+    input: {
+      readonly filePath: string;
+      readonly approval: string;
+      readonly allowDestructive: boolean;
+      readonly resume: boolean;
+    },
+  ) => ReturnType<typeof rollbackStandardGoogleMigrationFile>;
   readonly prepareDeploy?: (
     project: GstackProject,
   ) => ReturnType<typeof prepareStandardGoogleDeploy>;
@@ -123,6 +134,8 @@ const defaultServices: ProgramServices = {
     applyStandardGoogleMigrationFile({ project, ...input }),
   prepareMigrationRollbackFile: (project, filePath) =>
     prepareStandardGoogleMigrationRollbackFile({ project, filePath }),
+  rollbackMigrationFile: (project, input) =>
+    rollbackStandardGoogleMigrationFile({ project, ...input }),
   prepareDeploy: (project) => prepareStandardGoogleDeploy({ project }),
   executeDeploy: (project, approval) =>
     deployStandardGoogle({ project, approval }),
@@ -398,41 +411,83 @@ export function createProgram(
 
   migration
     .command('rollback')
-    .description('Preview rollback of the latest applied Migration')
+    .description('Rollback the latest applied Migration with explicit approval')
     .requiredOption(
       '--file <path>',
       'applied Migration YAML inside migrations/',
     )
     .option('--dry-run', 'validate and preview without changing Provider state')
+    .option('--approval <fingerprint>', 'approve the exact rollback Plan')
+    .option('--allow-destructive', 'allow an approved destructive rollback')
+    .option('--resume', 'resume an explicitly approved failed rollback')
     .option('--json', 'output structured JSON')
     .action(
-      async (options: { file: string; dryRun?: boolean; json?: boolean }) => {
+      async (options: {
+        file: string;
+        dryRun?: boolean;
+        approval?: string;
+        allowDestructive?: boolean;
+        resume?: boolean;
+        json?: boolean;
+      }) => {
         await withProjectOutput(
           io,
           options.json,
           async (project) => {
-            if (!options.dryRun) {
+            if (
+              options.dryRun &&
+              (options.approval || options.allowDestructive || options.resume)
+            ) {
+              throw new GstackError({
+                code: 'MIGRATION_OPTIONS_INVALID',
+                category: 'migration',
+                message:
+                  'Migration Rollback dry-run cannot include execution options.',
+                hint: 'Run dry-run alone, then pass its fingerprint to --approval.',
+              });
+            }
+            if (!options.dryRun && !options.approval) {
               throw new GstackError({
                 code: 'MIGRATION_ROLLBACK_DRY_RUN_REQUIRED',
                 category: 'migration',
-                message: 'Migration Rollback is available as dry-run only.',
-                hint: 'Pass --dry-run to inspect the rollback Plan.',
+                message:
+                  'Migration Rollback requires an explicit approval fingerprint.',
+                hint: 'Run with --dry-run, then pass its fingerprint to --approval.',
               });
             }
-            const preview = await services.prepareMigrationRollbackFile(
-              project,
-              options.file,
-            );
-            const migrationRollback = {
-              sourceVersion: preview.sourceVersion,
-              sourceChecksum: preview.sourceChecksum,
-              targetVersion: preview.targetVersion,
-              planFingerprint: preview.planFingerprint,
-              plan: preview.plan,
-            };
+            if (options.dryRun) {
+              const preview = await services.prepareMigrationRollbackFile(
+                project,
+                options.file,
+              );
+              const migrationRollback = {
+                sourceVersion: preview.sourceVersion,
+                sourceChecksum: preview.sourceChecksum,
+                targetVersion: preview.targetVersion,
+                planFingerprint: preview.planFingerprint,
+                plan: preview.plan,
+              };
+              return {
+                data: { dryRun: true, migrationRollback },
+                human: formatMigrationRollbackDryRunHuman(migrationRollback),
+              };
+            }
+            const result = await (
+              services.rollbackMigrationFile ??
+              ((selected, input) =>
+                rollbackStandardGoogleMigrationFile({
+                  project: selected,
+                  ...input,
+                }))
+            )(project, {
+              filePath: options.file,
+              approval: options.approval as string,
+              allowDestructive: Boolean(options.allowDestructive),
+              resume: Boolean(options.resume),
+            });
             return {
-              data: { dryRun: true, migrationRollback },
-              human: formatMigrationRollbackDryRunHuman(migrationRollback),
+              data: { dryRun: false, migrationRollback: result },
+              human: formatMigrationRollbackHuman(result),
             };
           },
           services.loadProject,

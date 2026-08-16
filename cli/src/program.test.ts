@@ -124,6 +124,7 @@ describe('migration apply CLI', () => {
       status: 'applied',
       operationCount: 1,
       completedOperationCount: 1,
+      completedRollbackOperationCount: 0,
     } as never;
     const applyMigrationFile = vi.fn(async () => ({
       outcome: 'applied' as const,
@@ -191,6 +192,7 @@ describe('migration apply CLI', () => {
       sourceVersion: '20260815_000001',
       sourceChecksum: 'a'.repeat(64),
       completedOperationCount: 1,
+      completedRollbackOperationCount: 0,
       targetVersion: null,
       targetSnapshot: null,
       plan,
@@ -228,6 +230,59 @@ describe('migration apply CLI', () => {
           targetVersion: null,
           planFingerprint: 'b'.repeat(64),
         },
+      },
+    });
+  });
+
+  it('Rollback fingerprintと破壊承認を実行serviceへ渡す', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const rollbackMigrationFile = vi.fn(async () => ({
+      outcome: 'rolled_back' as const,
+      history: {
+        version: '20260815_000001',
+        status: 'rolled_back',
+        operationCount: 1,
+        completedRollbackOperationCount: 1,
+      } as never,
+    }));
+    await createProgram(
+      { stdout, stderr },
+      {
+        loadProject: async () => ({ root: '/project' }) as never,
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile: vi.fn(),
+        prepareMigrationRollbackFile: vi.fn(),
+        rollbackMigrationFile,
+      },
+    ).parseAsync([
+      'node',
+      'gstack',
+      'migration',
+      'rollback',
+      '--file',
+      'migrations/add_email.yaml',
+      '--approval',
+      'b'.repeat(64),
+      '--allow-destructive',
+      '--resume',
+      '--json',
+    ]);
+    expect(rollbackMigrationFile).toHaveBeenCalledWith(
+      expect.objectContaining({ root: '/project' }),
+      {
+        filePath: 'migrations/add_email.yaml',
+        approval: 'b'.repeat(64),
+        allowDestructive: true,
+        resume: true,
+      },
+    );
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        dryRun: false,
+        migrationRollback: { outcome: 'rolled_back' },
       },
     });
   });

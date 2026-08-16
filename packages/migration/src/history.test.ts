@@ -5,9 +5,13 @@ import {
   completeMigration,
   createPendingHistory,
   failMigration,
+  failRollback,
   recordOperationCompleted,
   recordRollback,
+  recordRollbackOperationCompleted,
   resumeMigration,
+  resumeRollback,
+  startRollback,
   startMigration,
 } from './history.js';
 import { createApplicationModelSnapshot } from './snapshot.js';
@@ -37,6 +41,7 @@ describe('Migration History', () => {
       status: 'applied',
       operationCount: 0,
       completedOperationCount: 0,
+      completedRollbackOperationCount: 0,
       startedAt: '2026-08-12T01:00:00.000Z',
       completedAt: '2026-08-12T01:00:01.000Z',
       rolledBackAt: null,
@@ -81,10 +86,45 @@ describe('Migration History', () => {
       '2026-08-12T01:00:01Z',
       snapshot,
     );
-    expect(recordRollback(applied, '2026-08-12T01:00:02Z')).toMatchObject({
+    const rollingBack = startRollback(applied);
+    expect(recordRollback(rollingBack, '2026-08-12T01:00:02Z')).toMatchObject({
       status: 'rolled_back',
       completedAt: '2026-08-12T01:00:01Z',
       rolledBackAt: '2026-08-12T01:00:02Z',
+    });
+  });
+
+  it('Rollbackの進捗、失敗、明示再開をforward進捗と分離する', () => {
+    const oneOperationFile = createMigrationFile(
+      '20260812_000004',
+      'rollback_progress',
+      [{ id: 'one' }] as never,
+    );
+    const applied = completeMigration(
+      recordOperationCompleted(
+        startMigration(
+          createPendingHistory(oneOperationFile),
+          '2026-08-12T01:00:00Z',
+        ),
+      ),
+      '2026-08-12T01:00:01Z',
+      snapshot,
+    );
+    const failed = failRollback(
+      startRollback(applied),
+      'inverse-one',
+      'PROVIDER_OPERATION_FAILED',
+    );
+    expect(failed).toMatchObject({
+      status: 'rollback_failed',
+      completedOperationCount: 1,
+      completedRollbackOperationCount: 0,
+      failedOperationId: 'inverse-one',
+    });
+    const progressed = recordRollbackOperationCompleted(resumeRollback(failed));
+    expect(recordRollback(progressed, '2026-08-12T01:00:02Z')).toMatchObject({
+      status: 'rolled_back',
+      completedRollbackOperationCount: 1,
     });
   });
 

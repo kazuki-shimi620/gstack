@@ -23,14 +23,17 @@ import {
   MigrationFileSystemError,
   MigrationLockError,
   MigrationRollbackError,
+  MigrationRollbackExecutionError,
   MigrationReadService,
-  migrationPlanFingerprint,
+  migrationRollbackFingerprint,
   prepareMigrationApply,
   previewMigrationRollback,
+  rollbackMigration,
   type MigrationFile,
   type MigrationHistoryEntry,
   type MigrationPlan,
   type MigrationRollbackPreview,
+  type MigrationRollbackResult,
   type PreparedMigrationApply,
   type MigrationApplyResult,
 } from '@gstack/migration';
@@ -557,7 +560,7 @@ export function prepareStandardGoogleMigrationRollback(input: {
   return Object.freeze({
     ...preview,
     plan,
-    planFingerprint: migrationPlanFingerprint(input.file, plan),
+    planFingerprint: migrationRollbackFingerprint({ ...preview, plan }),
   });
 }
 
@@ -576,6 +579,50 @@ export async function prepareStandardGoogleMigrationRollbackFile(input: {
       runtime.history.list(),
     ]);
     return prepareStandardGoogleMigrationRollback({ file, history, runtime });
+  } catch (error: unknown) {
+    throw normalizeMigrationError(error);
+  }
+}
+
+export async function rollbackStandardGoogleMigrationFile(input: {
+  readonly project: GstackProject;
+  readonly filePath: string;
+  readonly approval: string;
+  readonly allowDestructive: boolean;
+  readonly resume: boolean;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly now?: () => string;
+}): Promise<MigrationRollbackResult> {
+  try {
+    const runtime = await resolveStandardGoogleMigrationRuntime(
+      input.project,
+      input.environment,
+    );
+    const [file, history] = await Promise.all([
+      loadMigrationFile(input.project.root, input.filePath),
+      runtime.history.list(),
+    ]);
+    const prepared = prepareStandardGoogleMigrationRollback({
+      file,
+      history,
+      runtime,
+    });
+    return await rollbackMigration(
+      {
+        file,
+        plan: prepared.plan,
+        providerContext: runtime.providerContext,
+        approval: input.approval,
+        allowDestructive: input.allowDestructive,
+        resume: input.resume,
+      },
+      {
+        history: runtime.history,
+        lock: runtime.lock,
+        executor: runtime.executor,
+        now: input.now ?? (() => new Date().toISOString()),
+      },
+    );
   } catch (error: unknown) {
     throw normalizeMigrationError(error);
   }
@@ -756,7 +803,8 @@ function normalizeMigrationError(error: unknown): unknown {
     error instanceof MigrationApplyError ||
     error instanceof MigrationLockError ||
     error instanceof MigrationExecutionError ||
-    error instanceof MigrationRollbackError
+    error instanceof MigrationRollbackError ||
+    error instanceof MigrationRollbackExecutionError
   ) {
     return new GstackError(
       {

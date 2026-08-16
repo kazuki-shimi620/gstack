@@ -262,7 +262,7 @@ gstack migration rollback \
   --dry-run
 ```
 
-MVPではlatest applied Historyと明示Fileが一致する場合のread-only previewだけを提供する。実RollbackはProvider固有の逆操作と承認契約が確定するまで公開しない。規範は`DECISIONS.md` D-058とする。
+最初にlatest applied Historyと明示Fileが一致することを`--dry-run`で検査し、評価済み逆Operation、risk、target、fingerprintを確認する。実行時は同じfingerprintを`--approval`へ渡し、破壊的な逆Operationには`--allow-destructive`、失敗後の再開には`--resume`も必要とする。暗黙の最新File選択、複数Migration一括Rollback、MCP Rollbackは提供しない。規範は`DECISIONS.md` D-058／D-090とする。
 
 ---
 

@@ -339,6 +339,18 @@ export function formatMigrationRollbackDryRunHuman(
   ].join('\n');
 }
 
+export function formatMigrationRollbackHuman(result: {
+  readonly outcome: 'rolled_back';
+  readonly history: MigrationHistoryEntry;
+}): string {
+  return [
+    'Migration rolled back.',
+    `Version: ${result.history.version}`,
+    `Status: ${result.history.status}`,
+    `Operations: ${result.history.completedRollbackOperationCount}/${result.history.operationCount}`,
+  ].join('\n');
+}
+
 function enabledCapabilities(
   capabilities: ProviderSummary['capabilities'],
 ): string {

@@ -1,6 +1,7 @@
 export { createMigrationPlan, operationId } from './plan.js';
 export {
   createMigrationRollbackPlan,
+  migrationRollbackFingerprint,
   MigrationRollbackError,
   previewMigrationRollback,
 } from './rollback.js';
@@ -8,6 +9,15 @@ export type {
   MigrationRollbackPlan,
   MigrationRollbackPreview,
 } from './rollback.js';
+export {
+  MigrationRollbackExecutionError,
+  rollbackMigration,
+} from './rollback-engine.js';
+export type {
+  MigrationRollbackDependencies,
+  MigrationRollbackRequest,
+  MigrationRollbackResult,
+} from './rollback-engine.js';
 export {
   MigrationApplyError,
   MigrationLockError,
@@ -75,10 +85,14 @@ export {
   completeMigration,
   createPendingHistory,
   failMigration,
+  failRollback,
   MigrationHistoryError,
   recordOperationCompleted,
   recordRollback,
+  recordRollbackOperationCompleted,
   resumeMigration,
+  resumeRollback,
+  startRollback,
   startMigration,
 } from './history.js';
 export type { MigrationHistoryEntry, MigrationStatus } from './history.js';

@@ -15,6 +15,7 @@ export interface MigrationRollbackPlan {
 
 export interface MigrationRollbackPreview extends MigrationRollbackPlan {
   readonly targetVersion: string | null;
+  readonly completedRollbackOperationCount: number;
 }
 
 export class MigrationRollbackError extends Error {
@@ -58,7 +59,7 @@ export function previewMigrationRollback(input: {
     );
   }
   if (
-    source.status !== 'applied' ||
+    (source.status !== 'applied' && source.status !== 'rollback_failed') ||
     source.version !== input.file.version ||
     source.name !== input.file.name ||
     source.checksum !== input.file.checksum ||
@@ -88,7 +89,33 @@ export function previewMigrationRollback(input: {
       previousSnapshot: previous?.appliedSnapshot ?? null,
     }),
     targetVersion: previous?.version ?? null,
+    completedRollbackOperationCount: source.completedRollbackOperationCount,
   });
+}
+
+export function migrationRollbackFingerprint(input: {
+  readonly sourceVersion: string;
+  readonly sourceChecksum: string;
+  readonly targetSnapshot: ApplicationModelSnapshot | null;
+  readonly plan: MigrationPlan;
+}): string {
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        sourceVersion: input.sourceVersion,
+        sourceChecksum: input.sourceChecksum,
+        targetSnapshotChecksum:
+          input.targetSnapshot === null
+            ? null
+            : snapshotChecksum(input.targetSnapshot),
+        operations: input.plan.operations.map(({ id, capability }) => ({
+          id,
+          capability,
+        })),
+      }),
+      'utf8',
+    )
+    .digest('hex');
 }
 
 export function createMigrationRollbackPlan(input: {
@@ -265,3 +292,4 @@ function deepFreeze<T>(value: T): T {
   for (const child of Object.values(value)) deepFreeze(child);
   return value;
 }
+import { createHash } from 'node:crypto';
