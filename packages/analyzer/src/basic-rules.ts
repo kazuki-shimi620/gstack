@@ -276,13 +276,22 @@ function validateOptionalSections(
   const permissions = mappingValue(root, 'permissions');
   if (permissions) {
     for (const key of ['read', 'create', 'update', 'delete']) {
-      validateOptionalStringSequenceAtPath(
+      const roles = validateOptionalStringSequenceAtPath(
         permissions,
         key,
         'permissions',
         schema,
         diagnostics,
       );
+      for (const role of roles ?? []) {
+        validateSnakeCase(
+          role.value,
+          'Permission Role',
+          role.node,
+          schema,
+          diagnostics,
+        );
+      }
     }
   }
 

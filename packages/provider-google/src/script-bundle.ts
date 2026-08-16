@@ -49,7 +49,7 @@ export function createGoogleScriptSourceBundle(
     Object.freeze({
       name: CONFIG_FILE,
       type: 'SERVER_JS',
-      source: `const GSTACK_SPREADSHEET_ID = ${JSON.stringify(config.spreadsheetId)};\n`,
+      source: googleRuntimeConfigSource(config),
     }),
     Object.freeze({
       name: GSTACK_SCRIPT_MARKER_FILE,
@@ -60,6 +60,24 @@ export function createGoogleScriptSourceBundle(
   return Object.freeze(
     files.sort((left, right) => left.name.localeCompare(right.name)),
   );
+}
+
+function googleRuntimeConfigSource(config: GoogleProviderConfig): string {
+  const byEmail = new Map<string, string[]>();
+  const bindings = config.authorization?.roleBindings ?? {};
+  for (const role of Object.keys(bindings).sort()) {
+    for (const email of [...(bindings[role] ?? [])].sort()) {
+      const roles = byEmail.get(email) ?? [];
+      roles.push(role);
+      byEmail.set(email, roles);
+    }
+  }
+  const roleBindings = Object.fromEntries(
+    [...byEmail.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([email, roles]) => [email, roles.sort()]),
+  );
+  return `const GSTACK_SPREADSHEET_ID = ${JSON.stringify(config.spreadsheetId)};\nconst GSTACK_ROLE_BINDINGS = ${JSON.stringify(roleBindings)};\n`;
 }
 
 function mapArtifact(relative: string, content: string): GoogleScriptFile {

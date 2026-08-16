@@ -164,7 +164,7 @@ ai/
 
 Google Workspaceを実行基盤として利用可能にする。
 
-Status: Provider package、Manifest、strict configuration、offline validation、OAuth／HTTP safety、Google Sheets／Drive／Apps Script adapter、統合health、Project Config、標準RuntimeからCLI／MCPへの接続まで実装済み。Google Sheets Migrationは`create_model`、`add_column`、同じ列位置でデータを保持する`rename_column`、明示destructive承認を必須とする不可逆な`drop_column`／`drop_model`をatomic batch、管理marker、競合拒否、再開可能なExecutorとして実装しManifestで`native`を宣言する。`alter_column`、Index、Relationは既存値を変更せず互換性を検査し、生成Apps Scriptが将来writeを保証する`emulated` Operationとして実装済み。全MVP Migration Operationを標準Runtimeへ接続した。CLI Applyはdry-run、fingerprint承認、破壊操作承認、failed Migration再開まで実装済み。Apps Scriptは管理project初期化、source bundle、content全置換、version／deployment、Migration readiness gate、Deploy CLIまで実装済み。permission role mappingはD-089で契約を確定し、Config／bundle／runtime実装は未完了。
+Status: Provider package、Manifest、strict configuration、offline validation、OAuth／HTTP safety、Google Sheets／Drive／Apps Script adapter、統合health、Project Config、標準RuntimeからCLI／MCPへの接続まで実装済み。Google Sheets Migrationは`create_model`、`add_column`、同じ列位置でデータを保持する`rename_column`、明示destructive承認を必須とする不可逆な`drop_column`／`drop_model`をatomic batch、管理marker、競合拒否、再開可能なExecutorとして実装しManifestで`native`を宣言する。`alter_column`、Index、Relationは既存値を変更せず互換性を検査し、生成Apps Scriptが将来writeを保証する`emulated` Operationとして実装済み。全MVP Migration Operationを標準Runtimeへ接続した。CLI Applyはdry-run、fingerprint承認、破壊操作承認、failed Migration再開まで実装済み。Apps Scriptは管理project初期化、source bundle、content全置換、version／deployment、Migration readiness gate、Deploy CLIまで実装済み。D-089のstrict role binding、`USER_ACCESSING` active identity、全CRUD fail-closed permission検証も実装済みで、Web App accessは`MYSELF`を維持する。
 
 ## Tasks
 

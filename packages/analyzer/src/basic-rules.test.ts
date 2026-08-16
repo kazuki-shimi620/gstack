@@ -452,7 +452,7 @@ ui:
   list: { columns: [name, missing, name, 1] }
   form: { fields: [missing] }
 permissions:
-  read: [admin, admin, 1, ""]
+  read: [admin, admin, BadRole, 1, ""]
 workflow: { enabled: "false" }
 events: { enabled: 1 }
 `,
@@ -465,6 +465,7 @@ events: { enabled: 1 }
         'SCHEMA_VALUE_TYPE_INVALID',
         'SCHEMA_VALUE_EMPTY',
         'SCHEMA_SEQUENCE_VALUE_DUPLICATE',
+        'SCHEMA_NAME_INVALID',
         'SCHEMA_UI_COLUMN_UNKNOWN',
       ]),
     );
@@ -478,6 +479,6 @@ events: { enabled: 1 }
         (diagnostic) => diagnostic.code === 'SCHEMA_SEQUENCE_VALUE_DUPLICATE',
       ),
     ).toHaveLength(2);
-    expect(diagnostics).toHaveLength(12);
+    expect(diagnostics).toHaveLength(13);
   });
 });

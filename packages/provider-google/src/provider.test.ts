@@ -98,6 +98,56 @@ describe('Google Provider foundation', () => {
     });
   });
 
+  it('Role bindingをlowercase・sort済みのimmutable設定へ正規化する', () => {
+    const result = parseGoogleProviderConfig({
+      ...configuration,
+      authorization: {
+        roleBindings: {
+          user: ['User@Example.com'],
+          admin: ['z@example.com', ' A@example.com '],
+        },
+      },
+    });
+    expect(result).toEqual({
+      config: {
+        ...configuration,
+        authorization: {
+          roleBindings: {
+            admin: ['a@example.com', 'z@example.com'],
+            user: ['user@example.com'],
+          },
+        },
+      },
+      issues: [],
+    });
+    expect(result.config && Object.isFrozen(result.config.authorization)).toBe(
+      true,
+    );
+    expect(
+      parseGoogleProviderConfig({
+        ...configuration,
+        authorization: {
+          unknown: true,
+          roleBindings: {
+            BadRole: ['invalid'],
+            admin: ['A@example.com', 'a@example.com'],
+            empty: [],
+            invalid_email: ['bad..dot@example.com'],
+          },
+        },
+      }),
+    ).toMatchObject({
+      config: null,
+      issues: [
+        { path: 'authorization.roleBindings.admin' },
+        { path: 'authorization.roleBindings.BadRole' },
+        { path: 'authorization.roleBindings.empty' },
+        { path: 'authorization.roleBindings.invalid_email' },
+        { path: 'authorization.unknown' },
+      ],
+    });
+  });
+
   it('offline validationではGatewayやSecret Resolverを呼ばない', async () => {
     const gateway = { checkHealth: vi.fn() };
     const secrets = { get: vi.fn() };

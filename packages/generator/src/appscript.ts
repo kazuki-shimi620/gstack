@@ -40,6 +40,12 @@ export function generateAppsScriptBackendArtifacts(
           targetModel: relation.targetModel,
           references: relation.references,
         })),
+      permissions: {
+        read: [...model.permissions.read].sort(),
+        create: [...model.permissions.create].sort(),
+        update: [...model.permissions.update].sort(),
+        delete: [...model.permissions.delete].sort(),
+      },
       create: model.api.create,
       update: model.api.update,
       delete: model.api.delete,
@@ -53,7 +59,7 @@ export function generateAppsScriptBackendArtifacts(
           dependencies: {},
           exceptionLogging: 'STACKDRIVER',
           runtimeVersion: 'V8',
-          webapp: { access: 'MYSELF', executeAs: 'USER_DEPLOYING' },
+          webapp: { access: 'MYSELF', executeAs: 'USER_ACCESSING' },
         },
         null,
         2,
@@ -84,14 +90,15 @@ function gstackHandle_(method, event) {
     const parts = String(event.pathInfo || '').split('/').filter(Boolean);
     const definition = GSTACK_MODELS.find(function (item) { return item.resource === parts[0]; });
     if (!definition) return gstackJson_({ ok: false, error: { code: 'RESOURCE_NOT_FOUND' } });
-    if (method === 'GET' && parts.length === 1) return gstackJson_({ ok: true, data: gstackList_(definition) });
-    if (method === 'POST' && parts.length === 1 && definition.create) return gstackJson_({ ok: true, data: gstackCreate_(definition, gstackBody_(event)) });
-    if (method === 'PATCH' && parts.length === 2 && definition.update) return gstackJson_({ ok: true, data: gstackUpdate_(definition, parts[1], gstackBody_(event)) });
-    if (method === 'DELETE' && parts.length === 2 && definition.delete) { gstackDelete_(definition, parts[1]); return gstackJson_({ ok: true, data: null }); }
+    if (method === 'GET' && parts.length === 1) { gstackAuthorize_(definition, 'read'); return gstackJson_({ ok: true, data: gstackList_(definition) }); }
+    if (method === 'POST' && parts.length === 1 && definition.create) { gstackAuthorize_(definition, 'create'); return gstackJson_({ ok: true, data: gstackCreate_(definition, gstackBody_(event)) }); }
+    if (method === 'PATCH' && parts.length === 2 && definition.update) { gstackAuthorize_(definition, 'update'); return gstackJson_({ ok: true, data: gstackUpdate_(definition, parts[1], gstackBody_(event)) }); }
+    if (method === 'DELETE' && parts.length === 2 && definition.delete) { gstackAuthorize_(definition, 'delete'); gstackDelete_(definition, parts[1]); return gstackJson_({ ok: true, data: null }); }
     return gstackJson_({ ok: false, error: { code: 'OPERATION_NOT_ALLOWED' } });
   } catch (error) {
     const code = error && error.message === 'NOT_FOUND' ? 'RECORD_NOT_FOUND'
       : error && error.message === 'REFERENCE_CONFLICT' ? 'CONFLICT'
+      : error && error.message === 'FORBIDDEN' ? 'PERMISSION_DENIED'
       : 'REQUEST_INVALID';
     return gstackJson_({ ok: false, error: { code: code } });
   }
@@ -101,6 +108,27 @@ function gstackSheet_(definition) {
   const sheet = SpreadsheetApp.openById(GSTACK_SPREADSHEET_ID).getSheetByName(definition.model);
   if (!sheet) throw new Error('NOT_FOUND');
   return sheet;
+}
+
+function gstackAuthorize_(definition, operation) {
+  let email = '';
+  try { email = String(Session.getActiveUser().getEmail() || '').trim().toLowerCase(); }
+  catch (_) { throw new Error('FORBIDDEN'); }
+  if (!gstackEmailValid_(email)) throw new Error('FORBIDDEN');
+  const bindings = typeof GSTACK_ROLE_BINDINGS === 'object' && GSTACK_ROLE_BINDINGS ? GSTACK_ROLE_BINDINGS : {};
+  const roles = bindings[email] || [];
+  const allowed = definition.permissions[operation] || [];
+  if (!roles.some(function (role) { return allowed.indexOf(role) >= 0; })) throw new Error('FORBIDDEN');
+}
+
+function gstackEmailValid_(value) {
+  if (value.length > 254) return false;
+  const parts = value.split('@');
+  if (parts.length !== 2) return false;
+  const local = parts[0];
+  const labels = parts[1].split('.');
+  if (!local || local.length > 64 || local.charAt(0) === '.' || local.charAt(local.length - 1) === '.' || local.indexOf('..') >= 0 || !/^[a-z0-9.!#$%&'*+/=?^_{}|~-]+$/.test(local)) return false;
+  return labels.length >= 2 && labels.every(function (label) { return label.length > 0 && label.length <= 63 && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label); });
 }
 
 function gstackRows_(definition) {

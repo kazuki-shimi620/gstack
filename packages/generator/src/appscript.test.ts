@@ -17,7 +17,7 @@ describe('Apps Script backend generator', () => {
     ]);
     expect(JSON.parse(artifacts[0]!.content)).toMatchObject({
       runtimeVersion: 'V8',
-      webapp: { access: 'MYSELF', executeAs: 'USER_DEPLOYING' },
+      webapp: { access: 'MYSELF', executeAs: 'USER_ACCESSING' },
     });
     expect(artifacts[1]!.content).toContain('function doGet(event)');
     expect(artifacts[1]!.content).toContain('__gstack_method');
@@ -59,6 +59,79 @@ describe('Apps Script backend generator', () => {
         {},
       ),
     ).toThrow('INVALID');
+  });
+
+  it('active user emailとSchema Roleの共通部分だけを許可する', () => {
+    const authorized = {
+      ...model('users', 'users'),
+      permissions: {
+        read: ['admin'],
+        create: [],
+        update: [],
+        delete: [],
+      },
+    };
+    const source = generateAppsScriptBackendArtifacts({
+      schemaVersion: 1,
+      name: 'sample',
+      metadata: {},
+      models: [authorized],
+    })[1]!.content;
+    const session = (email: string) => ({
+      getActiveUser: () => ({ getEmail: () => email }),
+    });
+    expect(() =>
+      runInNewContext(
+        `${source}\ngstackAuthorize_(GSTACK_MODELS[0], 'read');`,
+        {
+          Session: session(' Admin@Example.com '),
+          GSTACK_ROLE_BINDINGS: { 'admin@example.com': ['admin'] },
+        },
+      ),
+    ).not.toThrow();
+    expect(() =>
+      runInNewContext(
+        `${source}\ngstackAuthorize_(GSTACK_MODELS[0], 'read');`,
+        {
+          Session: session('bad..dot@example.com'),
+          GSTACK_ROLE_BINDINGS: { 'bad..dot@example.com': ['admin'] },
+        },
+      ),
+    ).toThrow('FORBIDDEN');
+    for (const context of [
+      {
+        Session: session(''),
+        GSTACK_ROLE_BINDINGS: { 'admin@example.com': ['admin'] },
+      },
+      {
+        Session: session('user@example.com'),
+        GSTACK_ROLE_BINDINGS: { 'user@example.com': ['user'] },
+      },
+      {
+        Session: session('bad..dot@example.com'),
+        GSTACK_ROLE_BINDINGS: { 'bad..dot@example.com': ['admin'] },
+      },
+      {
+        Session: session('admin@example.com'),
+        GSTACK_ROLE_BINDINGS: { 'admin@example.com': ['admin'] },
+      },
+      {
+        Session: {
+          getActiveUser: () => {
+            throw new Error('identity-secret');
+          },
+        },
+        GSTACK_ROLE_BINDINGS: { 'admin@example.com': ['admin'] },
+      },
+    ]) {
+      expect(() =>
+        runInNewContext(
+          `${source}\ngstackAuthorize_(GSTACK_MODELS[0], 'create');`,
+          context,
+        ),
+      ).toThrow('FORBIDDEN');
+    }
+    expect(source).not.toContain('getEffectiveUser');
   });
 
   it('generated runtime enforces composite unique indexes without coercion', () => {

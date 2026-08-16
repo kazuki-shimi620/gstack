@@ -34,7 +34,35 @@ describe('Apps Script source bundle', () => {
       { name: 'main', type: 'SERVER_JS' },
     ]);
     expect(files.find(({ name }) => name === 'gstack_config')?.source).toBe(
-      'const GSTACK_SPREADSHEET_ID = "sheet\\"id";\n',
+      'const GSTACK_SPREADSHEET_ID = "sheet\\"id";\nconst GSTACK_ROLE_BINDINGS = {};\n',
+    );
+    expect(JSON.stringify(files)).not.toContain('GOOGLE_CREDENTIALS');
+  });
+
+  it('Role bindingをemailからsort済みRoleを引く非secret設定へ変換する', () => {
+    const files = createGoogleScriptSourceBundle(
+      [
+        {
+          path: 'generated/backend/appsscript/main.gs',
+          content: 'function doGet() {}\n',
+        },
+        {
+          path: 'generated/backend/appsscript/appsscript.json',
+          content: '{"runtimeVersion":"V8"}\n',
+        },
+      ],
+      {
+        ...config,
+        authorization: {
+          roleBindings: {
+            user: ['a@example.com'],
+            admin: ['z@example.com', 'a@example.com'],
+          },
+        },
+      },
+    );
+    expect(files.find(({ name }) => name === 'gstack_config')?.source).toBe(
+      'const GSTACK_SPREADSHEET_ID = "sheet\\"id";\nconst GSTACK_ROLE_BINDINGS = {"a@example.com":["admin","user"],"z@example.com":["admin"]};\n',
     );
     expect(JSON.stringify(files)).not.toContain('GOOGLE_CREDENTIALS');
   });

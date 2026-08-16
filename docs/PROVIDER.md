@@ -1032,7 +1032,15 @@ providers:
       authentication:
         mode: user_oauth
         credentialSecret: GSTACK_GOOGLE_CREDENTIAL
+      authorization:
+        roleBindings:
+          admin:
+            - admin@example.com
+          user:
+            - user@example.com
 ```
+
+`authorization.roleBindings`はD-089のoptionalなGoogle Account email allowlistであり、Schemaのrole名と対応させる。emailはcredentialではないが個人情報になり得るため、必要最小限にし、CLI outputや共有用sampleへ実値を転記しない。未指定binding、空のSchema permission、identity取得不能は全てdenyとなる。Web Appは`MYSELF`のまま維持し、role bindingを公開範囲拡張の代替にしない。
 
 参照先の値は次のkeyだけを持つ1行JSONである。以下は形式説明用の明らかなplaceholderであり、実credentialをrepositoryへ保存してはいけない。
 
