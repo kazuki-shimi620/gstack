@@ -204,7 +204,7 @@ CLIだけでアプリケーションを公開できるようにする。
 - Project Initialization
 - Local Development
 
-Status: BuildはApplication Modelからprivate Apps Script Web App sourceを決定的に生成し、`gstack build --dry-run`／`gstack build`でgenerated writeとGoogle bundle検証を分離する。Deployは無副作用`--dry-run`、target／bundle fingerprint、明示`--approval`、管理project限定content更新、冪等version／deployment公開、Migration最新確認gateまで実装済み。Project Initializationは空Apps Script project限定のpreview／approval付きCLIを実装済み。Field runtime validationは実装済み。Local Developmentはloopback限定in-memory APIを実装済み。permission role mapping、Publish access拡張、UI bundling／hot reloadは未実装。
+Status: BuildはApplication Modelからprivate Apps Script Web App sourceを決定的に生成し、`gstack build --dry-run`／`gstack build`でgenerated writeとGoogle bundle検証を分離する。Deployは無副作用`--dry-run`、target／bundle fingerprint、明示`--approval`、管理project限定content更新、冪等version／deployment公開、Migration最新確認gateまで実装済み。Project Initializationは空Apps Script project限定のpreview／approval付きCLIを実装済み。Field runtime validationとD-089のpermission role mappingは実装済み。Local Developmentはloopback限定in-memory APIを実装済み。Publish accessは安全側の`MYSELF`を維持し、公開範囲拡張、UI bundling／hot reloadは将来対応とする。
 
 ---
 

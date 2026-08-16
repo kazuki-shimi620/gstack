@@ -32,6 +32,7 @@
 - [x] D-089に従い、Google Provider Configのrole binding、Apps Script `USER_ACCESSING` identity、全CRUDのfail-closed permission検証、binding本文をpreview／結果へ出さないDeploy bundleを実装した。`MYSELF`以外の公開範囲は拡張しない。
 - [x] Google Migration History Storage／LockはD-054で確定し、Drive管理JSON adapterとSheets Named Range lock adapterを実装した。明示unlockは診断契約を別途確定してから公開する。
 - [x] Migration Apply CLIのfile選択、Schema一致、approval UXはD-055で確定。安全なfilesystem loader、`--dry-run`、同じ準備結果を使う明示承認付き実Applyを実装した。
+- [ ] D-090に従い、Google ProviderのRollback実行、専用History状態、fingerprint／destructive承認、失敗後の明示resumeを実装する。
 
 ## MCP／AI supportの後続作業
 
@@ -74,7 +75,7 @@
 - [x] fingerprintの再計算と明示approval、管理content全置換、version／deployment公開を`DECISIONS.md` D-067でRuntimeとCLIへ接続した。
 - [x] Deploy前に最新Historyがappliedかつ現在Application Model snapshotと一致することを確認するgateを`DECISIONS.md` D-068で実装した。
 - [x] Apps Script runtimeへField型、required、enum、validation、unique、Primary Key不変の実行時検証を`DECISIONS.md` D-070で追加した。
-- [ ] Schema permission roleとApps Scriptアクセスidentityの対応を確定し、role enforcement後にPublish access拡張を検討する。
+- [x] Schema permission roleとApps Scriptアクセスidentityの対応をD-089で確定し、role enforcementを実装した。Publish access拡張はD-089の対象外であり、`MYSELF`を維持する。
 - [x] generated writeとGoogle Deploy bundle検証を分離するBuild CLI契約を`DECISIONS.md` D-071で実装した。
 - [x] loopback限定in-memory APIによる初期Local Development serverと`gstack dev`を`DECISIONS.md` D-072で実装した。
 - [x] Provider／Generator共通Plugin Manifest、Registry、明示package Loader、Generator namespaceを`DECISIONS.md` D-073で実装した。

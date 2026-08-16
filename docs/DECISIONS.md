@@ -624,3 +624,11 @@ Apps Script manifestは`access: MYSELF`を維持し、`executeAs: USER_ACCESSING
 GeneratorはApplication ModelからModelごとのpermission role allowlistだけを生成し、Google emailやProvider Configを入力にしない。Google Providerのsource bundle adapterがstrictに正規化したbindingを`gstack_config`へ注入し、GeneratorからProviderへの依存を作らない。role bindingはcredential／secretではないが個人情報になり得るため、生成artifact、CLI preview、Deploy result、fingerprint表示へ本文を出さない。bundle checksumには含めてbinding変更を新しいDeployとして扱う。
 
 MVPでは`MYSELF`のままなので実アクセス者はdeployerに限定されるが、permission検証を省略しない。`DOMAIN`／`ANYONE`／`ANYONE_ANONYMOUS`への変更、group／domain role、request headerやbodyによるrole自己申告、temporary user keyによるrole推測を実装しない。公式仕様上active user emailが利用できない状況は存在するため、identity取得不能時はfallbackせずdenyする。参考: [Apps Script Web Apps](https://developers.google.com/apps-script/guides/web)、[Session](https://developers.google.com/apps-script/reference/base/session)、[Web app manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable)
+
+## D-090 Google Provider Migration Rollback Execution
+
+実RollbackはD-058のlatest applied Migrationだけを対象とし、同じFileと最新Historyから毎回Planを再生成する。`gstack migration rollback --file <path> --dry-run`のfingerprintを`--approval`へ完全一致させ、逆Operationにdestructiveが1件でもあれば`--allow-destructive`も必須とする。実行時にFile、History、capability、fingerprintを再検証し、preview後に変化した状態へwriteしない。MCPへRollbackを公開せず、暗黙Rollback、複数Migration一括Rollback、不可逆Migrationの推測復元を行わない。
+
+Historyは`applied -> rolling_back -> rolled_back | rollback_failed`を追加し、Rollback用の完了Operation数、失敗Operation ID、安全なerror codeをforward Applyの進捗と分離して保持する。`rollback_failed`からの再開には同じFile、再生成したfingerprint、`--resume`を要求する。各逆Operation完了後にHistoryを保存し、Provider response喪失時は既存のchecksum／Operation markerによるidempotency照合後にだけ進捗を進める。Rollback完了後も元の`completedAt`と適用snapshotを監査情報として保持し、`rolledBackAt`だけを追加する。
+
+実行はD-054と同じProvider lockを取得し、lock keyはforward Applyと競合するsource Migration keyを使う。Google ProviderはCoreが生成してcapability評価した逆Operationだけを既存のstrict Sheets executorへ渡し、Provider内で逆操作を再推論しない。逆Operationにはsource checksumから分離したRollback checksumを使用してforward markerと衝突させず、source version、source checksum、逆Operation順序、rollback target snapshot checksumに結び付ける。`create_model`／`add_column`の逆操作は追加後の業務dataを削除し得るためdestructive承認と現在構造のstrict drift照合を必須とし、backupや値復元を表明しない。
