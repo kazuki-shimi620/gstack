@@ -632,3 +632,11 @@ MVPでは`MYSELF`のままなので実アクセス者はdeployerに限定され�
 Historyは`applied -> rolling_back -> rolled_back | rollback_failed`を追加し、Rollback用の完了Operation数、失敗Operation ID、安全なerror codeをforward Applyの進捗と分離して保持する。`rollback_failed`からの再開には同じFile、再生成したfingerprint、`--resume`を要求する。各逆Operation完了後にHistoryを保存し、Provider response喪失時は既存のchecksum／Operation markerによるidempotency照合後にだけ進捗を進める。Rollback完了後も元の`completedAt`と適用snapshotを監査情報として保持し、`rolledBackAt`だけを追加する。
 
 実行はD-054と同じProvider lockを取得し、lock keyはforward Applyと競合するsource Migration keyを使う。Google ProviderはCoreが生成してcapability評価した逆Operationだけを既存のstrict Sheets executorへ渡し、Provider内で逆操作を再推論しない。逆Operationにはsource checksumから分離したRollback checksumを使用してforward markerと衝突させず、source version、source checksum、逆Operation順序、rollback target snapshot checksumに結び付ける。`create_model`／`add_column`の逆操作は追加後の業務dataを削除し得るためdestructive承認と現在構造のstrict drift照合を必須とし、backupや値復元を表明しない。
+
+## D-091 Interrupted Migration Lock Recovery
+
+明示unlockは`gstack migration unlock --file <path> --dry-run`で、指定Fileに対応するdeterministic lockだけを対象とする。全Named Rangeの列挙や任意ID削除を公開しない。previewはFile checksum、latest Historyのstatusとforward／rollback進捗、期待lockの存在をread-onlyで照合し、source状態とlock IDのchecksumに結び付くfingerprint、安全な警告を返す。対象はlatest Historyが`applying`または`rolling_back`の中断状態、もしくは後述の回復用failed状態で、対応lockが存在する場合に限定する。lockがない正常状態、別Migration、checksum不一致、latestでないHistoryを拒否する。
+
+実解除は`--approval <fingerprint>`を必須とし、利用者が該当Migration processの停止を外部で確認した前提で実行する。gstackはprocess livenessを推測せず、時間経過だけのstale判定、自動steal、Apply／Rollback中の暗黙解除、MCP unlockを提供しない。実行時にFile、History、lockを再readしてfingerprintを再検証する。
+
+Drive History更新とSheets Named Range削除はatomicにできないため、安全側の順序として最初にHistoryを回復用`failed`または`rollback_failed`へ遷移し、safe error code `MIGRATION_INTERRUPTED`と次のOperation IDを記録してからlockを削除する。全Operation進捗済みで最終History確定だけが中断した場合は、Fileと再構築したtarget snapshotを検証して`applied`または`rolled_back`へ確定してからlockを削除する。History更新後にlock削除が失敗した場合、同じ回復状態と残存lockから新しいpreview／approvalで再試行できる。lock削除後に自動resumeせず、利用者は改めてApply／Rollbackのdry-runと`--resume`承認を行う。
