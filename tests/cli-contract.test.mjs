@@ -52,7 +52,7 @@ test('helpとversionを表示する', () => {
   assert.equal(version.stderr, '');
 });
 
-test('initは既存pathを上書きせず有効な最小Projectを作成する', (t) => {
+test('initからMigration、Generation、Deploy dry-runまでのProject workflowを実行する', (t) => {
   const parent = mkdtempSync(path.join(tmpdir(), 'gstack-init-contract-'));
   t.after(() => rmSync(parent, { recursive: true, force: true }));
   const initialized = run(['init', 'sample-app', '--json'], parent);
@@ -100,6 +100,41 @@ test('initは既存pathを上書きせず有効な最小Projectを作成する',
     readFileSync(path.join(root, migration.path), 'utf8'),
     /capability: not_evaluated/u,
   );
+  const generationPreview = run(['generate', '--dry-run', '--json'], root);
+  assert.equal(generationPreview.status, 0);
+  assert.equal(JSON.parse(generationPreview.stdout).data.dryRun, true);
+  const generation = run(['generate', '--json'], root);
+  assert.equal(generation.status, 0);
+  assert.equal(
+    existsSync(path.join(root, 'generated/.gstack-manifest.json')),
+    true,
+  );
+
+  const configPath = path.join(root, 'gstack.yaml');
+  writeFileSync(
+    configPath,
+    `${readFileSync(configPath, 'utf8')}providers:
+  google:
+    enabled: true
+    configuration:
+      spreadsheetId: spreadsheet-id
+      appsScriptProjectId: script-id
+      driveFolderId: folder-id
+      authentication:
+        mode: user_oauth
+        credentialSecret: GOOGLE_CREDENTIALS
+`,
+  );
+  const buildPreview = run(['build', '--dry-run', '--json'], root);
+  assert.equal(buildPreview.status, 0);
+  assert.equal(JSON.parse(buildPreview.stdout).data.build.dryRun, true);
+  const deployPreview = run(['deploy', '--dry-run', '--json'], root);
+  assert.equal(deployPreview.status, 0);
+  assert.equal(
+    JSON.parse(deployPreview.stdout).data.deploy.scriptId,
+    'script-id',
+  );
+  assert.equal(deployPreview.stdout.includes('GOOGLE_CREDENTIALS'), false);
 
   const duplicate = run(['init', 'sample-app', '--json'], parent);
   assert.equal(duplicate.status, 3);
