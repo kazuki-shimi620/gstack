@@ -209,6 +209,18 @@ gstack schema format
 
 Migrationを管理する。
 
+### create
+
+現在のApplication Modelと正式baselineの差分を、レビュー可能なMigration Fileとして固定する。
+
+```bash
+gstack migration create initial_schema
+```
+
+Migration名はsnake_caseとする。Provider未設定ではlocal Migrationが存在しない初回だけ`null` baselineを許可する。2件目以降はlocal FileとProvider Historyの完全な対応を必須とし、未適用Fileを重ねない。File内のcapabilityは`not_evaluated`とし、Apply dry-run時にProvider Manifestで再評価する。UTC version採番、checksum、symlink拒否、排他的atomic writeの規範は`DECISIONS.md` D-022／D-094とする。
+
+---
+
 ### plan
 
 適用予定の変更を表示する。

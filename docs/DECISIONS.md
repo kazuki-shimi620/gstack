@@ -656,3 +656,11 @@ filesystem writeはtargetと同じparent内のgstack所有temporary directoryへ
 初期Schemaは`name`、`model.displayName`、`database.primaryKey: id`、`database.columns.id.type: uuid`だけを持つD-003準拠の最小Modelとする。displayNameはModel名のsnake_case segmentをPascalCaseへ決定的に変換する。API、UI、Permission、Provider設定、Relation、business Fieldを推測生成しない。
 
 writeはtargetと同じSchema directory内のgstack所有temporary fileへ`wx`で書き、hard linkの排他的作成で公開してtemporary fileを削除する。これにより確認後にtargetが作られたraceでも上書きしない。失敗時はtemporary fileだけを削除し、既存targetや他Schemaへ変更を加えない。write前後に通常のCore Schema validationを通し、既存Projectと生成後Projectの構文・意味検証が成功した場合だけ結果を返す。結果はProject Root相対pathとModel名だけを含み、Schema本文を通常出力へ複製しない。MCPにはSchema作成を公開しない。
+
+## D-094 Migration File Creation
+
+`gstack migration create <name>`は現在のApplication Modelと正式baselineのDiffから、D-022形式のMigration Fileを`migrations/`直下へ1件作成する。nameはsnake_caseとする。Providerが設定済みならHistoryのlatest applied snapshotをbaselineとし、Provider未設定時はlocal Migration Fileが1件もない初回に限り`null` baselineを許可する。Provider未設定で既存Migrationがある場合、Historyに対応しないlocal Fileがある場合、Historyに対応するlocal Fileが欠落／checksum不一致の場合、またはlocal Fileの状態が`applied | rolled_back`以外の場合は、baselineを推測せず拒否する。Operationが0件のFileは作成しない。
+
+Fileへ保存するOperationはProvider capability評価前の`not_evaluated`へ正規化し、Provider名、`native | emulated | unsupported`評価、credential、live stateを含めない。作成後のApply dry-runがその時点のProvider Manifestで再評価する。renameはD-019の明示intentを別途CLI入力として受けるまで暗黙推測せず、通常のdrop／addをrenameへ書き換えない。
+
+versionはUTC日付`YYYYMMDD`と6桁sequenceから生成する。current UTC日付と既存local Fileの最大日付の大きい方を使い、同日最大sequence＋1、Fileがなければ`000001`とする。clock rollbackで既存versionより小さくしない。filenameは`<version>_<name>.yaml`とし、既存file、directory、symlinkを上書きしない。migrations directoryとtargetのsymlinkを拒否し、同directoryのtemporary fileへ完全なYAMLを書いた後、hard linkの排他的作成で公開する。成功結果はversion、name、checksum、相対path、Operation件数だけを返し、File本文を通常出力へ複製しない。MCPにはFile作成を公開しない。

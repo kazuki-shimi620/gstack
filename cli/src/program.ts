@@ -10,6 +10,7 @@ import {
   applyStandardPluginInstall,
   applyStandardPluginRemove,
   buildStandardGoogle,
+  createProjectMigration,
   listStandardPlugins,
   loadStandardProject,
   prepareStandardPluginInstall,
@@ -69,6 +70,10 @@ export interface ProgramServices {
     project: GstackProject,
     model: string,
   ) => ReturnType<typeof initializeSchemaModel>;
+  readonly createProjectMigration?: (
+    project: GstackProject,
+    name: string,
+  ) => ReturnType<typeof createProjectMigration>;
   readonly loadProject: () => Promise<GstackProject>;
   readonly prepareMigrationApplyFile: (
     project: GstackProject,
@@ -151,6 +156,8 @@ const defaultServices: ProgramServices = {
   initializeLocalProject: (name) => initializeLocalProject({ name }),
   initializeSchemaModel: (project, model) =>
     initializeSchemaModel({ project, model }),
+  createProjectMigration: (project, name) =>
+    createProjectMigration({ project, name }),
   loadProject: loadStandardProject,
   prepareMigrationApplyFile: (project, filePath) =>
     prepareStandardGoogleMigrationApplyFile({ project, filePath }),
@@ -597,6 +604,38 @@ export function createProgram(
         );
       },
     );
+
+  migration
+    .command('create <name>')
+    .description('Create a reviewed Provider-independent Migration File')
+    .option('--json', 'output structured JSON')
+    .action(async (name: string, options: { json?: boolean }) => {
+      await withProjectOutput(
+        io,
+        options.json,
+        async (project) => {
+          const result = await (
+            services.createProjectMigration ??
+            ((selected, migrationName) =>
+              createProjectMigration({
+                project: selected,
+                name: migrationName,
+              }))
+          )(project, name);
+          return {
+            data: { migrationCreation: result },
+            human: [
+              `Migration File created: ${result.name}`,
+              `Version: ${result.version}`,
+              `Checksum: ${result.checksum}`,
+              `Operations: ${result.operationCount}`,
+              `Created: ${result.path}`,
+            ].join('\n'),
+          };
+        },
+        services.loadProject,
+      );
+    });
 
   migration
     .command('plan')

@@ -86,6 +86,20 @@ test('initは既存pathを上書きせず有効な最小Projectを作成する',
   const validation = run(['schema', 'validate', '--json'], root);
   assert.equal(validation.status, 0);
   assert.equal(JSON.parse(validation.stdout).ok, true);
+  const migrationCreate = run(
+    ['migration', 'create', 'initial_schema', '--json'],
+    root,
+  );
+  assert.equal(migrationCreate.status, 0);
+  assert.equal(migrationCreate.stderr, '');
+  const migration = JSON.parse(migrationCreate.stdout).data.migrationCreation;
+  assert.match(migration.version, /^\d{8}_000001$/u);
+  assert.equal(migration.operationCount, 1);
+  assert.equal(existsSync(path.join(root, migration.path)), true);
+  assert.match(
+    readFileSync(path.join(root, migration.path), 'utf8'),
+    /capability: not_evaluated/u,
+  );
 
   const duplicate = run(['init', 'sample-app', '--json'], parent);
   assert.equal(duplicate.status, 3);

@@ -49,6 +49,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Google Provider、Migration Apply、Apps Script Build／Deploy、Local Development API
 - 既存pathを上書きしないatomicな`gstack init <name>`
 - 最小Modelを安全に作成する`gstack schema init <model>`
+- Provider非依存Fileを固定する`gstack migration create <name>`
 - Provider／Generator Plugin、明示承認付きpackage管理、publish前検証
 - Application Model／Migration／Provider Contextを含むread-only MCPとhost別setup guide
 

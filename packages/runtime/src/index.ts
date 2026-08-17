@@ -73,6 +73,8 @@ export { initializeLocalProject } from './project-init.js';
 export type { ProjectInitializationResult } from './project-init.js';
 export { initializeSchemaModel } from './schema-init.js';
 export type { SchemaInitializationResult } from './schema-init.js';
+export { createProjectMigration } from './migration-create.js';
+export type { MigrationCreationResult } from './migration-create.js';
 export type { StandardDevServer } from './dev.js';
 export {
   applyStandardPluginInstall,
