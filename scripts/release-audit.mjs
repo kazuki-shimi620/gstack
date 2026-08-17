@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -45,6 +45,8 @@ const versions = new Set(
   [...manifests.values()].map(({ manifest }) => manifest.version),
 );
 const diagnostics = [];
+const homepage = 'https://github.com/kazuki-shimi620/gstack#readme';
+const bugs = 'https://github.com/kazuki-shimi620/gstack/issues';
 
 if (versions.size !== 1) {
   diagnostics.push('全Workspace Packageのversionが同期していません。');
@@ -78,6 +80,9 @@ for (const [name, { directory, manifest }] of manifests) {
   if (typeof manifest.repository !== 'object' || manifest.repository === null) {
     diagnostics.push(`${name}: repository metadataがありません。`);
   }
+  if (manifest.homepage !== homepage || manifest.bugs?.url !== bugs) {
+    diagnostics.push(`${name}: homepageまたはbugs metadataが一致しません。`);
+  }
   if (
     !Array.isArray(manifest.files) ||
     manifest.files.length !== 1 ||
@@ -87,6 +92,16 @@ for (const [name, { directory, manifest }] of manifests) {
   }
 
   const requiredEntries = packageEntries(manifest);
+  const readme = path.join(root, directory, 'README.md');
+  if (
+    !existsSync(readme) ||
+    !lstatSync(readme).isFile() ||
+    !readFileSync(readme, 'utf8').startsWith(`# ${name}\n`)
+  ) {
+    diagnostics.push(
+      `${name}: Package名を見出しに持つregular README.mdがありません。`,
+    );
+  }
   for (const file of requiredEntries) {
     if (!existsSync(path.join(root, directory, file))) {
       diagnostics.push(
@@ -130,7 +145,7 @@ for (const [name, { directory, manifest }] of manifests) {
     );
     const [pack] = JSON.parse(raw);
     const files = new Set(pack.files.map(({ path: file }) => file));
-    for (const file of ['package.json', ...requiredEntries]) {
+    for (const file of ['package.json', 'README.md', ...requiredEntries]) {
       if (!files.has(file))
         diagnostics.push(`${name}: npm packに${file}が含まれません。`);
     }

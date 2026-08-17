@@ -102,3 +102,4 @@
 - [x] D-098で全14 Workspace Packageをtarball化し、隔離Consumer Projectへのinstall、全package entry import、CLI binを検証するRelease smoke testをCIへ追加した。
 - [x] D-099でroot versionをSingle Sourceとし、全Package／内部依存／lockfile／Core／CLI／MCP／公式Providerの同期checkとversion更新commandを追加した。
 - [x] D-100で全配布PackageをESM／Node.js 24へ固定し、各tarball metadataをRelease Gateで検証する。
+- [x] D-101で全配布Packageへnpm用README、homepage、bugs metadataを追加し、公開候補と内部依存のsupport境界を明記した。

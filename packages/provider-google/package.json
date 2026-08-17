@@ -9,6 +9,10 @@
     "url": "git+https://github.com/kazuki-shimi620/gstack.git",
     "directory": "packages/provider-google"
   },
+  "homepage": "https://github.com/kazuki-shimi620/gstack#readme",
+  "bugs": {
+    "url": "https://github.com/kazuki-shimi620/gstack/issues"
+  },
   "publishConfig": {
     "access": "public"
   },

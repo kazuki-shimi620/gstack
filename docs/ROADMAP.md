@@ -59,6 +59,8 @@ D-099では、root package versionをSingle Source of Truthとし、全Workspace
 
 D-100では、全配布PackageへESM専用／Node.js 24以上のRuntime要件を個別に設定し、単独tarballでもConsumerへ要件が伝わることをRelease Gateで検証する。
 
+D-101では、全14 PackageのtarballへREADMEを収録し、repository／homepage／bugs metadataを統一した。公開候補は用途と安全境界、内部依存Packageは直接利用がsupport外であることをnpm上でも明示する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

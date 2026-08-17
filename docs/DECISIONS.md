@@ -151,6 +151,12 @@ root `package.json`のversionをRelease versionのSingle Source of Truthとす�
 
 全Workspace配布PackageはESM専用とし、`type: module`と`engines.node: ">=24"`を個別のpackage metadataへ持つ。root workspaceのengine指定だけに依存せず、単独tarballをinstallするConsumerへ同じ要件を伝える。MVPではCommonJS dual package、Node.js 22以前、browser単独runtimeをsupport対象としない。Release Gateは全配布Packageのmodule形式とNode.js engine完全一致を検証し、D-098のGitHub Actions／smoke testもNode.js 24で実行する。
 
+## D-101 Package Documentation
+
+全Workspace配布Packageはnpm上でsourceとIssue窓口を追跡できるよう、同じrepository、homepage、bugs URLをmetadataへ持ち、Package名をtop-level見出しとする`README.md`をtarballへ収録する。D-014の公開候補READMEは用途、Runtime要件、entry pointまたは責務、安全上の境界、開発中で未公開であることを説明する。D-095の内部配布Package READMEは依存closure用であり、直接利用をsupportしないことを明示する。
+
+Package READMEへcredential、token、個別Project ID、未確定のinstall command、公開済みという表現を含めない。詳細仕様を複製せずrepository文書へ案内する。Release Gateはmetadata URL、regular READMEの見出し、実際の`npm pack`収録を全14 Packageで検証する。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

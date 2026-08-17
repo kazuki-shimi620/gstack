@@ -57,6 +57,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - 全Package tarballの隔離installとCLI起動を行うRelease smoke test
 - root versionを基準にPackage／Runtime／Providerを同期するRelease version Gate
 - 全tarballで明示するESM／Node.js 24 Runtime契約
+- npm上で用途とsupport境界を示すPackage別README／Repository metadata
 
 未完了項目と安全上保留している機能は[`docs/TODO.md`](docs/TODO.md)および[`docs/ROADMAP.md`](docs/ROADMAP.md)を参照してください。
 
