@@ -117,6 +117,12 @@ CLIはstdout／stderrとexit codeを管理し、MCPはprotocol contentと`isErro
 
 公開package候補は`@gstack/core`、`@gstack/cli`、`@gstack/mcp`、`@gstack/provider`、具体的なProvider packageとする。Parser、Analyzer、Schema、Config、Application packageは内部実装packageのままとする。MVPの全packageは1つの同期versionを使用する。明示的な例外がない限り、public stabilityは1.0から開始する。
 
+## D-095 npm配布の依存closure
+
+D-014の「内部実装package」は、利用者向けの独立したpublic APIではないという意味とする。公開候補が実行時依存するWorkspace Packageは、依存解決可能にするため同じnpm registryへ同期exact versionで配布する。内部Packageの直接利用はsupport対象にせず、READMEや利用者向けexportから案内しない。
+
+MVPではWorkspace間importを外部化した現在のESM出力を維持し、公開候補ごとのbundleや依存codeの重複収録は行わない。Release Gateは全Workspace Packageの同期version、公開状態、metadata、`dist`収録物、依存closureを検証し、そのうえでD-014の公開候補についてCLI／MCP binを含む利用者向けentryを追加検証する。Licenseが別途決まるまでpackage metadataは`UNLICENSED`とし、公開作業を行ってはならない。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

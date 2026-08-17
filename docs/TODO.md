@@ -96,5 +96,6 @@
 - [x] D-094に従い、`gstack migration create <name>`でProvider非依存Migration Fileを安全に作成した。
 - [x] sample projectでinitからvalidate、migration create、generate、build／deploy dry-runまでのend-to-end contractを検証した。
 - [x] D-014の公開候補packageについてmetadata、収録file、内部依存version、CLI／MCP binを検証するrelease gateを追加した。`npm run release:audit`は未準備理由をJSONで列挙し、`release:check`は同じ監査をRelease Gateとして失敗させる。
-- [ ] 公開候補が内部実装packageへ持つ実行時依存をどう配布するか確定する。現状の`@gstack/core`、CLI、MCPは非公開Workspace Packageへ依存するためRelease Gateを通過しない。bundleするか公開範囲を変更するかをDecisionとして記録する。
+- [x] D-095で公開候補の実行時依存closureも同期versionで配布し、公開候補だけを利用者向けsupport対象とする方針を確定した。MVPではbundleを導入しない。
+- [ ] 全Workspace PackageへD-095の配布metadataと`dist`収録範囲を設定し、Release Gateを通す。Licenseは未決定のため`UNLICENSED`を維持し、実際の公開は行わない。
 - [ ] 1.0公開API／CLI互換性baselineと変更検出方針を確定する。
