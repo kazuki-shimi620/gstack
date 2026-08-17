@@ -125,7 +125,7 @@ MVPではWorkspace間importを外部化した現在のESM出力を維持し、�
 
 ## D-096 1.0公開API／CLI互換性baseline
 
-D-014の利用者向け公開候補について、package `exports`、`types`、`bin`とBuild後のroot declaration fileを公開API surfaceとする。CLIはroot commandから再帰的に列挙した全command、argument、option、descriptionを含むCommander helpを公開surfaceとする。これらをcanonical SHA-256として`compatibility/api-cli-baseline.json`へ固定し、通常CIで現在Buildとの完全一致を検証する。内部実装PackageのdeclarationはD-095により直接利用をsupportしないためbaseline対象に含めない。
+D-014の利用者向け公開候補について、package `exports`、`types`、`bin`とBuild後のroot declaration fileを公開API surfaceとする。CLIはroot commandから全commandを再帰列挙し、name／alias／description／summary／version、argument、optionの公開metadataをcanonicalなJSON互換値へ射影する。render済みhelp文字列はterminal幅や実行Platformに依存するためbaselineへ使用しない。Package declarationは改行を正規化したSHA-256、CLIは構造化surfaceとして`compatibility/api-cli-baseline.json`へ固定し、通常CIで現在Buildとの完全一致を検証する。内部実装PackageのdeclarationはD-095により直接利用をsupportしないためbaseline対象に含めない。
 
 Baseline差分は自動承認しない。変更者はAPI／CLIの互換性、Schema／machine-readable resultへの影響、SemVerをレビューし、意図した変更だけを`npm run compatibility:update`で更新して同じ変更に含める。1.0以降、公開symbolの削除・rename、互換性のない型変更、command／argument／optionの削除・rename、既存意味の非互換変更はmajor versionを必須とする。追加的変更はminor、互換bug fixはpatchとする。Hash Gateは互換性を分類せず、レビュー漏れを防ぐ変更検出として扱う。
 

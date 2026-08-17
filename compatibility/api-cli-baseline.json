@@ -1,5 +1,5 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 2,
   "packages": {
     "@gstack/core": {
       "exports": "./dist/index.js",
@@ -38,156 +38,987 @@
   },
   "cli": {
     "path": "gstack",
-    "helpSha256": "e6b5e7b0db90cdd84f2dbdd441695fa328ea16a62f172306aec1f51469bf9d88",
+    "aliases": [],
+    "description": "Schema-first application framework",
+    "summary": "",
+    "version": "0.0.0",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "-V, --version",
+        "description": "output the version number",
+        "required": false,
+        "optional": false,
+        "variadic": false,
+        "mandatory": false,
+        "negate": false,
+        "hidden": false,
+        "choices": null,
+        "defaultValue": null
+      }
+    ],
     "commands": [
       {
         "path": "gstack schema",
-        "helpSha256": "69367d610b298630fff87b53a2f219ea24ef29201b1854bb1acf2af68d763895",
+        "aliases": [],
+        "description": "Manage Schema files",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [],
         "commands": [
           {
             "path": "gstack schema init",
-            "helpSha256": "52f2ed30e39c33883f7e643dfc40367df0115b2f6a618d500cd728a1970c4914",
+            "aliases": [],
+            "description": "Create a minimal Schema Model without overwriting files",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "model",
+                "description": "",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack schema validate",
-            "helpSha256": "37b10595aee8a8a213faca5ae16552992c77914435b559c324c9a13683c984df",
+            "aliases": [],
+            "description": "Validate project Schema files",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           }
         ]
       },
       {
         "path": "gstack provider",
-        "helpSha256": "4929422864041568048a8a30cdb7a28f06fdfb82af94b6531c5f2943b156dde6",
+        "aliases": [],
+        "description": "Inspect configured Providers",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [],
         "commands": [
           {
             "path": "gstack provider list",
-            "helpSha256": "2dc76941dc60abd437aacb3a4a28fc955fecabc405234dbd6daf0499128b9c03",
+            "aliases": [],
+            "description": "List enabled Providers",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack provider info",
-            "helpSha256": "e8106c1f5cefe4f0ee849af81a420fc428ed75f76641517630165251a39c9e4a",
+            "aliases": [],
+            "description": "Show one Provider manifest and capabilities",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "name",
+                "description": "",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack provider validate",
-            "helpSha256": "a79ad0f3f084f0519132c6d32f7e2cf47e5915f4afbe9dff234c3bb9748d413f",
+            "aliases": [],
+            "description": "Validate one Provider configuration without changing it",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "name",
+                "description": "",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack provider health",
-            "helpSha256": "6062b4d840d3fd5493079b64c1d0666570209205a805a9337c9842cfdc111772",
+            "aliases": [],
+            "description": "Read one Provider health status without changing it",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "name",
+                "description": "",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack provider initialize",
-            "helpSha256": "46ebf0d44343d52f6b967b01c7e598a68a1c0bff01bfe26fc0882f586a919b8a",
+            "aliases": [],
+            "description": "Initialize an empty Provider project for gstack management",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "name",
+                "description": "",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--dry-run",
+                "description": "inspect initialization without changing Provider state",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--approval <fingerprint>",
+                "description": "approve the exact initialization state",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           }
         ]
       },
       {
         "path": "gstack plugin",
-        "helpSha256": "d73bc1942100cc9c8d239259d041acf775ec7852d708c2a9f8dbdf503a480fdb",
+        "aliases": [],
+        "description": "Inspect allowlisted Plugins",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [],
         "commands": [
           {
             "path": "gstack plugin package",
-            "helpSha256": "9c54e118eaaafa567448ded0e26caaeb77d0e30d1f6d4cd5f55fd5087eaaece3",
+            "aliases": [],
+            "description": "Validate a Plugin package before publishing",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [],
             "commands": [
               {
                 "path": "gstack plugin package validate",
-                "helpSha256": "94d6158be8a871c713e73f7a6fbf46aa760e352a2950e8d1d3f4f15ecfc7751a",
+                "aliases": [],
+                "description": "Validate local package metadata and npm pack contents",
+                "summary": "",
+                "version": null,
+                "arguments": [],
+                "options": [
+                  {
+                    "flags": "--directory <path>",
+                    "description": "Plugin package directory",
+                    "required": true,
+                    "optional": false,
+                    "variadic": false,
+                    "mandatory": false,
+                    "negate": false,
+                    "hidden": false,
+                    "choices": null,
+                    "defaultValue": "<cwd>"
+                  },
+                  {
+                    "flags": "--json",
+                    "description": "output structured JSON",
+                    "required": false,
+                    "optional": false,
+                    "variadic": false,
+                    "mandatory": false,
+                    "negate": false,
+                    "hidden": false,
+                    "choices": null,
+                    "defaultValue": null
+                  }
+                ],
                 "commands": []
               }
             ]
           },
           {
             "path": "gstack plugin list",
-            "helpSha256": "c2f6021244505b23a0af652fbbda55057d9fd93f03aa6a305a014175fed80e81",
+            "aliases": [],
+            "description": "List validated allowlisted Plugins",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack plugin install",
-            "helpSha256": "cdce3be6e4ac8ad35f2b5f26cea62afde472c0523a2e8f8de1abe1869236527c",
+            "aliases": [],
+            "description": "Preview installation of an exact Plugin package version",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "package-spec",
+                "description": "npm package with an exact SemVer version",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--dry-run",
+                "description": "create a Plan without changing files or packages",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--approval <fingerprint>",
+                "description": "approve the exact current Plan",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack plugin remove",
-            "helpSha256": "c7640a2d6f132fa8a7826e11b9d232e27335f20d79d4d65a3e2533553822bd65",
+            "aliases": [],
+            "description": "Preview removal of an unused Plugin package",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "package-name",
+                "description": "allowlisted npm package name",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--dry-run",
+                "description": "create a Plan without changing files or packages",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--approval <fingerprint>",
+                "description": "approve the exact current Plan",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           }
         ]
       },
       {
         "path": "gstack migration",
-        "helpSha256": "2d1ef22cf83df63edb334e904547a7f66537fbaeb4fd9c3a774c6404367a4976",
+        "aliases": [],
+        "description": "Inspect Migration state and plans",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [],
         "commands": [
           {
             "path": "gstack migration status",
-            "helpSha256": "19350505db2f4911aa6f46d9ce0960e3153daba7ffb018a415d44baed84a418b",
+            "aliases": [],
+            "description": "Show read-only Migration status",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack migration apply",
-            "helpSha256": "125082ff1ec82583bdd148fa2821e9fba402f230b4cf79f2e917e55906e32cf6",
+            "aliases": [],
+            "description": "Validate one Migration File before explicit Apply",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--file <path>",
+                "description": "Migration YAML inside migrations/",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": true,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--dry-run",
+                "description": "validate and preview without changing Provider state",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--approval <fingerprint>",
+                "description": "approve the exact evaluated Plan",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--allow-destructive",
+                "description": "allow an approved destructive Plan",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--resume",
+                "description": "resume an explicitly approved failed Migration",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack migration history",
-            "helpSha256": "415bc20be6fe9c14ba935db41745ae178c4c9489e3b18fabb52776a3a031dc59",
+            "aliases": [],
+            "description": "List Migration History without changing it",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack migration rollback",
-            "helpSha256": "8fb8101ee8fbc3eba50f65001b95a114bd52e97cbfa95fb6864d9b6a5f9f97d9",
+            "aliases": [],
+            "description": "Rollback the latest applied Migration with explicit approval",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--file <path>",
+                "description": "applied Migration YAML inside migrations/",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": true,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--dry-run",
+                "description": "validate and preview without changing Provider state",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--approval <fingerprint>",
+                "description": "approve the exact rollback Plan",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--allow-destructive",
+                "description": "allow an approved destructive rollback",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--resume",
+                "description": "resume an explicitly approved failed rollback",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack migration unlock",
-            "helpSha256": "238c8e6071a61fd8be5873d47f5906ae7b88ecdceb154013ca23fdc95acd3542",
+            "aliases": [],
+            "description": "Recover an interrupted Migration and remove its lock",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--file <path>",
+                "description": "interrupted Migration YAML inside migrations/",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": true,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--dry-run",
+                "description": "inspect recovery without changing History or Provider state",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--approval <fingerprint>",
+                "description": "approve the exact recovery state",
+                "required": true,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              },
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack migration create",
-            "helpSha256": "f60b1f0ffc802287256440ada5a9d240dca5f42f6325525502762e8773cf1ca2",
+            "aliases": [],
+            "description": "Create a reviewed Provider-independent Migration File",
+            "summary": "",
+            "version": null,
+            "arguments": [
+              {
+                "name": "name",
+                "description": "",
+                "required": true,
+                "variadic": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           },
           {
             "path": "gstack migration plan",
-            "helpSha256": "59842a488a4fa1d4d6d26314977e74fefeb4ce6cdea0aac7a703f2196ec9de00",
+            "aliases": [],
+            "description": "Preview a Provider-independent Migration Plan",
+            "summary": "",
+            "version": null,
+            "arguments": [],
+            "options": [
+              {
+                "flags": "--json",
+                "description": "output structured JSON",
+                "required": false,
+                "optional": false,
+                "variadic": false,
+                "mandatory": false,
+                "negate": false,
+                "hidden": false,
+                "choices": null,
+                "defaultValue": null
+              }
+            ],
             "commands": []
           }
         ]
       },
       {
         "path": "gstack version",
-        "helpSha256": "b03e50284c7df600ad942c685d02bae4fe87adedc5168cc91d81716120d64a20",
+        "aliases": [],
+        "description": "Show the gstack CLI version",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [],
         "commands": []
       },
       {
         "path": "gstack init",
-        "helpSha256": "19704c0e438c9751c0855d0fc68cc3c7c779863c138e8123419a42cf3b61f96f",
+        "aliases": [],
+        "description": "Create a new local gstack project",
+        "summary": "",
+        "version": null,
+        "arguments": [
+          {
+            "name": "name",
+            "description": "",
+            "required": true,
+            "variadic": false,
+            "choices": null,
+            "defaultValue": null
+          }
+        ],
+        "options": [
+          {
+            "flags": "--json",
+            "description": "output structured JSON",
+            "required": false,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          }
+        ],
         "commands": []
       },
       {
         "path": "gstack generate",
-        "helpSha256": "2463fc79398ef7b15098eeb08c643454d7136a1be1f310a484b3daada746731f",
+        "aliases": [],
+        "description": "Generate configured Artifacts from the Application Model",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [
+          {
+            "flags": "--dry-run",
+            "description": "preview writes and deletes without changing files",
+            "required": false,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          },
+          {
+            "flags": "--json",
+            "description": "output structured JSON",
+            "required": false,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          }
+        ],
         "commands": []
       },
       {
         "path": "gstack build",
-        "helpSha256": "6f6e419db478a460d86913b273d9a1ecb1c1bc121a44d24e99a50792aa7ed19b",
+        "aliases": [],
+        "description": "Build generated Artifacts and validate the Deploy bundle",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [
+          {
+            "flags": "--dry-run",
+            "description": "preview Build without changing generated files",
+            "required": false,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          },
+          {
+            "flags": "--json",
+            "description": "output structured JSON",
+            "required": false,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          }
+        ],
         "commands": []
       },
       {
         "path": "gstack deploy",
-        "helpSha256": "6f7ec772b7896b289d658c24ab2669b072ee7851bc6753ca55ee9f855f6dc6d6",
+        "aliases": [],
+        "description": "Build and deploy the configured application",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [
+          {
+            "flags": "--dry-run",
+            "description": "build and preview without changing Provider state",
+            "required": false,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          },
+          {
+            "flags": "--approval <fingerprint>",
+            "description": "approve the exact Deploy build",
+            "required": true,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          },
+          {
+            "flags": "--json",
+            "description": "output structured JSON",
+            "required": false,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": null
+          }
+        ],
         "commands": []
       },
       {
         "path": "gstack dev",
-        "helpSha256": "b6e854adcbb43594d3b1d9271b4a7af2bacd689b1612c65633fb13f9403a246f",
+        "aliases": [],
+        "description": "Start the loopback-only in-memory development API",
+        "summary": "",
+        "version": null,
+        "arguments": [],
+        "options": [
+          {
+            "flags": "--port <port>",
+            "description": "loopback port",
+            "required": true,
+            "optional": false,
+            "variadic": false,
+            "mandatory": false,
+            "negate": false,
+            "hidden": false,
+            "choices": null,
+            "defaultValue": "3000"
+          }
+        ],
         "commands": []
       }
     ]

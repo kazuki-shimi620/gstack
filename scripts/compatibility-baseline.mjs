@@ -18,7 +18,7 @@ const packages = new Map([
 ]);
 
 const current = {
-  formatVersion: 1,
+  formatVersion: 2,
   packages: Object.fromEntries(
     [...packages].map(([name, directory]) => [name, packageSurface(directory)]),
   ),
@@ -35,13 +35,14 @@ if (process.argv.includes('--write')) {
 } else {
   let expected;
   try {
-    expected = readFileSync(baselinePath, 'utf8');
+    expected = JSON.parse(readFileSync(baselinePath, 'utf8'));
   } catch {
     fail('互換性baselineを読み込めません。');
   }
-  if (expected !== serialized) {
+  const difference = firstDifference(expected, current);
+  if (difference) {
     fail(
-      '公開APIまたはCLI surfaceがbaselineと一致しません。互換性をレビューしてbaselineを明示更新してください。',
+      `公開APIまたはCLI surfaceがbaselineと一致しません（${difference}）。互換性をレビューしてbaselineを明示更新してください。`,
     );
   }
   process.stdout.write('公開API／CLI互換性baselineは一致しています。\n');
@@ -69,9 +70,75 @@ function commandSurface(command, parents = []) {
   const pathParts = [...parents, command.name()];
   return {
     path: pathParts.join(' '),
-    helpSha256: sha256(command.helpInformation()),
+    aliases: command.aliases(),
+    description: command.description(),
+    summary: command.summary(),
+    version: command.version() ?? null,
+    arguments: command.registeredArguments.map((argument) => ({
+      name: argument.name(),
+      description: argument.description,
+      required: argument.required,
+      variadic: argument.variadic,
+      choices: argument.argChoices ?? null,
+      defaultValue: jsonValue(argument.defaultValue),
+    })),
+    options: command.options.map((option) => ({
+      flags: option.flags,
+      description: option.description,
+      required: option.required,
+      optional: option.optional,
+      variadic: option.variadic,
+      mandatory: option.mandatory,
+      negate: option.negate,
+      hidden: option.hidden,
+      choices: option.argChoices ?? null,
+      defaultValue: jsonValue(option.defaultValue),
+    })),
     commands: command.commands.map((child) => commandSurface(child, pathParts)),
   };
+}
+
+function jsonValue(value) {
+  if (value === undefined) return null;
+  if (value === process.cwd()) return '<cwd>';
+  JSON.stringify(value);
+  return value;
+}
+
+function firstDifference(expected, actual, location = '$') {
+  if (Object.is(expected, actual)) return null;
+  if (Array.isArray(expected) && Array.isArray(actual)) {
+    if (expected.length !== actual.length) return `${location}.length`;
+    for (let index = 0; index < expected.length; index += 1) {
+      const difference = firstDifference(
+        expected[index],
+        actual[index],
+        `${location}[${index}]`,
+      );
+      if (difference) return difference;
+    }
+    return null;
+  }
+  if (object(expected) && object(actual)) {
+    const expectedKeys = Object.keys(expected);
+    const actualKeys = Object.keys(actual);
+    if (expectedKeys.join('\0') !== actualKeys.join('\0'))
+      return `${location}.keys`;
+    for (const key of expectedKeys) {
+      const difference = firstDifference(
+        expected[key],
+        actual[key],
+        `${location}.${key}`,
+      );
+      if (difference) return difference;
+    }
+    return null;
+  }
+  return location;
+}
+
+function object(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function sha256(value) {
