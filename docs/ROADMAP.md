@@ -49,7 +49,7 @@ gstackは以下の順序で実装する。
 | 0.7     | AI Support       |
 | 1.0     | Stable Release   |
 
-Stable Release向けに、D-014の公開候補、同期version、metadata、公開依存closure、Build entry、CLI／MCP bin、`npm pack`収録物、機密file候補を監査する`release:audit`／`release:check`を追加済み。D-095では、利用者向け公開候補と、それを実行可能にする内部依存Packageを同期versionで配布する方針を採用し、MVPではbundleを導入しない。License確定前は`UNLICENSED`を維持し、実際の公開は行わない。
+Stable Release向けに、D-014の公開候補、同期version、metadata、公開依存closure、Build entry、CLI／MCP bin、`npm pack`収録物、機密file候補を監査する`release:audit`／`release:check`を追加済み。D-095では、利用者向け公開候補と、それを実行可能にする内部依存Packageを同期versionで配布する方針を採用し、MVPではbundleを導入しない。全14 Workspace Packageへ配布metadataと`dist`限定の収録範囲を設定し、Release Gateを通常CIへ組み込んだ。License確定前は`UNLICENSED`を維持し、実際の公開は行わない。
 
 ---
 

@@ -1,7 +1,20 @@
 {
   "name": "@gstack/mcp",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
+  "description": "Read-only MCP server for gstack",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kazuki-shimi620/gstack.git",
+    "directory": "packages/mcp"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "bin": {
     "gstack-mcp": "./dist/main.js"

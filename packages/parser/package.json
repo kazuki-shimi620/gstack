@@ -1,7 +1,20 @@
 {
   "name": "@gstack/parser",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
+  "description": "YAML schema parser and AST for gstack",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kazuki-shimi620/gstack.git",
+    "directory": "packages/parser"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,7 +1,20 @@
 {
   "name": "@gstack/cli",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
+  "description": "gstack command-line interface",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kazuki-shimi620/gstack.git",
+    "directory": "cli"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "bin": {
     "gstack": "./dist/main.js"

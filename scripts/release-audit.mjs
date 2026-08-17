@@ -8,7 +8,7 @@ import process from 'node:process';
 
 const root = path.resolve(import.meta.dirname, '..');
 const strict = process.argv.includes('--strict');
-const candidates = new Map([
+const supportedCandidates = new Map([
   ['@gstack/core', 'packages/core'],
   ['@gstack/cli', 'cli'],
   ['@gstack/mcp', 'packages/mcp'],
@@ -50,16 +50,13 @@ if (versions.size !== 1) {
   diagnostics.push('全Workspace Packageのversionが同期していません。');
 }
 
-for (const [name, directory] of candidates) {
-  const entry = manifests.get(name);
-  if (!entry || entry.directory !== directory) {
+for (const [name, { directory, manifest }] of manifests) {
+  const expectedDirectory = supportedCandidates.get(name);
+  if (expectedDirectory && expectedDirectory !== directory) {
     diagnostics.push(
       `${name}: 公開候補Packageを所定のDirectoryで確認できません。`,
     );
-    continue;
   }
-
-  const { manifest } = entry;
   if (manifest.private !== false) {
     diagnostics.push(`${name}: package.jsonのprivateがfalseではありません。`);
   }
@@ -74,6 +71,13 @@ for (const [name, directory] of candidates) {
   }
   if (typeof manifest.repository !== 'object' || manifest.repository === null) {
     diagnostics.push(`${name}: repository metadataがありません。`);
+  }
+  if (
+    !Array.isArray(manifest.files) ||
+    manifest.files.length !== 1 ||
+    manifest.files[0] !== 'dist'
+  ) {
+    diagnostics.push(`${name}: filesはdistだけを収録する設定ではありません。`);
   }
 
   const requiredEntries = packageEntries(manifest);
@@ -141,7 +145,8 @@ for (const [name, directory] of candidates) {
 const result = {
   ready: diagnostics.length === 0,
   version: versions.size === 1 ? [...versions][0] : null,
-  candidates: [...candidates.keys()],
+  candidates: [...supportedCandidates.keys()],
+  distributionPackages: [...manifests.keys()].sort(),
   diagnostics,
 };
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

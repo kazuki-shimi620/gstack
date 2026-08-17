@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run test:cli",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run test:cli && node scripts/release-audit.mjs --strict",
     "clean": "tsc -b --clean",
     "format": "prettier --write \"**/*.{ts,js,mjs,json,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,yaml,yml}\"",
