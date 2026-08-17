@@ -41,7 +41,7 @@
 - [x] 対応するCore Read APIへ委譲するMCP Resource／Toolを追加した。Application Model、Migration status／history、Generation Plan preview、Provider Catalog／inspection、Generated Artifact inventoryをread-onlyで提供する。
 - [x] Generator設計で生成領域向け`AGENTS.md`と永続化する`PROJECT_CONTEXT.md`の形式を定義し、Application Modelから導出する（`DECISIONS.md` D-031）。現在のCore／MCP Project Contextはmemory上のread modelであり、生成物ではない。
 - [x] Codex、Claude Code、その他stdio MCP host向けのsource checkout installation例を公式資料に合わせて文書化した（`DECISIONS.md` D-081）。npm公開後の例は実配布時に追加する。
-- [ ] 危険なMCP Toolは、明示的な確認、plan-before-apply、破壊操作承認を含む別設計が確定した場合にだけ追加する。現時点で承認済みの危険なToolはない。
+- [x] MVPのMCPはD-081どおりread-only allowlistに固定し、危険なToolを追加しない。将来追加する場合は、明示確認、plan-before-apply、破壊操作承認を含む別Decisionを先に必須とする。
 
 ## Migration Engine実装前の設計判断
 
@@ -58,9 +58,9 @@
 ## Generator Engine実装前の設計判断
 
 - [x] Generated Artifact Manifestのversion、checksum、path正規化、stale artifact削除手順を確定する（`DECISIONS.md` D-026）。
-- [ ] MVP Generator Configと生成対象の有効化単位を確定する。built-in producerと`gstack.yaml`接続は`DECISIONS.md` D-001／D-032で完了。標準Templateの選択・override規則はAPI／UI Generator着手前に確定する。
+- [x] MVP Generator Config、生成対象、固定built-in Template、override非対応をD-001／D-032／D-097で確定した。拡張はGenerator Pluginの所有領域を使用する。
 - [x] TypeScriptのModel／Field命名規則と型mappingを確定する（`DECISIONS.md` D-027）。
-- [ ] API Generatorのruntime transport、routing framework、Template契約を確定する。framework非依存contractとhandler／business logic境界は`DECISIONS.md` D-034で完了。特定frameworkを暗黙選択しない。
+- [x] API GeneratorはD-034／D-097のframework非依存contractをMVP完成形とし、routing runtimeを生成しない。Google Apps Script backendはD-064の独立producerとして責務を分離する。
 - [x] UI Generatorのframework、標準Template、List／Form component境界、styling方針を確定する（`DECISIONS.md` D-035）。Detail／Search／Filter／PaginationはSchema契約がないため将来対応とする。
 
 ## Core Foundationの残判断

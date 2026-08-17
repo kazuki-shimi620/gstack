@@ -129,6 +129,12 @@ D-014の利用者向け公開候補について、package `exports`、`types`、
 
 Baseline差分は自動承認しない。変更者はAPI／CLIの互換性、Schema／machine-readable resultへの影響、SemVerをレビューし、意図した変更だけを`npm run compatibility:update`で更新して同じ変更に含める。1.0以降、公開symbolの削除・rename、互換性のない型変更、command／argument／optionの削除・rename、既存意味の非互換変更はmajor versionを必須とする。追加的変更はminor、互換bug fixはpatchとする。Hash Gateは互換性を分類せず、レビュー漏れを防ぐ変更検出として扱う。
 
+## D-097 MVP Generator TemplateとOverride
+
+MVPのbuilt-in producerはrepository内でversion管理する固定Templateだけを使用する。`gstack.yaml`にTemplate path、package、URL、inline source、overrideを追加せず、Project filesystemやnetworkからTemplateを探索しない。利用者固有の生成はD-073のGenerator Pluginを明示allowlistし、`generated/plugins/<plugin-id>/`の所有領域へ閉じ込める。built-in成果物の一部上書き、Template継承、post-generation hookはMVP対象外とする。
+
+D-034のAPI Generatorはrouting runtimeではなくframework非依存TypeScript contractを完成形とし、特定routing frameworkを選ばない。D-035のReact UIはnetwork／routingを持たないcontrolled componentを固定Templateで生成する。Google Apps Script runtimeはD-064の独立したbackend producerであり、API contract GeneratorへProvider固有transportを混在させない。Template形式やruntime frameworkを将来追加する場合は、Application Modelを入力とする新producerまたはGenerator Pluginとして所有範囲と互換性を別途定義する。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

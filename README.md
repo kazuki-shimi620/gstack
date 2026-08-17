@@ -52,6 +52,8 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Provider非依存Fileを固定する`gstack migration create <name>`
 - Provider／Generator Plugin、明示承認付きpackage管理、publish前検証
 - Application Model／Migration／Provider Contextを含むread-only MCPとhost別setup guide
+- 全Workspace Packageの配布内容／依存closureを検証するRelease Gate
+- 公開Package declarationと全CLI help treeの互換性baseline
 
 未完了項目と安全上保留している機能は[`docs/TODO.md`](docs/TODO.md)および[`docs/ROADMAP.md`](docs/ROADMAP.md)を参照してください。
 
@@ -61,6 +63,6 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 npm run check
 ```
 
-format、lint、TypeScript、unit／integration test、Architecture test、built CLI contract testをまとめて実行します。
+format、lint、TypeScript、unit／integration test、Architecture test、built CLI contract test、全PackageのRelease監査、公開API／CLI互換性baselineをまとめて実行します。
 
 Pull Requestと`main`へのpushでは、GitHub ActionsがNode.js 24と`npm ci`を使用して同じ`npm run check`を実行します。CIへGoogle credentialを渡さず、標準testは外部Google APIへ接続しません。

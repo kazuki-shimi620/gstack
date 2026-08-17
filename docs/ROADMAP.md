@@ -266,7 +266,7 @@ Google Workspace上で実用的なアプリケーションを開発できる状�
 - Deploy
 - Documentation
 
-Status: Stable Release監査を開始。Node.js 24、`npm ci`、repository全checkを実行する最小権限GitHub Actions CIを追加済み。D-092の`gstack init`、D-093の`schema init`、D-094のProvider非依存`migration create`を実装した。同じ生成Projectをbuilt CLIでinit、Schema作成、semantic validation、初回Migration File作成、Generation、非secret Google設定でBuild／Deploy dry-runまでend-to-end contract testした。公開package metadata／pack検証、1.0互換性baselineは未完了であり、実registry publishは行わない。
+Status: Stable Releaseの実装・監査項目は完了。Node.js 24、`npm ci`、repository全checkを実行する最小権限GitHub Actions CI、D-092の`gstack init`、D-093の`schema init`、D-094のProvider非依存`migration create`を実装した。同じ生成Projectをbuilt CLIでinit、Schema作成、semantic validation、初回Migration File作成、Generation、非secret Google設定でBuild／Deploy dry-runまでend-to-end contract testした。D-095の全Workspace Package metadata／pack／依存closure Gateと、D-096の公開API／CLI互換性baselineも通常CIで検証する。Licenseは未決定のため`UNLICENSED`を維持し、実registry publishは行わない。
 
 ---
 
