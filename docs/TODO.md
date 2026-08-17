@@ -87,3 +87,11 @@
 - [x] Plugin install／removeのexact version、lifecycle script無効、state fingerprintを持つread-only Planを実装した（`DECISIONS.md` D-078）。
 - [x] Plugin install／removeの実変更をfingerprint再検証、npm失敗時の安全側状態、Manifest検証後のatomic Config更新付きで実装した（`DECISIONS.md` D-079）。
 - [x] Plugin配布packageの公開前検証契約とread-only commandを実装した（`DECISIONS.md` D-080）。
+
+## Stable Release
+
+- [x] Pull Requestと`main` pushでNode.js 24、`npm ci`、`npm run check`を実行するGitHub Actions CIを追加した。
+- [ ] `gstack init <name>`でProvider credentialを含まない最小projectを安全に生成する。
+- [ ] sample projectでinitからvalidate、migration、generate、deploy dry-runまでのend-to-end contractを検証する。
+- [ ] D-014の公開候補packageについてmetadata、収録file、内部依存version、CLI／MCP binを検証するrelease gateを追加する。
+- [ ] 1.0公開API／CLI互換性baselineと変更検出方針を確定する。

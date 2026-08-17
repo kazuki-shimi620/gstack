@@ -674,6 +674,10 @@ gstack plugin package validate --directory <plugin-package>
 
 `DECISIONS.md` is normative for AST/IR, Validation ownership, Application Model boundaries, package publication, Provider abstraction, and machine-readable results. MVP uses one syntax-only AST and no separate Validation Engine. Public Adapters consume Core structured data; internal packages remain non-public implementation details unless a later decision changes their status.
 
+## CI Gate
+
+GitHub ActionsはPull Requestと`main`へのpushでNode.js 24、lockfileに基づく`npm ci`、`npm run check`を実行する。CIの標準gateはformat、lint、strict TypeScript、全test、Architecture依存検査、build済みCLI contractを含む。Google credentialやaccess tokenをCI workflowへ保存せず、外部Google APIを必要とするlive testはこのgateへ暗黙追加しない。
+
 | Document        | Purpose     |
 | --------------- | ----------- |
 | ARCHITECTURE.md | 全体アーキテクチャ   |
