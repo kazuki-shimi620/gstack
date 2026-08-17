@@ -286,6 +286,77 @@ describe('migration apply CLI', () => {
       },
     });
   });
+
+  it('Migration unlockをdry-runし、fingerprint承認を実行serviceへ渡す', async () => {
+    const preview = {
+      version: '20260817_000001',
+      checksum: 'a'.repeat(64),
+      status: 'applying' as const,
+      completedOperationCount: 0,
+      completedRollbackOperationCount: 0,
+      nextOperationId: 'create_model:users:users',
+      action: 'mark_failed' as const,
+      lockChecksum: 'b'.repeat(64),
+      fingerprint: 'c'.repeat(64),
+      warnings: ['Confirm that no Migration process is still running.'],
+    };
+    const prepareMigrationUnlockFile = vi.fn(async () => preview);
+    const unlockMigrationFile = vi.fn(async () => preview);
+    const services = {
+      loadProject: async () => ({ root: '/project' }) as never,
+      prepareMigrationApplyFile: vi.fn(),
+      applyMigrationFile: vi.fn(),
+      prepareMigrationRollbackFile: vi.fn(),
+      prepareMigrationUnlockFile,
+      unlockMigrationFile,
+    };
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    await createProgram({ stdout, stderr }, services).parseAsync([
+      'node',
+      'gstack',
+      'migration',
+      'unlock',
+      '--file',
+      'migrations/interrupted.yaml',
+      '--dry-run',
+      '--json',
+    ]);
+    expect(prepareMigrationUnlockFile).toHaveBeenCalledWith(
+      expect.objectContaining({ root: '/project' }),
+      'migrations/interrupted.yaml',
+    );
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        dryRun: true,
+        migrationUnlock: { action: 'mark_failed' },
+      },
+    });
+
+    stdout.mockClear();
+    await createProgram({ stdout, stderr }, services).parseAsync([
+      'node',
+      'gstack',
+      'migration',
+      'unlock',
+      '--file',
+      'migrations/interrupted.yaml',
+      '--approval',
+      'c'.repeat(64),
+      '--json',
+    ]);
+    expect(unlockMigrationFile).toHaveBeenCalledWith(
+      expect.objectContaining({ root: '/project' }),
+      'migrations/interrupted.yaml',
+      'c'.repeat(64),
+    );
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: { dryRun: false },
+    });
+    expect(stderr).not.toHaveBeenCalled();
+  });
 });
 
 describe('plugin CLI', () => {

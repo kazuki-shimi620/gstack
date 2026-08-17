@@ -266,6 +266,24 @@ gstack migration rollback \
 
 ---
 
+### unlock
+
+異常終了したMigrationのHistoryを安全な再開可能状態へ回復し、対応するProvider lockを明示解除する。
+
+```bash
+gstack migration unlock \
+  --file migrations/20260813_000001_initial.yaml \
+  --dry-run
+
+gstack migration unlock \
+  --file migrations/20260813_000001_initial.yaml \
+  --approval <recovery-fingerprint>
+```
+
+利用者は旧Migration processが停止していることを確認してから実行する。dry-runはlatest History、forward／rollback進捗、指定Fileに対応するlockだけを診断する。実行は同じ状態に結び付くfingerprintを必須とし、先にHistoryを`MIGRATION_INTERRUPTED`付きの再開可能状態または完了状態へ確定してからlockを削除する。時間経過による自動解除、任意lock IDの指定、unlock後の自動resume、MCP unlockは提供しない。規範は`DECISIONS.md` D-091とする。
+
+---
+
 ### history
 
 Migration履歴を表示する。

@@ -6,6 +6,8 @@ import {
   createPendingHistory,
   failMigration,
   failRollback,
+  interruptMigration,
+  interruptRollback,
   recordOperationCompleted,
   recordRollback,
   recordRollbackOperationCompleted,
@@ -125,6 +127,38 @@ describe('Migration History', () => {
     expect(recordRollback(progressed, '2026-08-12T01:00:02Z')).toMatchObject({
       status: 'rolled_back',
       completedRollbackOperationCount: 1,
+    });
+  });
+
+  it('中断状態をsafe error code付きの再開可能状態へ変換する', () => {
+    const oneOperationFile = createMigrationFile(
+      '20260812_000005',
+      'interrupted',
+      [{ id: 'one' }] as never,
+    );
+    const applying = startMigration(
+      createPendingHistory(oneOperationFile),
+      '2026-08-12T01:00:00Z',
+    );
+    expect(
+      interruptMigration(applying, '2026-08-12T01:00:01Z', 'one'),
+    ).toMatchObject({
+      status: 'failed',
+      failedOperationId: 'one',
+      errorCode: 'MIGRATION_INTERRUPTED',
+    });
+
+    const applied = completeMigration(
+      recordOperationCompleted(applying),
+      '2026-08-12T01:00:01Z',
+      snapshot,
+    );
+    expect(
+      interruptRollback(startRollback(applied), 'inverse-one'),
+    ).toMatchObject({
+      status: 'rollback_failed',
+      failedOperationId: 'inverse-one',
+      errorCode: 'MIGRATION_INTERRUPTED',
     });
   });
 

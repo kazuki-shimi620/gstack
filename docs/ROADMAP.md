@@ -114,7 +114,7 @@ Migration Plan
 Migration File
 ```
 
-Status: Provider非依存のDiff／Plan、Migration File／checksum、History／snapshot、risk、capability、Apply Engine、完了Operationを逆順変換するRollback Planを実装済み。D-090に従い、latest appliedだけを対象とするRollback dry-run／fingerprint承認、専用History進捗、破壊承認、失敗後の明示resumeをCore／Google Runtime／CLIへ実装した。明示unlockは未実装。
+Status: Provider非依存のDiff／Plan、Migration File／checksum、History／snapshot、risk、capability、Apply Engine、完了Operationを逆順変換するRollback Planを実装済み。D-090に従い、latest appliedだけを対象とするRollback dry-run／fingerprint承認、専用History進捗、破壊承認、失敗後の明示resumeをCore／Google Runtime／CLIへ実装した。D-091の中断History回復、deterministic lock診断、fingerprint承認付き明示unlockも実装済み。
 
 ---
 

@@ -325,3 +325,27 @@ test('Migration Rollbackはapprovalなしの実行を拒否する', (t) => {
     'MIGRATION_ROLLBACK_DRY_RUN_REQUIRED',
   );
 });
+
+test('Migration Unlockはapprovalなしの実行を拒否する', (t) => {
+  const root = project(
+    'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',
+  );
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const result = run(
+    [
+      'migration',
+      'unlock',
+      '--file',
+      'migrations/20260813_000001_initial.yaml',
+      '--json',
+    ],
+    root,
+  );
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, '');
+  assert.equal(
+    JSON.parse(result.stderr).error.code,
+    'MIGRATION_UNLOCK_APPROVAL_INVALID',
+  );
+});

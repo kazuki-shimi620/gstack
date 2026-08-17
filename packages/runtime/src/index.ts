@@ -22,18 +22,22 @@ import {
   MigrationFileError,
   MigrationFileSystemError,
   MigrationLockError,
+  MigrationLockRecoveryError,
   MigrationRollbackError,
   MigrationRollbackExecutionError,
   MigrationReadService,
   migrationRollbackFingerprint,
   prepareMigrationApply,
+  prepareMigrationLockRecovery,
   previewMigrationRollback,
   rollbackMigration,
+  recoverMigrationLock,
   type MigrationFile,
   type MigrationHistoryEntry,
   type MigrationPlan,
   type MigrationRollbackPreview,
   type MigrationRollbackResult,
+  type MigrationLockRecoveryPreview,
   type PreparedMigrationApply,
   type MigrationApplyResult,
 } from '@gstack/migration';
@@ -628,6 +632,69 @@ export async function rollbackStandardGoogleMigrationFile(input: {
   }
 }
 
+export async function prepareStandardGoogleMigrationUnlockFile(input: {
+  readonly project: GstackProject;
+  readonly filePath: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+}): Promise<MigrationLockRecoveryPreview> {
+  try {
+    const [file, runtime] = await Promise.all([
+      loadMigrationFile(input.project.root, input.filePath),
+      resolveStandardGoogleMigrationRuntime(input.project, input.environment),
+    ]);
+    const [prepared, history] = await Promise.all([
+      prepareStandardGoogleMigrationApply({
+        project: input.project,
+        file,
+        runtime,
+      }),
+      runtime.history.list(),
+    ]);
+    return await prepareMigrationLockRecovery({
+      file,
+      history,
+      lock: runtime.lock,
+      lockKey: `${runtime.providerContext}:${file.version}`,
+      forwardTargetSnapshot: prepared.targetSnapshot,
+    });
+  } catch (error: unknown) {
+    throw normalizeMigrationError(error);
+  }
+}
+
+export async function unlockStandardGoogleMigrationFile(input: {
+  readonly project: GstackProject;
+  readonly filePath: string;
+  readonly approval: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
+  readonly now?: () => string;
+}): Promise<MigrationLockRecoveryPreview> {
+  try {
+    const [file, runtime] = await Promise.all([
+      loadMigrationFile(input.project.root, input.filePath),
+      resolveStandardGoogleMigrationRuntime(input.project, input.environment),
+    ]);
+    const prepared = await prepareStandardGoogleMigrationApply({
+      project: input.project,
+      file,
+      runtime,
+    });
+    return await recoverMigrationLock({
+      file,
+      lockKey: `${runtime.providerContext}:${file.version}`,
+      forwardTargetSnapshot: prepared.targetSnapshot,
+      approval: input.approval,
+      dependencies: {
+        history: runtime.history,
+        lock: runtime.lock,
+        now: input.now ?? (() => new Date().toISOString()),
+      },
+    });
+  } catch (error: unknown) {
+    throw normalizeMigrationError(error);
+  }
+}
+
 async function resolveStandardGoogleMigrationApply(input: {
   readonly project: GstackProject;
   readonly filePath: string;
@@ -804,7 +871,8 @@ function normalizeMigrationError(error: unknown): unknown {
     error instanceof MigrationLockError ||
     error instanceof MigrationExecutionError ||
     error instanceof MigrationRollbackError ||
-    error instanceof MigrationRollbackExecutionError
+    error instanceof MigrationRollbackExecutionError ||
+    error instanceof MigrationLockRecoveryError
   ) {
     return new GstackError(
       {

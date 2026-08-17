@@ -16,7 +16,9 @@ import {
   prepareStandardPluginRemove,
   prepareStandardGoogleMigrationApplyFile,
   prepareStandardGoogleMigrationRollbackFile,
+  prepareStandardGoogleMigrationUnlockFile,
   rollbackStandardGoogleMigrationFile,
+  unlockStandardGoogleMigrationFile,
   prepareStandardGoogleDeploy,
   deployStandardGoogle,
   initializeStandardGoogleProject,
@@ -39,6 +41,7 @@ import {
   formatMigrationPlanHuman,
   formatMigrationRollbackDryRunHuman,
   formatMigrationRollbackHuman,
+  formatMigrationUnlockHuman,
   formatMigrationStatusHuman,
   formatProviderHealthHuman,
   formatProviderInfoHuman,
@@ -84,6 +87,15 @@ export interface ProgramServices {
       readonly resume: boolean;
     },
   ) => ReturnType<typeof rollbackStandardGoogleMigrationFile>;
+  readonly prepareMigrationUnlockFile?: (
+    project: GstackProject,
+    filePath: string,
+  ) => ReturnType<typeof prepareStandardGoogleMigrationUnlockFile>;
+  readonly unlockMigrationFile?: (
+    project: GstackProject,
+    filePath: string,
+    approval: string,
+  ) => ReturnType<typeof unlockStandardGoogleMigrationFile>;
   readonly prepareDeploy?: (
     project: GstackProject,
   ) => ReturnType<typeof prepareStandardGoogleDeploy>;
@@ -136,6 +148,10 @@ const defaultServices: ProgramServices = {
     prepareStandardGoogleMigrationRollbackFile({ project, filePath }),
   rollbackMigrationFile: (project, input) =>
     rollbackStandardGoogleMigrationFile({ project, ...input }),
+  prepareMigrationUnlockFile: (project, filePath) =>
+    prepareStandardGoogleMigrationUnlockFile({ project, filePath }),
+  unlockMigrationFile: (project, filePath, approval) =>
+    unlockStandardGoogleMigrationFile({ project, filePath, approval }),
   prepareDeploy: (project) => prepareStandardGoogleDeploy({ project }),
   executeDeploy: (project, approval) =>
     deployStandardGoogle({ project, approval }),
@@ -488,6 +504,81 @@ export function createProgram(
             return {
               data: { dryRun: false, migrationRollback: result },
               human: formatMigrationRollbackHuman(result),
+            };
+          },
+          services.loadProject,
+        );
+      },
+    );
+
+  migration
+    .command('unlock')
+    .description('Recover an interrupted Migration and remove its lock')
+    .requiredOption(
+      '--file <path>',
+      'interrupted Migration YAML inside migrations/',
+    )
+    .option(
+      '--dry-run',
+      'inspect recovery without changing History or Provider state',
+    )
+    .option('--approval <fingerprint>', 'approve the exact recovery state')
+    .option('--json', 'output structured JSON')
+    .action(
+      async (options: {
+        file: string;
+        dryRun?: boolean;
+        approval?: string;
+        json?: boolean;
+      }) => {
+        await withProjectOutput(
+          io,
+          options.json,
+          async (project) => {
+            if (options.dryRun && options.approval) {
+              throw new GstackError({
+                code: 'MIGRATION_OPTIONS_INVALID',
+                category: 'migration',
+                message: 'Migration unlock dry-run cannot include approval.',
+                hint: 'Run dry-run alone, then pass its fingerprint to --approval.',
+              });
+            }
+            if (!options.dryRun && !options.approval) {
+              throw new GstackError({
+                code: 'MIGRATION_UNLOCK_APPROVAL_INVALID',
+                category: 'migration',
+                message:
+                  'Migration unlock requires an explicit approval fingerprint.',
+                hint: 'Run with --dry-run after confirming the old process has stopped.',
+              });
+            }
+            const recovery = options.dryRun
+              ? await (
+                  services.prepareMigrationUnlockFile ??
+                  ((selected, filePath) =>
+                    prepareStandardGoogleMigrationUnlockFile({
+                      project: selected,
+                      filePath,
+                    }))
+                )(project, options.file)
+              : await (
+                  services.unlockMigrationFile ??
+                  ((selected, filePath, approval) =>
+                    unlockStandardGoogleMigrationFile({
+                      project: selected,
+                      filePath,
+                      approval,
+                    }))
+                )(project, options.file, options.approval as string);
+            return {
+              data: {
+                dryRun: Boolean(options.dryRun),
+                migrationUnlock: recovery,
+              },
+              human: formatMigrationUnlockHuman(
+                recovery,
+                Boolean(options.dryRun),
+              ),
             };
           },
           services.loadProject,

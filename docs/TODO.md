@@ -31,7 +31,7 @@
 - [x] D-087に従い、Google Sheets Relation marker、既存参照検査、生成Apps Script runtimeの参照先確認／RESTRICT deleteを実装し、`add_relation`／`drop_relation`を`emulated`へ変更した。
 - [x] D-089に従い、Google Provider Configのrole binding、Apps Script `USER_ACCESSING` identity、全CRUDのfail-closed permission検証、binding本文をpreview／結果へ出さないDeploy bundleを実装した。`MYSELF`以外の公開範囲は拡張しない。
 - [x] Google Migration History Storage／LockはD-054で確定し、Drive管理JSON adapterとSheets Named Range lock adapterを実装した。明示unlockは診断契約を別途確定してから公開する。
-- [ ] D-091に従い、中断Historyの回復、read-only lock診断、fingerprint承認付き`migration unlock`、解除失敗の再試行を実装する。
+- [x] D-091に従い、中断Historyの回復、read-only lock診断、fingerprint承認付き`migration unlock`、解除失敗の再試行を実装した。
 - [x] Migration Apply CLIのfile選択、Schema一致、approval UXはD-055で確定。安全なfilesystem loader、`--dry-run`、同じ準備結果を使う明示承認付き実Applyを実装した。
 - [x] D-090に従い、Google ProviderのRollback実行、専用History状態、fingerprint／destructive承認、失敗後の明示resumeを実装した。
 

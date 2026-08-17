@@ -73,6 +73,29 @@ describe('Google Migration lock', () => {
     await expect(raced.acquire(key)).resolves.toBeNull();
   });
 
+  it('回復対象keyのlockだけを診断して明示削除する', async () => {
+    const key = 'google:sheet-1:20260813_000001';
+    const remove = vi.fn().mockResolvedValue(undefined);
+    const lock = new GoogleSheetsMigrationLock(
+      {
+        inspect: vi.fn().mockResolvedValue({
+          sheetIds: [1],
+          lockIds: [googleMigrationLockId('other'), googleMigrationLockId(key)],
+        }),
+        add: vi.fn(),
+        remove,
+      },
+      config,
+      { get: vi.fn() },
+    );
+    await expect(lock.exists(key)).resolves.toBe(true);
+    await expect(lock.exists('missing')).resolves.toBe(false);
+    await lock.remove(key);
+    expect(remove).toHaveBeenCalledWith(
+      expect.objectContaining({ lockId: googleMigrationLockId(key) }),
+    );
+  });
+
   it('不正stateとgateway errorをsafe errorへ変換する', async () => {
     const invalid = new GoogleSheetsMigrationLock(
       {

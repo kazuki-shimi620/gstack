@@ -86,6 +86,8 @@ export {
   createPendingHistory,
   failMigration,
   failRollback,
+  interruptMigration,
+  interruptRollback,
   MigrationHistoryError,
   recordOperationCompleted,
   recordRollback,
@@ -114,6 +116,17 @@ export type {
 } from './snapshot.js';
 export { MigrationHistoryRepository } from './storage.js';
 export type { MigrationHistoryStorage } from './storage.js';
+export {
+  MigrationLockRecoveryError,
+  prepareMigrationLockRecovery,
+  recoverMigrationLock,
+} from './recovery.js';
+export type {
+  MigrationLockRecoveryDependencies,
+  MigrationLockRecoveryPreview,
+  MigrationRecoveryAction,
+  MigrationRecoveryLock,
+} from './recovery.js';
 export { MigrationReadService } from './read.js';
 export type { MigrationPlanPreview, MigrationStatusSummary } from './read.js';
 export {

@@ -351,6 +351,28 @@ export function formatMigrationRollbackHuman(result: {
   ].join('\n');
 }
 
+export function formatMigrationUnlockHuman(
+  recovery: {
+    readonly version: string;
+    readonly status: MigrationHistoryEntry['status'];
+    readonly action: string;
+    readonly nextOperationId: string | null;
+    readonly fingerprint: string;
+    readonly warnings: readonly string[];
+  },
+  dryRun: boolean,
+): string {
+  return [
+    dryRun ? 'Migration Unlock Dry Run:' : 'Migration lock recovered.',
+    `Version: ${recovery.version}`,
+    `Status: ${recovery.status}`,
+    `Recovery action: ${recovery.action}`,
+    `Next operation: ${recovery.nextOperationId ?? 'none'}`,
+    `Fingerprint: ${recovery.fingerprint}`,
+    ...recovery.warnings.map((warning) => `Warning: ${warning}`),
+  ].join('\n');
+}
+
 function enabledCapabilities(
   capabilities: ProviderSummary['capabilities'],
 ): string {

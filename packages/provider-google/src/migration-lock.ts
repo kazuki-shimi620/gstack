@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto';
 
-import type { MigrationLock, MigrationLockLease } from '@gstack/migration';
+import type {
+  MigrationLock,
+  MigrationLockLease,
+  MigrationRecoveryLock,
+} from '@gstack/migration';
 import type { ProviderSecretResolver } from '@gstack/provider';
 
 import { googleCredentialRequest } from './authentication.js';
@@ -32,7 +36,9 @@ export class GoogleMigrationLockError extends Error {
   }
 }
 
-export class GoogleSheetsMigrationLock implements MigrationLock {
+export class GoogleSheetsMigrationLock
+  implements MigrationLock, MigrationRecoveryLock
+{
   public constructor(
     private readonly gateway: GoogleMigrationLockGateway,
     private readonly config: GoogleProviderConfig,
@@ -41,14 +47,7 @@ export class GoogleSheetsMigrationLock implements MigrationLock {
 
   async acquire(key: string): Promise<MigrationLockLease | null> {
     const lockId = googleMigrationLockId(key);
-    const common = {
-      spreadsheetId: this.config.spreadsheetId,
-      secrets: this.secrets,
-      credential: googleCredentialRequest(
-        this.config.authentication.credentialSecret,
-        'database_write',
-      ),
-    };
+    const common = this.input();
     let state: unknown;
     try {
       state = await this.gateway.inspect(common);
@@ -80,6 +79,39 @@ export class GoogleSheetsMigrationLock implements MigrationLock {
         }
       },
     });
+  }
+
+  async exists(key: string): Promise<boolean> {
+    const lockId = googleMigrationLockId(key);
+    try {
+      const state = normalizeLockState(
+        await this.gateway.inspect(this.input()),
+      );
+      return state.lockIds.includes(lockId);
+    } catch (error: unknown) {
+      if (error instanceof GoogleMigrationLockError) throw error;
+      throw failed(error);
+    }
+  }
+
+  async remove(key: string): Promise<void> {
+    const lockId = googleMigrationLockId(key);
+    try {
+      await this.gateway.remove({ ...this.input(), lockId });
+    } catch (error: unknown) {
+      throw failed(error);
+    }
+  }
+
+  private input(): LockInput {
+    return {
+      spreadsheetId: this.config.spreadsheetId,
+      secrets: this.secrets,
+      credential: googleCredentialRequest(
+        this.config.authentication.credentialSecret,
+        'database_write',
+      ),
+    };
   }
 }
 

@@ -1086,6 +1086,8 @@ Provider非依存のApply Orchestratorはlock内でHistoryを再確認し、Oper
 
 Google ProviderのHistory Storageとlockは`DECISIONS.md` D-054を規範とする。Historyはconfigured Drive folder内の管理JSON、lockはSpreadsheetのdeterministic Named Range IDに分離する。期限切れlockを時間だけで自動解除せず、異常終了後はread-only診断と明示unlockを必要とする。
 
+D-091の明示unlockは指定Migration File、latest History、deterministic lockの存在を照合するread-only previewと、同じ状態に結び付くfingerprint承認を分離する。実変更では先に中断Historyを`failed`／`rollback_failed`または完了状態へ確定し、その後にlockを削除する。History更新後のlock削除失敗は残存lockを安全側として保持し、新しいpreview／approvalで削除だけを再試行できる。任意Named Range削除、自動stale判定、自動resumeは行わない。
+
 Operation scope、stable ID、alter risk、初回baseline、rename intent、capability評価時点の詳細は`DECISIONS.md` D-015からD-020を規範とする。
 
 Capability評価結果の完全性、Planの集約状態、適用可否は`DECISIONS.md` D-025を規範とする。Migration packageは評価結果を反映するpure functionだけを所有し、具体的Providerの呼出しはProvider／Core側のOrchestrationが担当する。

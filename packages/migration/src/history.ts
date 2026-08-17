@@ -166,6 +166,19 @@ export function failMigration(
   });
 }
 
+export function interruptMigration(
+  entry: MigrationHistoryEntry,
+  interruptedAt: string,
+  nextOperationId: string,
+): MigrationHistoryEntry {
+  return failMigration(
+    entry,
+    interruptedAt,
+    nextOperationId,
+    'MIGRATION_INTERRUPTED',
+  );
+}
+
 export function recordRollback(
   entry: MigrationHistoryEntry,
   completedAt: string,
@@ -242,6 +255,13 @@ export function failRollback(
     failedOperationId,
     errorCode,
   });
+}
+
+export function interruptRollback(
+  entry: MigrationHistoryEntry,
+  nextOperationId: string,
+): MigrationHistoryEntry {
+  return failRollback(entry, nextOperationId, 'MIGRATION_INTERRUPTED');
 }
 
 function requireStatus(
