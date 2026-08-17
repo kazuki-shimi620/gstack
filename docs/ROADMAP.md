@@ -55,6 +55,8 @@ D-096では、利用者向け公開候補のpackage entry／root declarationと�
 
 D-098では、全14 Workspace Packageを実tarballへpackし、隔離Consumer Projectへlifecycle scriptなしでinstallして、全package entry importとCLI binを検証するRelease smoke testをGitHub Actionsへ追加した。Workspace linkやrepository rootの依存で配布不備を隠さない。
 
+D-099では、root package versionをSingle Source of Truthとし、全Workspace Package、内部exact dependency、lockfile、Core Runtime、CLI、MCP、公式Google Providerのversion同期を通常CIで検証する。正規SemVerを一括反映する`version:set`も追加した。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

@@ -141,6 +141,12 @@ Release GateはD-095の全Workspace PackageをBuild後に実際のnpm tarballへ
 
 install後はroot `exports`を持つ全配布PackageをConsumer Projectからimportし、`gstack` binのversionとhelpを実行する。これによりsource checkoutのWorkspace linkやroot `node_modules`で配布漏れを隠さない。MCPはserver processを起動して待機させず、`@gstack/mcp` package entryのimportとbin収録をD-095の監査で検証する。GitHub Actionsは通常checkの後にこのsmoke testを実行し、Registry dependencyを解決できない場合をRelease不成立として扱う。
 
+## D-099 Release Version同期
+
+root `package.json`のversionをRelease versionのSingle Source of Truthとする。全Workspace Package version、Workspace間dependency、`package-lock.json`、Coreが公開する`GSTACK_VERSION`、公式Google Providerのversion／minimum gstack versionは完全一致させる。CLI version、MCP server metadata、Project status、Plugin互換性判定はCoreの同一定数を使用し、個別のversion literalを持たない。具体ProviderからCoreへの依存は禁止されるため、Google Providerはpackage内定数を持ち、同期Gateでrootと照合する。
+
+`npm run version:set -- <semver>`はbuild metadataを含まない正規SemVerだけを受け、全manifest、内部exact dependency、Runtime定数、lockfileを同期する。Release変更では続けてBuild／test、D-096の互換性レビューとbaseline更新、D-095／D-098のpack／install Gateを必須とする。Application Modelにversion入力がないOpenAPI documentのplaceholder `0.0.0`と、`gstack init`が作る利用者Project自身の初期versionはframework Release versionではなく、同期対象へ含めない。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

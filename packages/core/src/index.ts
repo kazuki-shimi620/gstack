@@ -1,4 +1,5 @@
 export { loadProject } from './project.js';
+export { GSTACK_VERSION } from './version.js';
 export type { ApplicationModel } from '@gstack/application';
 export type { GenerationPlan } from '@gstack/generator';
 export type {

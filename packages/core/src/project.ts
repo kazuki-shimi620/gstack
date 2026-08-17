@@ -32,8 +32,7 @@ import type {
   ValidationResult,
 } from './types.js';
 import { GstackError, type GstackErrorCode } from './error.js';
-
-const GSTACK_VERSION = '0.0.0';
+import { GSTACK_VERSION } from './version.js';
 
 export interface LoadProjectOptions {
   readonly root?: string;

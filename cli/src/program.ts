@@ -2,6 +2,7 @@ import {
   failureResult,
   getErrorDetails,
   GstackError,
+  GSTACK_VERSION,
   successResult,
   type GstackProject,
 } from '@gstack/core';
@@ -203,7 +204,7 @@ export function createProgram(
   const program = new Command()
     .name('gstack')
     .description('Schema-first application framework')
-    .version('0.0.0');
+    .version(GSTACK_VERSION);
 
   const schema = program.command('schema').description('Manage Schema files');
   const provider = program
@@ -221,7 +222,7 @@ export function createProgram(
   program
     .command('version')
     .description('Show the gstack CLI version')
-    .action(() => io.stdout('0.0.0'));
+    .action(() => io.stdout(GSTACK_VERSION));
 
   provider
     .command('list')

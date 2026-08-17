@@ -8,6 +8,7 @@ import {
   failureResult,
   getErrorDetails,
   GstackError,
+  GSTACK_VERSION,
   successResult,
   type GstackProject,
 } from '@gstack/core';
@@ -17,7 +18,7 @@ import { createReadHandlers } from './handlers.js';
 export function createMcpServer(project: GstackProject): McpServer {
   const handlers = createReadHandlers(project);
   const server = new McpServer(
-    { name: 'gstack', version: '0.0.0' },
+    { name: 'gstack', version: GSTACK_VERSION },
     {
       instructions:
         'Use read and validation tools to inspect this gstack project. This server exposes no apply, rollback, deploy, remove, or delete operation.',

@@ -55,6 +55,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - 全Workspace Packageの配布内容／依存closureを検証するRelease Gate
 - 公開Package declarationと全CLI help treeの互換性baseline
 - 全Package tarballの隔離installとCLI起動を行うRelease smoke test
+- root versionを基準にPackage／Runtime／Providerを同期するRelease version Gate
 
 未完了項目と安全上保留している機能は[`docs/TODO.md`](docs/TODO.md)および[`docs/ROADMAP.md`](docs/ROADMAP.md)を参照してください。
 
@@ -69,3 +70,5 @@ format、lint、TypeScript、unit／integration test、Architecture test、built
 Pull Requestと`main`へのpushでは、GitHub ActionsがNode.js 24と`npm ci`を使用して同じ`npm run check`を実行します。CIへGoogle credentialを渡さず、標準testは外部Google APIへ接続しません。
 
 CIは続けて`npm run release:smoke`を実行し、全Workspace Packageのtarballを一時Consumer Projectへinstallしてpackage entryとCLIを検証します。この検証はnpm Registryから通常依存を取得しますが、package公開やGoogle API接続は行いません。
+
+Release versionを変更する場合は`npm run version:set -- <semver>`を使用します。その後、公開API／CLIのSemVer影響をレビューして`npm run compatibility:update`を実行し、通常checkとRelease smoke testを通してください。

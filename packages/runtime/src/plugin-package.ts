@@ -4,7 +4,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
-import { GstackError } from '@gstack/core';
+import { GstackError, GSTACK_VERSION } from '@gstack/core';
 import { loadPlugins, type PluginModuleImporter } from '@gstack/plugin';
 
 const execFileAsync = promisify(execFile);
@@ -41,7 +41,7 @@ export async function validateStandardPluginPackage(input: {
 
   const plugins = await loadPlugins({
     packageNames: [metadata.name],
-    gstackVersion: '0.0.0',
+    gstackVersion: GSTACK_VERSION,
     importer:
       input.moduleImporter ??
       (async () => import(pathToFileURL(path.join(directory, entry)).href)),

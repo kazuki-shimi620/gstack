@@ -19,6 +19,9 @@ const repositoryRoot = path.resolve(
   '..',
 );
 const cli = path.join(repositoryRoot, 'cli/dist/main.js');
+const releaseVersion = JSON.parse(
+  readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'),
+).version;
 
 function run(args, cwd = repositoryRoot) {
   return spawnSync(process.execPath, [cli, ...args], {
@@ -48,7 +51,7 @@ test('helpとversionを表示する', () => {
 
   const version = run(['version']);
   assert.equal(version.status, 0);
-  assert.equal(version.stdout, '0.0.0\n');
+  assert.equal(version.stdout, `${releaseVersion}\n`);
   assert.equal(version.stderr, '');
 });
 

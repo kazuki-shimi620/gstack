@@ -13,13 +13,14 @@ import {
   type GoogleProviderConfig,
 } from './config.js';
 import { googleCredentialRequest } from './authentication.js';
+import { GOOGLE_PROVIDER_VERSION, MINIMUM_GSTACK_VERSION } from './version.js';
 
 export const googleProviderManifest: ProviderManifest = Object.freeze({
   formatVersion: 1,
   name: 'google',
   packageName: '@gstack/provider-google',
-  version: '0.0.0',
-  minimumGstackVersion: '0.0.0',
+  version: GOOGLE_PROVIDER_VERSION,
+  minimumGstackVersion: MINIMUM_GSTACK_VERSION,
   capabilities: Object.freeze({
     database: true,
     api: true,

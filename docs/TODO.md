@@ -100,3 +100,4 @@
 - [x] 全Workspace PackageへD-095の配布metadataと`dist`収録範囲を設定し、全14 PackageのRelease Gateを通した。Licenseは未決定のため`UNLICENSED`を維持し、実際の公開は行わない。
 - [x] D-096で1.0公開API／CLI互換性baselineとSemVer review規則を確定し、生成済みdeclaration・package entry・再帰CLI helpの変更検出Gateを通常CIへ追加した。
 - [x] D-098で全14 Workspace Packageをtarball化し、隔離Consumer Projectへのinstall、全package entry import、CLI binを検証するRelease smoke testをCIへ追加した。
+- [x] D-099でroot versionをSingle Sourceとし、全Package／内部依存／lockfile／Core／CLI／MCP／公式Providerの同期checkとversion更新commandを追加した。

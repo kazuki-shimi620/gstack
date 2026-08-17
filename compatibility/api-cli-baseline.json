@@ -5,7 +5,7 @@
       "exports": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "bin": null,
-      "declarationSha256": "611322f80f0079ea2aebe0e59dd916965eda0e7e76623e90673c0e34a57804b8"
+      "declarationSha256": "5d36424ae263410a0b09515fba96cb96cd891ef9a86d3e0cc5601d25b3bcad4b"
     },
     "@gstack/cli": {
       "exports": null,

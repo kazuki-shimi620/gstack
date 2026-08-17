@@ -8,6 +8,7 @@ import {
 } from '@gstack/config';
 import {
   GstackError,
+  GSTACK_VERSION,
   loadProject,
   type GenerationPlan,
   type GstackProject,
@@ -838,7 +839,7 @@ async function loadConfiguredPlugins(
 ) {
   const plugins = await loadPlugins({
     packageNames: config.plugins?.packages ?? [],
-    gstackVersion: '0.0.0',
+    gstackVersion: GSTACK_VERSION,
     ...(importer === undefined ? {} : { importer }),
   });
   const unknownPluginConfiguration = Object.keys(

@@ -13,6 +13,9 @@ import path from 'node:path';
 import process from 'node:process';
 
 const root = path.resolve(import.meta.dirname, '..');
+const releaseVersion = JSON.parse(
+  readFileSync(path.join(root, 'package.json'), 'utf8'),
+).version;
 const workspaceDirectories = [
   'cli',
   'packages/analyzer',
@@ -94,7 +97,7 @@ try {
     cwd: installDirectory,
     encoding: 'utf8',
   }).trim();
-  if (version !== '0.0.0') fail(`CLI versionが一致しません: ${version}`);
+  if (version !== releaseVersion) fail(`CLI versionが一致しません: ${version}`);
   const help = execFileSync(cli, ['--help'], {
     cwd: installDirectory,
     encoding: 'utf8',

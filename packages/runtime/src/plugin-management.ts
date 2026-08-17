@@ -9,7 +9,7 @@ import {
   loadProjectConfig,
   writePluginPackages,
 } from '@gstack/config';
-import { GstackError } from '@gstack/core';
+import { GstackError, GSTACK_VERSION } from '@gstack/core';
 import {
   loadPlugins,
   type PluginModuleImporter,
@@ -211,7 +211,7 @@ async function loadConfiguredPlugins(
 ): Promise<PluginRegistry> {
   return loadPlugins({
     packageNames,
-    gstackVersion: '0.0.0',
+    gstackVersion: GSTACK_VERSION,
     ...(options.pluginImporter === undefined
       ? {}
       : { importer: options.pluginImporter }),
