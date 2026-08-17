@@ -153,6 +153,8 @@ gstack schema init users
 schema/users.yaml
 ```
 
+Model名はsnake_caseとし、`id: uuid`をPrimary Keyに持つ最小Schemaだけを生成する。既存Project Schemaがinvalidな場合、Schema directoryまたはtargetがsymlinkの場合、targetが既に存在する場合はwrite前に拒否する。API、UI、Permission、Relation、business Fieldは推測しない。規範は`DECISIONS.md` D-093とする。
+
 ---
 
 ### validate

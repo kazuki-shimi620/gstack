@@ -648,3 +648,11 @@ Drive History更新とSheets Named Range削除はatomicにできないため、�
 初期ProjectはD-001に従うProvider未設定の`gstack.yaml`、privateかつESMの最小`package.json`、`app/`、`schema/`、`migrations/`、`generated/`、`docs/`を持つ。GeneratorはMVP built-in 8種を明示的に有効化する。空directory保持用fileはcodeとして扱わず、dependency、credential、secret参照、Google ID、Migration、Schema Model、generated artifact manifestを推測生成しない。次の操作として`schema init`またはSchema fileの手動作成を案内する。
 
 filesystem writeはtargetと同じparent内のgstack所有temporary directoryへ全内容を書いた後、targetへ単一renameする。write失敗時は検証済みtemporary directoryだけをcleanupし、targetを部分生成しない。rename直前にもtarget不在を前提とし、競合時は既存pathを保持して失敗する。成功結果はProject名、絶対root、作成した相対pathだけを返し、file本文や環境変数を含めない。MCPにはProject作成を公開しない。
+
+## D-093 Schema Model Initialization
+
+`gstack schema init <model>`は最寄りのProject Rootと検証済み`gstack.yaml`を読み、`schema.directory`直下へ`<model>.yaml`を1件作成する。Model名はlower snake caseだけを許可し、path separator、`.`／`..`、absolute pathを拒否する。Schema directoryはProject Root内の相対pathに限定し、Project Root、途中directory、targetのsymlinkを拒否する。targetが既に存在する場合は内容や種類を問わず上書きしない。
+
+初期Schemaは`name`、`model.displayName`、`database.primaryKey: id`、`database.columns.id.type: uuid`だけを持つD-003準拠の最小Modelとする。displayNameはModel名のsnake_case segmentをPascalCaseへ決定的に変換する。API、UI、Permission、Provider設定、Relation、business Fieldを推測生成しない。
+
+writeはtargetと同じSchema directory内のgstack所有temporary fileへ`wx`で書き、hard linkの排他的作成で公開してtemporary fileを削除する。これにより確認後にtargetが作られたraceでも上書きしない。失敗時はtemporary fileだけを削除し、既存targetや他Schemaへ変更を加えない。write前後に通常のCore Schema validationを通し、既存Projectと生成後Projectの構文・意味検証が成功した場合だけ結果を返す。結果はProject Root相対pathとModel名だけを含み、Schema本文を通常出力へ複製しない。MCPにはSchema作成を公開しない。

@@ -48,6 +48,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Generated Artifact／Manifest／再生成Plan基盤とTypeScript Type／Validation／API／React UI／OpenAPI／Model・AI Documentation Generator
 - Google Provider、Migration Apply、Apps Script Build／Deploy、Local Development API
 - 既存pathを上書きしないatomicな`gstack init <name>`
+- 最小Modelを安全に作成する`gstack schema init <model>`
 - Provider／Generator Plugin、明示承認付きpackage管理、publish前検証
 - Application Model／Migration／Provider Contextを含むread-only MCPとhost別setup guide
 

@@ -72,6 +72,17 @@ test('initは既存pathを上書きせず有効な最小Projectを作成する',
   ]) {
     assert.equal(existsSync(path.join(root, directory)), true);
   }
+  const schemaInit = run(['schema', 'init', 'users', '--json'], root);
+  assert.equal(schemaInit.status, 0);
+  assert.equal(schemaInit.stderr, '');
+  assert.equal(
+    JSON.parse(schemaInit.stdout).data.schemaInitialization.path,
+    'schema/users.yaml',
+  );
+  assert.match(
+    readFileSync(path.join(root, 'schema/users.yaml'), 'utf8'),
+    /displayName: Users/u,
+  );
   const validation = run(['schema', 'validate', '--json'], root);
   assert.equal(validation.status, 0);
   assert.equal(JSON.parse(validation.stdout).ok, true);

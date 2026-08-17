@@ -23,6 +23,7 @@ import {
   deployStandardGoogle,
   initializeStandardGoogleProject,
   initializeLocalProject,
+  initializeSchemaModel,
   prepareStandardGoogleProjectInitialization,
   startStandardDevServer,
   validateStandardPluginPackage,
@@ -64,6 +65,10 @@ export interface ProgramServices {
   readonly initializeLocalProject?: (
     name: string,
   ) => ReturnType<typeof initializeLocalProject>;
+  readonly initializeSchemaModel?: (
+    project: GstackProject,
+    model: string,
+  ) => ReturnType<typeof initializeSchemaModel>;
   readonly loadProject: () => Promise<GstackProject>;
   readonly prepareMigrationApplyFile: (
     project: GstackProject,
@@ -144,6 +149,8 @@ export interface ProgramServices {
 
 const defaultServices: ProgramServices = {
   initializeLocalProject: (name) => initializeLocalProject({ name }),
+  initializeSchemaModel: (project, model) =>
+    initializeSchemaModel({ project, model }),
   loadProject: loadStandardProject,
   prepareMigrationApplyFile: (project, filePath) =>
     prepareStandardGoogleMigrationApplyFile({ project, filePath }),
@@ -760,6 +767,32 @@ export function createProgram(
         );
         process.exitCode = details.category === 'configuration' ? 3 : 1;
       }
+    });
+
+  schema
+    .command('init <model>')
+    .description('Create a minimal Schema Model without overwriting files')
+    .option('--json', 'output structured JSON')
+    .action(async (model: string, options: { json?: boolean }) => {
+      await withProjectOutput(
+        io,
+        options.json,
+        async (project) => {
+          const result = await (
+            services.initializeSchemaModel ??
+            ((selected, name) =>
+              initializeSchemaModel({ project: selected, model: name }))
+          )(project, model);
+          return {
+            data: { schemaInitialization: result },
+            human: [
+              `Schema Model initialized: ${result.model}`,
+              `Created: ${result.path}`,
+            ].join('\n'),
+          };
+        },
+        services.loadProject,
+      );
     });
 
   schema
