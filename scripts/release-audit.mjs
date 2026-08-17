@@ -60,6 +60,12 @@ for (const [name, { directory, manifest }] of manifests) {
   if (manifest.private !== false) {
     diagnostics.push(`${name}: package.jsonのprivateがfalseではありません。`);
   }
+  if (manifest.type !== 'module') {
+    diagnostics.push(`${name}: typeがmoduleではありません。`);
+  }
+  if (manifest.engines?.node !== '>=24') {
+    diagnostics.push(`${name}: engines.nodeが>=24ではありません。`);
+  }
   if (
     typeof manifest.description !== 'string' ||
     manifest.description.length === 0

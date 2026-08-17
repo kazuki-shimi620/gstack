@@ -147,6 +147,10 @@ root `package.json`のversionをRelease versionのSingle Source of Truthとす�
 
 `npm run version:set -- <semver>`はbuild metadataを含まない正規SemVerだけを受け、全manifest、内部exact dependency、Runtime定数、lockfileを同期する。Release変更では続けてBuild／test、D-096の互換性レビューとbaseline更新、D-095／D-098のpack／install Gateを必須とする。Application Modelにversion入力がないOpenAPI documentのplaceholder `0.0.0`と、`gstack init`が作る利用者Project自身の初期versionはframework Release versionではなく、同期対象へ含めない。
 
+## D-100 配布Runtime要件
+
+全Workspace配布PackageはESM専用とし、`type: module`と`engines.node: ">=24"`を個別のpackage metadataへ持つ。root workspaceのengine指定だけに依存せず、単独tarballをinstallするConsumerへ同じ要件を伝える。MVPではCommonJS dual package、Node.js 22以前、browser単独runtimeをsupport対象としない。Release Gateは全配布Packageのmodule形式とNode.js engine完全一致を検証し、D-098のGitHub Actions／smoke testもNode.js 24で実行する。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

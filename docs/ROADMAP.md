@@ -57,6 +57,8 @@ D-098では、全14 Workspace Packageを実tarballへpackし、隔離Consumer Pr
 
 D-099では、root package versionをSingle Source of Truthとし、全Workspace Package、内部exact dependency、lockfile、Core Runtime、CLI、MCP、公式Google Providerのversion同期を通常CIで検証する。正規SemVerを一括反映する`version:set`も追加した。
 
+D-100では、全配布PackageへESM専用／Node.js 24以上のRuntime要件を個別に設定し、単独tarballでもConsumerへ要件が伝わることをRelease Gateで検証する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation
