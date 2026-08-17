@@ -95,5 +95,6 @@
 - [x] D-093に従い、`gstack schema init <model>`で最小Schemaをatomicかつ非上書きで生成した。
 - [x] D-094に従い、`gstack migration create <name>`でProvider非依存Migration Fileを安全に作成した。
 - [x] sample projectでinitからvalidate、migration create、generate、build／deploy dry-runまでのend-to-end contractを検証した。
-- [ ] D-014の公開候補packageについてmetadata、収録file、内部依存version、CLI／MCP binを検証するrelease gateを追加する。
+- [x] D-014の公開候補packageについてmetadata、収録file、内部依存version、CLI／MCP binを検証するrelease gateを追加した。`npm run release:audit`は未準備理由をJSONで列挙し、`release:check`は同じ監査をRelease Gateとして失敗させる。
+- [ ] 公開候補が内部実装packageへ持つ実行時依存をどう配布するか確定する。現状の`@gstack/core`、CLI、MCPは非公開Workspace Packageへ依存するためRelease Gateを通過しない。bundleするか公開範囲を変更するかをDecisionとして記録する。
 - [ ] 1.0公開API／CLI互換性baselineと変更検出方針を確定する。

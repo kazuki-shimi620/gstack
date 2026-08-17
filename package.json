@@ -19,6 +19,8 @@
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,yaml,yml}\"",
     "lint": "eslint .",
     "mcp": "node packages/mcp/dist/main.js",
+    "release:audit": "npm run build && node scripts/release-audit.mjs",
+    "release:check": "npm run build && node scripts/release-audit.mjs --strict",
     "test": "vitest run",
     "test:architecture": "node --test tests/architecture.test.mjs",
     "test:cli": "npm run build && node --test tests/cli-contract.test.mjs",
