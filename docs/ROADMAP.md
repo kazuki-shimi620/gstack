@@ -51,6 +51,8 @@ gstackは以下の順序で実装する。
 
 Stable Release向けに、D-014の公開候補、同期version、metadata、公開依存closure、Build entry、CLI／MCP bin、`npm pack`収録物、機密file候補を監査する`release:audit`／`release:check`を追加済み。D-095では、利用者向け公開候補と、それを実行可能にする内部依存Packageを同期versionで配布する方針を採用し、MVPではbundleを導入しない。全14 Workspace Packageへ配布metadataと`dist`限定の収録範囲を設定し、Release Gateを通常CIへ組み込んだ。License確定前は`UNLICENSED`を維持し、実際の公開は行わない。
 
+D-096では、利用者向け公開候補のpackage entry／root declarationと全CLI help treeを1.0互換性baselineとして固定した。通常CIは差分を拒否し、意図したAPI／CLI変更はSemVer影響をレビューしてbaselineを明示更新する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

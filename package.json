@@ -13,7 +13,10 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run test:cli && node scripts/release-audit.mjs --strict",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run test:cli && node scripts/release-audit.mjs --strict && node scripts/compatibility-baseline.mjs",
+    "compatibility:check": "npm run build && node scripts/compatibility-baseline.mjs",
+    "compatibility:print": "npm run build && node scripts/compatibility-baseline.mjs --print",
+    "compatibility:update": "npm run build && node scripts/compatibility-baseline.mjs --write",
     "clean": "tsc -b --clean",
     "format": "prettier --write \"**/*.{ts,js,mjs,json,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,yaml,yml}\"",

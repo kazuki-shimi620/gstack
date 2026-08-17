@@ -1,0 +1,195 @@
+{
+  "formatVersion": 1,
+  "packages": {
+    "@gstack/core": {
+      "exports": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "bin": null,
+      "declarationSha256": "611322f80f0079ea2aebe0e59dd916965eda0e7e76623e90673c0e34a57804b8"
+    },
+    "@gstack/cli": {
+      "exports": null,
+      "types": null,
+      "bin": {
+        "gstack": "./dist/main.js"
+      },
+      "declarationSha256": null
+    },
+    "@gstack/mcp": {
+      "exports": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "bin": {
+        "gstack-mcp": "./dist/main.js"
+      },
+      "declarationSha256": "be896c6ebfd339b5250296acb4ba74fafc8f8ab95d7952c5a5f6e4c7fe8b6ea4"
+    },
+    "@gstack/provider": {
+      "exports": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "bin": null,
+      "declarationSha256": "baf058b8d226c0b672029e4a023f9396a6c2e2e32dacb39f4f4eddc526754e7f"
+    },
+    "@gstack/provider-google": {
+      "exports": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "bin": null,
+      "declarationSha256": "67ad563429ef36a85245f08771c6b7edcfbf2c84315dbd3291fb34b39eff44c0"
+    }
+  },
+  "cli": {
+    "path": "gstack",
+    "helpSha256": "e6b5e7b0db90cdd84f2dbdd441695fa328ea16a62f172306aec1f51469bf9d88",
+    "commands": [
+      {
+        "path": "gstack schema",
+        "helpSha256": "69367d610b298630fff87b53a2f219ea24ef29201b1854bb1acf2af68d763895",
+        "commands": [
+          {
+            "path": "gstack schema init",
+            "helpSha256": "52f2ed30e39c33883f7e643dfc40367df0115b2f6a618d500cd728a1970c4914",
+            "commands": []
+          },
+          {
+            "path": "gstack schema validate",
+            "helpSha256": "37b10595aee8a8a213faca5ae16552992c77914435b559c324c9a13683c984df",
+            "commands": []
+          }
+        ]
+      },
+      {
+        "path": "gstack provider",
+        "helpSha256": "4929422864041568048a8a30cdb7a28f06fdfb82af94b6531c5f2943b156dde6",
+        "commands": [
+          {
+            "path": "gstack provider list",
+            "helpSha256": "2dc76941dc60abd437aacb3a4a28fc955fecabc405234dbd6daf0499128b9c03",
+            "commands": []
+          },
+          {
+            "path": "gstack provider info",
+            "helpSha256": "e8106c1f5cefe4f0ee849af81a420fc428ed75f76641517630165251a39c9e4a",
+            "commands": []
+          },
+          {
+            "path": "gstack provider validate",
+            "helpSha256": "a79ad0f3f084f0519132c6d32f7e2cf47e5915f4afbe9dff234c3bb9748d413f",
+            "commands": []
+          },
+          {
+            "path": "gstack provider health",
+            "helpSha256": "6062b4d840d3fd5493079b64c1d0666570209205a805a9337c9842cfdc111772",
+            "commands": []
+          },
+          {
+            "path": "gstack provider initialize",
+            "helpSha256": "46ebf0d44343d52f6b967b01c7e598a68a1c0bff01bfe26fc0882f586a919b8a",
+            "commands": []
+          }
+        ]
+      },
+      {
+        "path": "gstack plugin",
+        "helpSha256": "d73bc1942100cc9c8d239259d041acf775ec7852d708c2a9f8dbdf503a480fdb",
+        "commands": [
+          {
+            "path": "gstack plugin package",
+            "helpSha256": "9c54e118eaaafa567448ded0e26caaeb77d0e30d1f6d4cd5f55fd5087eaaece3",
+            "commands": [
+              {
+                "path": "gstack plugin package validate",
+                "helpSha256": "94d6158be8a871c713e73f7a6fbf46aa760e352a2950e8d1d3f4f15ecfc7751a",
+                "commands": []
+              }
+            ]
+          },
+          {
+            "path": "gstack plugin list",
+            "helpSha256": "c2f6021244505b23a0af652fbbda55057d9fd93f03aa6a305a014175fed80e81",
+            "commands": []
+          },
+          {
+            "path": "gstack plugin install",
+            "helpSha256": "cdce3be6e4ac8ad35f2b5f26cea62afde472c0523a2e8f8de1abe1869236527c",
+            "commands": []
+          },
+          {
+            "path": "gstack plugin remove",
+            "helpSha256": "c7640a2d6f132fa8a7826e11b9d232e27335f20d79d4d65a3e2533553822bd65",
+            "commands": []
+          }
+        ]
+      },
+      {
+        "path": "gstack migration",
+        "helpSha256": "2d1ef22cf83df63edb334e904547a7f66537fbaeb4fd9c3a774c6404367a4976",
+        "commands": [
+          {
+            "path": "gstack migration status",
+            "helpSha256": "19350505db2f4911aa6f46d9ce0960e3153daba7ffb018a415d44baed84a418b",
+            "commands": []
+          },
+          {
+            "path": "gstack migration apply",
+            "helpSha256": "125082ff1ec82583bdd148fa2821e9fba402f230b4cf79f2e917e55906e32cf6",
+            "commands": []
+          },
+          {
+            "path": "gstack migration history",
+            "helpSha256": "415bc20be6fe9c14ba935db41745ae178c4c9489e3b18fabb52776a3a031dc59",
+            "commands": []
+          },
+          {
+            "path": "gstack migration rollback",
+            "helpSha256": "8fb8101ee8fbc3eba50f65001b95a114bd52e97cbfa95fb6864d9b6a5f9f97d9",
+            "commands": []
+          },
+          {
+            "path": "gstack migration unlock",
+            "helpSha256": "238c8e6071a61fd8be5873d47f5906ae7b88ecdceb154013ca23fdc95acd3542",
+            "commands": []
+          },
+          {
+            "path": "gstack migration create",
+            "helpSha256": "f60b1f0ffc802287256440ada5a9d240dca5f42f6325525502762e8773cf1ca2",
+            "commands": []
+          },
+          {
+            "path": "gstack migration plan",
+            "helpSha256": "59842a488a4fa1d4d6d26314977e74fefeb4ce6cdea0aac7a703f2196ec9de00",
+            "commands": []
+          }
+        ]
+      },
+      {
+        "path": "gstack version",
+        "helpSha256": "b03e50284c7df600ad942c685d02bae4fe87adedc5168cc91d81716120d64a20",
+        "commands": []
+      },
+      {
+        "path": "gstack init",
+        "helpSha256": "19704c0e438c9751c0855d0fc68cc3c7c779863c138e8123419a42cf3b61f96f",
+        "commands": []
+      },
+      {
+        "path": "gstack generate",
+        "helpSha256": "2463fc79398ef7b15098eeb08c643454d7136a1be1f310a484b3daada746731f",
+        "commands": []
+      },
+      {
+        "path": "gstack build",
+        "helpSha256": "6f6e419db478a460d86913b273d9a1ecb1c1bc121a44d24e99a50792aa7ed19b",
+        "commands": []
+      },
+      {
+        "path": "gstack deploy",
+        "helpSha256": "6f7ec772b7896b289d658c24ab2669b072ee7851bc6753ca55ee9f855f6dc6d6",
+        "commands": []
+      },
+      {
+        "path": "gstack dev",
+        "helpSha256": "b6e854adcbb43594d3b1d9271b4a7af2bacd689b1612c65633fb13f9403a246f",
+        "commands": []
+      }
+    ]
+  }
+}
