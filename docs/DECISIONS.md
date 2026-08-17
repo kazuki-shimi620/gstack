@@ -135,6 +135,12 @@ MVPのbuilt-in producerはrepository内でversion管理する固定Templateだ�
 
 D-034のAPI Generatorはrouting runtimeではなくframework非依存TypeScript contractを完成形とし、特定routing frameworkを選ばない。D-035のReact UIはnetwork／routingを持たないcontrolled componentを固定Templateで生成する。Google Apps Script runtimeはD-064の独立したbackend producerであり、API contract GeneratorへProvider固有transportを混在させない。Template形式やruntime frameworkを将来追加する場合は、Application Modelを入力とする新producerまたはGenerator Pluginとして所有範囲と互換性を別途定義する。
 
+## D-098 Release Tarball Smoke Test
+
+Release GateはD-095の全Workspace PackageをBuild後に実際のnpm tarballへpackし、repository外の一時Consumer Projectへ全tarballを同時installする。installはlifecycle scriptを無効にし、専用temporary npm cacheを使い、credentialや利用者のProjectを変更しない。終了時は成功／失敗にかかわらずgstack所有の一時Directoryだけを削除する。Registry publishは行わない。
+
+install後はroot `exports`を持つ全配布PackageをConsumer Projectからimportし、`gstack` binのversionとhelpを実行する。これによりsource checkoutのWorkspace linkやroot `node_modules`で配布漏れを隠さない。MCPはserver processを起動して待機させず、`@gstack/mcp` package entryのimportとbin収録をD-095の監査で検証する。GitHub Actionsは通常checkの後にこのsmoke testを実行し、Registry dependencyを解決できない場合をRelease不成立として扱う。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

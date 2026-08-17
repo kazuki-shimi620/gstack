@@ -53,6 +53,8 @@ Stable Release向けに、D-014の公開候補、同期version、metadata、公�
 
 D-096では、利用者向け公開候補のpackage entry／root declarationと全CLI help treeを1.0互換性baselineとして固定した。通常CIは差分を拒否し、意図したAPI／CLI変更はSemVer影響をレビューしてbaselineを明示更新する。
 
+D-098では、全14 Workspace Packageを実tarballへpackし、隔離Consumer Projectへlifecycle scriptなしでinstallして、全package entry importとCLI binを検証するRelease smoke testをGitHub Actionsへ追加した。Workspace linkやrepository rootの依存で配布不備を隠さない。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

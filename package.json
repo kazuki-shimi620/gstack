@@ -24,6 +24,7 @@
     "mcp": "node packages/mcp/dist/main.js",
     "release:audit": "npm run build && node scripts/release-audit.mjs",
     "release:check": "npm run build && node scripts/release-audit.mjs --strict",
+    "release:smoke": "npm run build && node scripts/release-smoke.mjs",
     "test": "vitest run",
     "test:architecture": "node --test tests/architecture.test.mjs",
     "test:cli": "npm run build && node --test tests/cli-contract.test.mjs",
