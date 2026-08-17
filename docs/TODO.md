@@ -91,7 +91,7 @@
 ## Stable Release
 
 - [x] Pull Requestと`main` pushでNode.js 24、`npm ci`、`npm run check`を実行するGitHub Actions CIを追加した。
-- [ ] `gstack init <name>`でProvider credentialを含まない最小projectを安全に生成する。
+- [x] D-092に従い、`gstack init <name>`でProvider credentialを含まない最小projectを安全に生成した。
 - [ ] sample projectでinitからvalidate、migration、generate、deploy dry-runまでのend-to-end contractを検証する。
 - [ ] D-014の公開候補packageについてmetadata、収録file、内部依存version、CLI／MCP binを検証するrelease gateを追加する。
 - [ ] 1.0公開API／CLI互換性baselineと変更検出方針を確定する。

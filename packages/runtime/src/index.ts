@@ -69,6 +69,8 @@ import {
 } from '@gstack/provider-google';
 
 export { startStandardDevServer } from './dev.js';
+export { initializeLocalProject } from './project-init.js';
+export type { ProjectInitializationResult } from './project-init.js';
 export type { StandardDevServer } from './dev.js';
 export {
   applyStandardPluginInstall,

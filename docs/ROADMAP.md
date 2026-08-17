@@ -262,7 +262,7 @@ Google Workspace上で実用的なアプリケーションを開発できる状�
 - Deploy
 - Documentation
 
-Status: Stable Release監査を開始。Node.js 24、`npm ci`、repository全checkを実行する最小権限GitHub Actions CIを追加済み。`gstack init`、sample projectのend-to-end検証、公開package metadata／pack検証、1.0互換性baselineは未完了であり、実registry publishは行わない。
+Status: Stable Release監査を開始。Node.js 24、`npm ci`、repository全checkを実行する最小権限GitHub Actions CIを追加済み。D-092のatomicかつ既存path非上書きの`gstack init`も実装し、生成Projectをbuilt CLIからSchema validationまでcontract testした。sample projectの完全なend-to-end検証、公開package metadata／pack検証、1.0互換性baselineは未完了であり、実registry publishは行わない。
 
 ---
 

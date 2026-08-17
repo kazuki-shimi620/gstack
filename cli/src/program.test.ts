@@ -6,6 +6,39 @@ afterEach(() => {
   process.exitCode = undefined;
 });
 
+describe('project init CLI', () => {
+  it('Project名をRuntimeへ渡して構造化結果を表示する', async () => {
+    const stdout = vi.fn();
+    const stderr = vi.fn();
+    const initializeLocalProject = vi.fn(async () => ({
+      name: 'sample-app',
+      root: '/workspace/sample-app',
+      createdPaths: ['gstack.yaml', 'schema/'],
+    }));
+    await createProgram(
+      { stdout, stderr },
+      {
+        initializeLocalProject,
+        loadProject: vi.fn(),
+        prepareMigrationApplyFile: vi.fn(),
+        applyMigrationFile: vi.fn(),
+        prepareMigrationRollbackFile: vi.fn(),
+      },
+    ).parseAsync(['node', 'gstack', 'init', 'sample-app', '--json']);
+    expect(initializeLocalProject).toHaveBeenCalledWith('sample-app');
+    expect(stderr).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      ok: true,
+      data: {
+        projectInitialization: {
+          name: 'sample-app',
+          root: '/workspace/sample-app',
+        },
+      },
+    });
+  });
+});
+
 describe('migration apply CLI', () => {
   it('dry-run結果を表示し、Apply service以外のwriteを要求しない', async () => {
     const stdout = vi.fn();

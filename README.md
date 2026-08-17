@@ -47,6 +47,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Provider非依存のMigration Diff／Plan／File／Historyと注入可能なCore／MCP Read API
 - Generated Artifact／Manifest／再生成Plan基盤とTypeScript Type／Validation／API／React UI／OpenAPI／Model・AI Documentation Generator
 - Google Provider、Migration Apply、Apps Script Build／Deploy、Local Development API
+- 既存pathを上書きしないatomicな`gstack init <name>`
 - Provider／Generator Plugin、明示承認付きpackage管理、publish前検証
 - Application Model／Migration／Provider Contextを含むread-only MCPとhost別setup guide
 

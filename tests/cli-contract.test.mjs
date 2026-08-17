@@ -52,6 +52,38 @@ test('helpとversionを表示する', () => {
   assert.equal(version.stderr, '');
 });
 
+test('initは既存pathを上書きせず有効な最小Projectを作成する', (t) => {
+  const parent = mkdtempSync(path.join(tmpdir(), 'gstack-init-contract-'));
+  t.after(() => rmSync(parent, { recursive: true, force: true }));
+  const initialized = run(['init', 'sample-app', '--json'], parent);
+  assert.equal(initialized.status, 0);
+  assert.equal(initialized.stderr, '');
+  const result = JSON.parse(initialized.stdout);
+  assert.equal(result.ok, true);
+  assert.equal(result.data.projectInitialization.name, 'sample-app');
+  const root = path.join(parent, 'sample-app');
+  assert.equal(existsSync(path.join(root, 'gstack.yaml')), true);
+  for (const directory of [
+    'app',
+    'schema',
+    'migrations',
+    'generated',
+    'docs',
+  ]) {
+    assert.equal(existsSync(path.join(root, directory)), true);
+  }
+  const validation = run(['schema', 'validate', '--json'], root);
+  assert.equal(validation.status, 0);
+  assert.equal(JSON.parse(validation.stdout).ok, true);
+
+  const duplicate = run(['init', 'sample-app', '--json'], parent);
+  assert.equal(duplicate.status, 3);
+  assert.equal(
+    JSON.parse(duplicate.stderr).error.code,
+    'PROJECT_INIT_TARGET_EXISTS',
+  );
+});
+
 test('親方向にProject Rootを探索してsemantic validationを実行する', (t) => {
   const root = project(
     'name: users\nmodel: { displayName: User }\ndatabase: { primaryKey: id, columns: { id: { type: uuid } } }\n',

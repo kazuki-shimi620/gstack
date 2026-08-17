@@ -105,7 +105,7 @@ gstack init my-app
 
 ### Input
 
-なし
+lower kebab caseのProject名を1つ指定する。current working directory直下の同名pathが既に存在する場合は、file／directory／symlinkを問わず失敗する。
 
 ### Output
 
@@ -130,6 +130,8 @@ package.json
 ### Side Effects
 
 - 新規プロジェクトを作成する
+
+Provider、dependency、credential、Schema Model、Migrationは推測生成しない。全fileを同じparentのtemporary directoryへ作成してからtargetへrenameし、部分生成や既存pathへのmergeを行わない。規範は`DECISIONS.md` D-092とする。
 
 ---
 

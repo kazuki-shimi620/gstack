@@ -640,3 +640,11 @@ Historyは`applied -> rolling_back -> rolled_back | rollback_failed`を追加し
 実解除は`--approval <fingerprint>`を必須とし、利用者が該当Migration processの停止を外部で確認した前提で実行する。gstackはprocess livenessを推測せず、時間経過だけのstale判定、自動steal、Apply／Rollback中の暗黙解除、MCP unlockを提供しない。実行時にFile、History、lockを再readしてfingerprintを再検証する。
 
 Drive History更新とSheets Named Range削除はatomicにできないため、安全側の順序として最初にHistoryを回復用`failed`または`rollback_failed`へ遷移し、safe error code `MIGRATION_INTERRUPTED`と次のOperation IDを記録してからlockを削除する。全Operation進捗済みで最終History確定だけが中断した場合は、Fileと再構築したtarget snapshotを検証して`applied`または`rolled_back`へ確定してからlockを削除する。History更新後にlock削除が失敗した場合、同じ回復状態と残存lockから新しいpreview／approvalで再試行できる。lock削除後に自動resumeせず、利用者は改めてApply／Rollbackのdry-runと`--resume`承認を行う。
+
+## D-092 Local Project Initialization
+
+`gstack init <name>`はcurrent working directory直下へ新しいlocal Projectを作成する。nameはlower kebab caseだけを許可し、path separator、`.`／`..`、absolute pathを拒否する。targetがfile、directory、symlinkのいずれとしても既に存在する場合は上書き、merge、削除を行わず失敗する。Projectと無関係な既存workspaceを探索・変更しない。
+
+初期ProjectはD-001に従うProvider未設定の`gstack.yaml`、privateかつESMの最小`package.json`、`app/`、`schema/`、`migrations/`、`generated/`、`docs/`を持つ。GeneratorはMVP built-in 8種を明示的に有効化する。空directory保持用fileはcodeとして扱わず、dependency、credential、secret参照、Google ID、Migration、Schema Model、generated artifact manifestを推測生成しない。次の操作として`schema init`またはSchema fileの手動作成を案内する。
+
+filesystem writeはtargetと同じparent内のgstack所有temporary directoryへ全内容を書いた後、targetへ単一renameする。write失敗時は検証済みtemporary directoryだけをcleanupし、targetを部分生成しない。rename直前にもtarget不在を前提とし、競合時は既存pathを保持して失敗する。成功結果はProject名、絶対root、作成した相対pathだけを返し、file本文や環境変数を含めない。MCPにはProject作成を公開しない。

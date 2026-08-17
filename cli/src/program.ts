@@ -22,6 +22,7 @@ import {
   prepareStandardGoogleDeploy,
   deployStandardGoogle,
   initializeStandardGoogleProject,
+  initializeLocalProject,
   prepareStandardGoogleProjectInitialization,
   startStandardDevServer,
   validateStandardPluginPackage,
@@ -60,6 +61,9 @@ export interface ProgramIO {
 }
 
 export interface ProgramServices {
+  readonly initializeLocalProject?: (
+    name: string,
+  ) => ReturnType<typeof initializeLocalProject>;
   readonly loadProject: () => Promise<GstackProject>;
   readonly prepareMigrationApplyFile: (
     project: GstackProject,
@@ -139,6 +143,7 @@ export interface ProgramServices {
 }
 
 const defaultServices: ProgramServices = {
+  initializeLocalProject: (name) => initializeLocalProject({ name }),
   loadProject: loadStandardProject,
   prepareMigrationApplyFile: (project, filePath) =>
     prepareStandardGoogleMigrationApplyFile({ project, filePath }),
@@ -725,6 +730,37 @@ export function createProgram(
         );
       },
     );
+
+  program
+    .command('init <name>')
+    .description('Create a new local gstack project')
+    .option('--json', 'output structured JSON')
+    .action(async (name: string, options: { json?: boolean }) => {
+      try {
+        const result = await (
+          services.initializeLocalProject ??
+          ((projectName) => initializeLocalProject({ name: projectName }))
+        )(name);
+        io.stdout(
+          options.json
+            ? formatJson(successResult({ projectInitialization: result }))
+            : [
+                `Project initialized: ${result.name}`,
+                `Root: ${result.root}`,
+                ...result.createdPaths.map((created) => `Created: ${created}`),
+                'Next: add a Schema Model under schema/.',
+              ].join('\n'),
+        );
+      } catch (error: unknown) {
+        const details = getErrorDetails(error);
+        io.stderr(
+          options.json
+            ? formatJson(failureResult(details))
+            : formatErrorHuman(details),
+        );
+        process.exitCode = details.category === 'configuration' ? 3 : 1;
+      }
+    });
 
   schema
     .command('validate')
