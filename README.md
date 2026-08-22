@@ -45,6 +45,7 @@ node ../../cli/dist/main.js generate --dry-run
 | [`docs/MCP.md`](docs/MCP.md)                   | MCP Tool、Resource、Transport、安全方針 |
 | [`docs/TODO.md`](docs/TODO.md)                 | 残作業と将来対応                        |
 | [`docs/RELEASE.md`](docs/RELEASE.md)           | Package公開前Gateと停止条件             |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md)       | 未公開・公開済みの利用者向け変更履歴    |
 
 ## 現在の実装状況
 

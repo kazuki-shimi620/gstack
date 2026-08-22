@@ -7,7 +7,7 @@
 ## Readinessの区別
 
 - `npm run release:check`: metadata、Build entry、依存closure、pack内容を検証する技術的Gateです。
-- `npm run release:publish-check`: 技術的Gateに加えて、placeholder versionと`UNLICENSED`が解消済みであることを要求します。
+- `npm run release:publish-check`: 技術的Gateに加えて、placeholder version、`UNLICENSED`、確定versionのChangelog entryが解消済みであることを要求します。
 - `npm run release:smoke`: 全14 Packageをtarball化し、一時Consumer Projectへinstallして全entry import、CLI起動、MCP stdio接続を検証します。
 
 `release:check`の`ready: true`はnpm公開の承認を意味しません。`publishReady: true`、GitHub Actions成功、Repository ownerによる公開承認がすべて必要です。
@@ -20,7 +20,7 @@
 4. 公開API／CLI差分をレビューし、意図した場合だけ`npm run compatibility:update`を実行する。
 5. `npm ci`、`npm run check`、`npm run release:publish-check`、`npm run release:smoke`をclean checkoutで成功させる。
 6. GitHub Actionsの同一commitが成功していることを確認する。
-7. changelogとRelease noteをレビューし、公開対象commitをtagで固定する。
+7. [`CHANGELOG.md`](CHANGELOG.md)の`Unreleased`を`## <version> - YYYY-MM-DD`へ確定してRelease noteをレビューし、公開対象commitをtagで固定する。
 
 ## Package公開順序
 

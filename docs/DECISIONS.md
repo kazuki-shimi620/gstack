@@ -157,6 +157,12 @@ Repository内の全Markdownからcode fenceと画像を除くinline linkを収�
 
 検証はMarkdownを変更せず、link先の本文や外部URLへアクセスしない。source file、link文字列、安全な理由だけをdiagnosticへ出し、file本文や環境情報を出力しない。抽出・path安全性を独立testし、実Repository全体の検査も通常checkへ含める。
 
+## D-108 ChangelogとRelease Entry Gate
+
+利用者向け変更履歴の正本を`docs/CHANGELOG.md`とし、未公開変更は`## Unreleased`へ記録する。Licenseと最初のversionが未決定の間はversion／日付を推測せず、既存の実装済みMVP機能と安全境界だけを要約する。詳細仕様やcommit logを複製せず、利用者に影響する機能、互換性、安全要件を簡潔に追記する。
+
+技術的Release Gateはregular file、`# Changelog`見出し、`Unreleased`節の存在を要求する。Publish Readinessはさらに同期versionと一致する`## <version> - YYYY-MM-DD`節を要求し、なければstable blocker `CHANGELOG_RELEASE_ENTRY_MISSING`で停止する。version更新commandは日付やRelease noteを自動生成せず、Repository ownerが内容と日付を確定してから公開Gateを再実行する。
+
 ## D-099 Release Version同期
 
 root `package.json`のversionをRelease versionのSingle Source of Truthとする。全Workspace Package version、Workspace間dependency、`package-lock.json`、Coreが公開する`GSTACK_VERSION`、公式Google Providerのversion／minimum gstack versionは完全一致させる。CLI version、MCP server metadata、Project status、Plugin互換性判定はCoreの同一定数を使用し、個別のversion literalを持たない。具体ProviderからCoreへの依存は禁止されるため、Google Providerはpackage内定数を持ち、同期Gateでrootと照合する。

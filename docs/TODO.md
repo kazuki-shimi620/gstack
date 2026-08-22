@@ -109,5 +109,6 @@
 - [x] D-105で隔離ConsumerへTarballからinstallした`gstack-mcp` binのstdio起動、read-only Tool surface、Project statusをRelease smokeで検証した。
 - [x] D-106でcredentialなしのversion管理済みQuickstartを追加し、semantic validation、dry-run、初回Migration、全Generator成果物を通常CIで検証した。
 - [x] D-107で全MarkdownのRepository内linkについて参照先存在性とpath境界を検証するDocumentation Gateを通常CIへ追加した。
+- [x] D-108で`Unreleased` CHANGELOGを追加し、確定versionのRelease entryがないnpm公開をRelease Gateで停止する。
 - [ ] Repository ownerが採用Licenseと最初のRelease versionを決定する。決定までは`UNLICENSED`／`0.0.0`を維持し、`release:publish-check`を通さずnpm公開しない。
 - [ ] Repository ownerがnpm `@gstack` scope、2FA／token保管、provenance、途中失敗時の公開方針を確認し、明示承認後にだけpublish automationを設計する。

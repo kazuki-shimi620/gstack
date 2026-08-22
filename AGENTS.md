@@ -33,6 +33,7 @@
 
 - 新機能では、`Schema -> Application Model -> Core / Generator / Provider -> CLI`の順で責務を検討します。明示的な操作が必要な場合にだけCLI commandを追加します。
 - 挙動、契約、依存関係、公開CLI／Schema semanticsを変更した場合は、対応する設計ドキュメントも更新します。未解決の設計判断は推測せず記録してください。
+- 利用者向けの機能・互換性・安全要件を変更した場合は、`docs/CHANGELOG.md`の`Unreleased`も簡潔に更新します。未確定versionやRelease日を推測してはいけません。
 - packageを凝集させ、依存方向を可視化し、小さなinterfaceを通してcomponentを交換可能に保ちます。Parsing、Analysis、Orchestration、Provider adapterを個別にテストできるよう、pure functionと注入可能なI/Oを優先します。
 - TypeScript Strict Modeを使用します。実装上の問題を回避するためにstrictnessを全体で弱めてはいけません。限定的な例外が必要なら、コードの近くに理由を書きます。
 - 挙動変更には相応のunit testを追加し、package間連携にはboundary／integration test、利用者向け挙動にはCLI contract testを追加します。テストは決定的にし、明示的なProvider integration test以外ではlive credentialを要求してはいけません。
@@ -55,3 +56,4 @@
 - `docs/TODO.md`: 残作業と将来対応
 - `docs/DECISIONS.md`: MVPで確定済みの契約と横断的な設計判断
 - `docs/RELEASE.md`: Package公開前Gate、公開順序、停止条件
+- `docs/CHANGELOG.md`: 未公開・公開済みの利用者向け変更履歴

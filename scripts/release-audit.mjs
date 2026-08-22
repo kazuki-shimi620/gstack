@@ -8,6 +8,7 @@ import process from 'node:process';
 
 import {
   assessPublishReadiness,
+  hasReleaseEntry,
   resolvePublicationOrder,
 } from './release-readiness.mjs';
 
@@ -56,6 +57,21 @@ const licenses = new Set(
 const diagnostics = [];
 const homepage = 'https://github.com/kazuki-shimi620/gstack#readme';
 const bugs = 'https://github.com/kazuki-shimi620/gstack/issues';
+const changelogPath = path.join(root, 'docs/CHANGELOG.md');
+const changelog =
+  existsSync(changelogPath) && lstatSync(changelogPath).isFile()
+    ? readFileSync(changelogPath, 'utf8')
+    : null;
+
+if (
+  changelog === null ||
+  !changelog.startsWith('# Changelog\n') ||
+  !changelog.includes('\n## Unreleased\n')
+) {
+  diagnostics.push(
+    'docs/CHANGELOG.mdにChangelog見出しとUnreleased節がありません。',
+  );
+}
 
 if (versions.size !== 1) {
   diagnostics.push('全Workspace Packageのversionが同期していません。');
@@ -189,13 +205,21 @@ if (publication.cyclicPackages.length > 0) {
 }
 const version = versions.size === 1 ? [...versions][0] : null;
 const license = licenses.size === 1 ? [...licenses][0] : null;
-const readiness = assessPublishReadiness({ diagnostics, version, license });
+const releaseNotesReady =
+  changelog !== null && hasReleaseEntry(changelog, version);
+const readiness = assessPublishReadiness({
+  diagnostics,
+  version,
+  license,
+  releaseNotesReady,
+});
 
 const result = {
   ready: readiness.ready,
   publishReady: readiness.publishReady,
   version,
   license,
+  releaseNotesReady,
   candidates: [...supportedCandidates.keys()],
   distributionPackages: [...manifests.keys()].sort(),
   publicationOrder: publication.publicationOrder,

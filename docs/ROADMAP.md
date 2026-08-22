@@ -73,6 +73,8 @@ D-106では、credentialなしの`examples/quickstart`をversion管理し、buil
 
 D-107では、全MarkdownのRepository内linkについて参照先存在性とpath境界を検証するDocumentation Gateを通常CIへ追加する。
 
+D-108では、`Unreleased`を持つCHANGELOGを変更履歴の正本とし、確定versionのRelease entryがないnpm公開をstable blockerで停止する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

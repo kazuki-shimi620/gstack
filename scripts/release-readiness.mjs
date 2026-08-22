@@ -2,9 +2,15 @@ export const PUBLISH_BLOCKER = Object.freeze({
   technicalGateFailed: 'TECHNICAL_GATE_FAILED',
   versionPlaceholder: 'VERSION_PLACEHOLDER',
   licenseUndecided: 'LICENSE_UNDECIDED',
+  changelogReleaseEntryMissing: 'CHANGELOG_RELEASE_ENTRY_MISSING',
 });
 
-export function assessPublishReadiness({ diagnostics, version, license }) {
+export function assessPublishReadiness({
+  diagnostics,
+  version,
+  license,
+  releaseNotesReady = true,
+}) {
   const publishBlockers = [];
   if (diagnostics.length > 0) {
     publishBlockers.push(PUBLISH_BLOCKER.technicalGateFailed);
@@ -15,12 +21,23 @@ export function assessPublishReadiness({ diagnostics, version, license }) {
   if (license === 'UNLICENSED') {
     publishBlockers.push(PUBLISH_BLOCKER.licenseUndecided);
   }
+  if (!releaseNotesReady) {
+    publishBlockers.push(PUBLISH_BLOCKER.changelogReleaseEntryMissing);
+  }
 
   return {
     ready: diagnostics.length === 0,
     publishReady: diagnostics.length === 0 && publishBlockers.length === 0,
     publishBlockers,
   };
+}
+
+export function hasReleaseEntry(changelog, version) {
+  if (version === null || version === '0.0.0') return false;
+  const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  return new RegExp(`^## ${escapedVersion} - \\d{4}-\\d{2}-\\d{2}$`, 'mu').test(
+    changelog,
+  );
 }
 
 export function resolvePublicationOrder(packageDependencies) {
