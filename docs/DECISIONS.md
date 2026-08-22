@@ -151,6 +151,12 @@ Definition of Doneのsample確認はtemporary test fixtureだけで完了とせ�
 
 通常CIはsampleをtemporary directoryへコピーし、semantic validation、Generation dry-runの無変更性、初回Migration File作成、全Generator成果物のwriteをbuilt CLI経由で検証する。実行後はcopyだけを削除し、version管理されたsampleへ生成物やMigrationを残さない。npm公開前は未公開packageのinstall commandを案内しない。
 
+## D-107 Documentation Link Gate
+
+Repository内の全Markdownからcode fenceと画像を除くinline linkを収集し、相対的なRepository内参照の存在を通常CIで検証する。HTTPなどscheme付きURLと同一文書anchorはnetworkや見出し生成規則に依存するため対象外とする。参照先が存在しないlink、Repository外を指す相対path、Repository内symlinkから外へ解決されるlink、不正なURI encodingを拒否する。
+
+検証はMarkdownを変更せず、link先の本文や外部URLへアクセスしない。source file、link文字列、安全な理由だけをdiagnosticへ出し、file本文や環境情報を出力しない。抽出・path安全性を独立testし、実Repository全体の検査も通常checkへ含める。
+
 ## D-099 Release Version同期
 
 root `package.json`のversionをRelease versionのSingle Source of Truthとする。全Workspace Package version、Workspace間dependency、`package-lock.json`、Coreが公開する`GSTACK_VERSION`、公式Google Providerのversion／minimum gstack versionは完全一致させる。CLI version、MCP server metadata、Project status、Plugin互換性判定はCoreの同一定数を使用し、個別のversion literalを持たない。具体ProviderからCoreへの依存は禁止されるため、Google Providerはpackage内定数を持ち、同期Gateでrootと照合する。

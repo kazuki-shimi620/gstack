@@ -82,7 +82,7 @@ node ../../cli/dist/main.js generate --dry-run
 npm run check
 ```
 
-format、lint、TypeScript、unit／integration test、Architecture test、built CLI／MCP／Quickstart contract test、全PackageのRelease監査、公開API／CLI互換性baselineをまとめて実行します。
+format、lint、TypeScript、unit／integration test、Architecture test、Documentation link、built CLI／MCP／Quickstart contract test、全PackageのRelease監査、公開API／CLI互換性baselineをまとめて実行します。
 
 Pull Requestと`main`へのpushでは、GitHub ActionsがNode.js 24と`npm ci`を使用して同じ`npm run check`を実行します。CIへGoogle credentialを渡さず、標準testは外部Google APIへ接続しません。
 

@@ -71,6 +71,8 @@ D-105では、全Tarballを隔離Consumerへinstallした後、実際の`gstack-
 
 D-106では、credentialなしの`examples/quickstart`をversion管理し、built CLIによるsemantic validation、dry-run、初回Migration、全Generator成果物を通常CIで検証する。
 
+D-107では、全MarkdownのRepository内linkについて参照先存在性とpath境界を検証するDocumentation Gateを通常CIへ追加する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation
