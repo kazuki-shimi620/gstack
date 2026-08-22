@@ -67,6 +67,8 @@ D-103では、公開準備判定と公開順序計算を副作用から分離し
 
 D-104では、build済みMCP entryを実stdio processとして起動し、AI Agentと同じprotocol clientからProject、Schema、semantic Validationを読み取るcontract testを通常CIへ追加する。
 
+D-105では、全Tarballを隔離Consumerへinstallした後、実際の`gstack-mcp` binへstdio接続してread-only Tool surfaceとProject statusを検証する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

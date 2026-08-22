@@ -8,7 +8,7 @@
 
 - `npm run release:check`: metadata、Build entry、依存closure、pack内容を検証する技術的Gateです。
 - `npm run release:publish-check`: 技術的Gateに加えて、placeholder versionと`UNLICENSED`が解消済みであることを要求します。
-- `npm run release:smoke`: 全14 Packageをtarball化し、一時Consumer Projectへinstallして全entry importとCLI起動を検証します。
+- `npm run release:smoke`: 全14 Packageをtarball化し、一時Consumer Projectへinstallして全entry import、CLI起動、MCP stdio接続を検証します。
 
 `release:check`の`ready: true`はnpm公開の承認を意味しません。`publishReady: true`、GitHub Actions成功、Repository ownerによる公開承認がすべて必要です。
 

@@ -139,7 +139,11 @@ D-034のAPI Generatorはrouting runtimeではなくframework非依存TypeScript 
 
 Release GateはD-095の全Workspace PackageをBuild後に実際のnpm tarballへpackし、repository外の一時Consumer Projectへ全tarballを同時installする。installはlifecycle scriptを無効にし、専用temporary npm cacheを使い、credentialや利用者のProjectを変更しない。終了時は成功／失敗にかかわらずgstack所有の一時Directoryだけを削除する。Registry publishは行わない。
 
-install後はroot `exports`を持つ全配布PackageをConsumer Projectからimportし、`gstack` binのversionとhelpを実行する。これによりsource checkoutのWorkspace linkやroot `node_modules`で配布漏れを隠さない。MCPはserver processを起動して待機させず、`@gstack/mcp` package entryのimportとbin収録をD-095の監査で検証する。GitHub Actionsは通常checkの後にこのsmoke testを実行し、Registry dependencyを解決できない場合をRelease不成立として扱う。
+install後はroot `exports`を持つ全配布PackageをConsumer Projectからimportし、`gstack` binのversionとhelpを実行する。これによりsource checkoutのWorkspace linkやroot `node_modules`で配布漏れを隠さない。GitHub Actionsは通常checkの後にこのsmoke testを実行し、Registry dependencyを解決できない場合をRelease不成立として扱う。
+
+## D-105 配布済みMCP Bin Smoke Test
+
+D-098の一時Consumer Projectへinstallされた`.bin/gstack-mcp`を実行し、temporaryな有効Projectを`GSTACK_PROJECT_ROOT`で指定して公式stdio Clientを接続する。Tool一覧にread-onlyなProject statusが存在し危険な名前のToolがないこと、実Project名を取得できること、正常時stderrが空であることを検証する。source checkoutのMCP entryを直接実行して配布漏れを隠さず、検証後はClientを閉じてD-098のtemporary directoryとともに削除する。
 
 ## D-099 Release Version同期
 
