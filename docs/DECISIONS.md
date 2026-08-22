@@ -167,6 +167,10 @@ Release監査は技術的なpack readinessと、実際のnpm publish readiness�
 
 Release Auditのfilesystem／`npm pack`検査と、公開可否／依存順序の判定を分離する。後者は副作用を持たない関数として通常CIで直接検証し、placeholder version、未決License、技術診断のstable blocker code、依存順序の決定性、循環時に部分的な公開順序を返さないことを固定する。実Packageを対象とするAuditは従来どおり統合Gateとして残す。
 
+## D-104 MCP stdio Process Contract
+
+MCPの完了条件はin-memory transportのserver testだけでなく、build済み`gstack-mcp` entryを子processとして起動するstdio contract testで検証する。temporaryな実Projectを`GSTACK_PROJECT_ROOT`で明示し、公式MCP Clientからread-only Tool一覧、Project status、Schema一覧／本文、semantic Validationを読み取る。stdoutはprotocol専用、正常時stderrは空、危険な名前のToolは存在しないことを通常CIで固定する。test終了時はClient transportを閉じ、temporary Projectだけを削除する。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

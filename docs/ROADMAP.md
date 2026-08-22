@@ -65,6 +65,8 @@ D-102では、技術的なpack readinessと実publish readinessを分離し、pl
 
 D-103では、公開準備判定と公開順序計算を副作用から分離し、通常CIでplaceholder、技術診断、決定的順序、循環依存を回帰検証する。
 
+D-104では、build済みMCP entryを実stdio processとして起動し、AI Agentと同じprotocol clientからProject、Schema、semantic Validationを読み取るcontract testを通常CIへ追加する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

@@ -18,7 +18,7 @@ MCPはbusiness logic layerではなくadapterである。Schema parsing、semant
 
 ## 2. PackageとTransport
 
-packageは`packages/mcp`に置き、将来のpackage名`@gstack/mcp`を想定する。実行fileは`gstack-mcp`とする。
+packageは`packages/mcp`に置き、package名は`@gstack/mcp`、実行fileは`gstack-mcp`とする。
 
 MVPのtransportはstdioだけとする。`GSTACK_PROJECT_ROOT`が明示されていない場合、Coreはcurrent working directoryから親方向へ探索し、最も近い`gstack.yaml`を含むdirectoryを選択する。stdoutはMCP protocol message専用とし、失敗と診断はstderrへ出力する。
 
@@ -35,7 +35,7 @@ MCP hostは`node /absolute/path/to/gstack/packages/mcp/dist/main.js`を起動し
 
 ### Hostへの登録
 
-現時点の`@gstack/mcp`はprivate workspace packageであり、npm registryからのinstallや`npx @gstack/mcp`はまだ案内しない。最初にsource checkoutで依存関係をinstallし、buildする。
+現時点の`@gstack/mcp`は配布候補としてpackage metadataを持つが、まだnpm registryへ公開していない。`npx @gstack/mcp`は案内せず、最初にsource checkoutで依存関係をinstallし、buildする。
 
 ```bash
 cd /absolute/path/to/gstack
