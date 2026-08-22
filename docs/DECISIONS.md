@@ -163,6 +163,10 @@ Release監査は技術的なpack readinessと、実際のnpm publish readiness�
 
 全Workspace Packageの公開順序はmanifestの内部runtime dependencyからtopological sortし、同時に循環を拒否する。同時に公開可能なPackageはnpm package名の辞書順とし、結果を`publicationOrder`で表示する。手書き順序をsource of truthにせず、依存Packageより先にconsumer Packageを公開しない。`release:publish-check`は`publishReady`がfalseなら失敗し、実際のpublish、tag、GitHub Release、credential操作を行わない。
 
+## D-103 Release Readiness判定の回帰検証
+
+Release Auditのfilesystem／`npm pack`検査と、公開可否／依存順序の判定を分離する。後者は副作用を持たない関数として通常CIで直接検証し、placeholder version、未決License、技術診断のstable blocker code、依存順序の決定性、循環時に部分的な公開順序を返さないことを固定する。実Packageを対象とするAuditは従来どおり統合Gateとして残す。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

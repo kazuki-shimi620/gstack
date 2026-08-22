@@ -63,6 +63,8 @@ D-101では、全14 PackageのtarballへREADMEを収録し、repository／homepa
 
 D-102では、技術的なpack readinessと実publish readinessを分離し、placeholder version／未決定Licenseをstable blockerとして明示する。全Workspace dependency graphの循環検査と決定的なtopological公開順序もRelease監査へ追加した。License、最初のversion、npm organization／provenanceはRepository ownerの判断待ちであり、npm公開は行わない。
 
+D-103では、公開準備判定と公開順序計算を副作用から分離し、通常CIでplaceholder、技術診断、決定的順序、循環依存を回帰検証する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation
