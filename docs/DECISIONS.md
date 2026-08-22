@@ -157,6 +157,12 @@ root `package.json`のversionをRelease versionのSingle Source of Truthとす�
 
 Package READMEへcredential、token、個別Project ID、未確定のinstall command、公開済みという表現を含めない。詳細仕様を複製せずrepository文書へ案内する。Release Gateはmetadata URL、regular READMEの見出し、実際の`npm pack`収録を全14 Packageで検証する。
 
+## D-102 Publish Readinessと公開順序
+
+Release監査は技術的なpack readinessと、実際のnpm publish readinessを分離する。`ready`はmetadata、Build entry、内部依存、tarball内容、依存graphが正しい場合に限りtrueとする。`publishReady`はさらにplaceholder version `0.0.0`と`UNLICENSED`が解消された場合だけtrueとし、未解決理由を本文やsecretなしのstable code sequence `publishBlockers`で返す。通常CIは技術的Gateを通しつつ、LicenseやRelease versionを推測して変更しない。
+
+全Workspace Packageの公開順序はmanifestの内部runtime dependencyからtopological sortし、同時に循環を拒否する。同時に公開可能なPackageはnpm package名の辞書順とし、結果を`publicationOrder`で表示する。手書き順序をsource of truthにせず、依存Packageより先にconsumer Packageを公開しない。`release:publish-check`は`publishReady`がfalseなら失敗し、実際のpublish、tag、GitHub Release、credential操作を行わない。
+
 ## D-015 Migration Operation範囲
 
 MVPのDiff／Plan対象は`create_model`、`drop_model`、`add_column`、`drop_column`、`alter_column`、`rename_column`、`add_index`、`drop_index`、`add_relation`、`drop_relation`とする。`rename_column`はSchema差分から生成せず、明示的なrename intentを検証して、対応するdrop／addを置き換える場合だけ生成する。

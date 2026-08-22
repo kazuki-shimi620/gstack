@@ -30,6 +30,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 | [`docs/PLAN.md`](docs/PLAN.md)                 | 現在の実装Phase                         |
 | [`docs/MCP.md`](docs/MCP.md)                   | MCP Tool、Resource、Transport、安全方針 |
 | [`docs/TODO.md`](docs/TODO.md)                 | 残作業と将来対応                        |
+| [`docs/RELEASE.md`](docs/RELEASE.md)           | Package公開前Gateと停止条件             |
 
 ## 現在の実装状況
 

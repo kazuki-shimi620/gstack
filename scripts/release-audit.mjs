@@ -8,6 +8,7 @@ import process from 'node:process';
 
 const root = path.resolve(import.meta.dirname, '..');
 const strict = process.argv.includes('--strict');
+const publish = process.argv.includes('--publish');
 const supportedCandidates = new Map([
   ['@gstack/core', 'packages/core'],
   ['@gstack/cli', 'cli'],
@@ -44,12 +45,18 @@ const manifests = new Map(
 const versions = new Set(
   [...manifests.values()].map(({ manifest }) => manifest.version),
 );
+const licenses = new Set(
+  [...manifests.values()].map(({ manifest }) => manifest.license),
+);
 const diagnostics = [];
 const homepage = 'https://github.com/kazuki-shimi620/gstack#readme';
 const bugs = 'https://github.com/kazuki-shimi620/gstack/issues';
 
 if (versions.size !== 1) {
   diagnostics.push('全Workspace Packageのversionが同期していません。');
+}
+if (licenses.size !== 1) {
+  diagnostics.push('全Workspace Packageのlicenseが同期していません。');
 }
 
 for (const [name, { directory, manifest }] of manifests) {
@@ -163,15 +170,57 @@ for (const [name, { directory, manifest }] of manifests) {
   }
 }
 
+const publicationOrder = resolvePublicationOrder();
+const version = versions.size === 1 ? [...versions][0] : null;
+const license = licenses.size === 1 ? [...licenses][0] : null;
+const publishBlockers = [];
+if (diagnostics.length > 0) publishBlockers.push('TECHNICAL_GATE_FAILED');
+if (version === '0.0.0') publishBlockers.push('VERSION_PLACEHOLDER');
+if (license === 'UNLICENSED') publishBlockers.push('LICENSE_UNDECIDED');
+
 const result = {
   ready: diagnostics.length === 0,
-  version: versions.size === 1 ? [...versions][0] : null,
+  publishReady: diagnostics.length === 0 && publishBlockers.length === 0,
+  version,
+  license,
   candidates: [...supportedCandidates.keys()],
   distributionPackages: [...manifests.keys()].sort(),
+  publicationOrder,
   diagnostics,
+  publishBlockers,
 };
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-if (strict && !result.ready) process.exitCode = 1;
+if ((strict && !result.ready) || (publish && !result.publishReady)) {
+  process.exitCode = 1;
+}
+
+function resolvePublicationOrder() {
+  const dependencies = new Map(
+    [...manifests].map(([name, { manifest }]) => [
+      name,
+      new Set(
+        Object.keys(manifest.dependencies ?? {}).filter((dependency) =>
+          manifests.has(dependency),
+        ),
+      ),
+    ]),
+  );
+  const order = [];
+  while (dependencies.size > 0) {
+    const next = [...dependencies]
+      .filter(([, required]) => required.size === 0)
+      .map(([name]) => name)
+      .sort()[0];
+    if (!next) {
+      diagnostics.push('Workspace Packageの公開依存graphに循環があります。');
+      return [];
+    }
+    order.push(next);
+    dependencies.delete(next);
+    for (const required of dependencies.values()) required.delete(next);
+  }
+  return order;
+}
 
 function packageEntries(manifest) {
   const entries = [];

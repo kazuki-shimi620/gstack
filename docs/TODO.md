@@ -103,3 +103,6 @@
 - [x] D-099でroot versionをSingle Sourceとし、全Package／内部依存／lockfile／Core／CLI／MCP／公式Providerの同期checkとversion更新commandを追加した。
 - [x] D-100で全配布PackageをESM／Node.js 24へ固定し、各tarball metadataをRelease Gateで検証する。
 - [x] D-101で全配布Packageへnpm用README、homepage、bugs metadataを追加し、公開候補と内部依存のsupport境界を明記した。
+- [x] D-102で技術的pack readinessとpublish readinessを分離し、Workspace依存graphから決定的な公開順序を検証・表示するGateを追加した。
+- [ ] Repository ownerが採用Licenseと最初のRelease versionを決定する。決定までは`UNLICENSED`／`0.0.0`を維持し、`release:publish-check`を通さずnpm公開しない。
+- [ ] Repository ownerがnpm `@gstack` scope、2FA／token保管、provenance、途中失敗時の公開方針を確認し、明示承認後にだけpublish automationを設計する。

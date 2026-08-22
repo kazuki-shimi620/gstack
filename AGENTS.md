@@ -54,3 +54,4 @@
 - `docs/MCP.md`: Core API境界、MCP Tool／Resource、Transport、安全方針
 - `docs/TODO.md`: 残作業と将来対応
 - `docs/DECISIONS.md`: MVPで確定済みの契約と横断的な設計判断
+- `docs/RELEASE.md`: Package公開前Gate、公開順序、停止条件

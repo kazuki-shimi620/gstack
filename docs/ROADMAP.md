@@ -61,6 +61,8 @@ D-100では、全配布PackageへESM専用／Node.js 24以上のRuntime要件を
 
 D-101では、全14 PackageのtarballへREADMEを収録し、repository／homepage／bugs metadataを統一した。公開候補は用途と安全境界、内部依存Packageは直接利用がsupport外であることをnpm上でも明示する。
 
+D-102では、技術的なpack readinessと実publish readinessを分離し、placeholder version／未決定Licenseをstable blockerとして明示する。全Workspace dependency graphの循環検査と決定的なtopological公開順序もRelease監査へ追加した。License、最初のversion、npm organization／provenanceはRepository ownerの判断待ちであり、npm公開は行わない。
+
 ---
 
 # 4. Version 0.1 - Core Foundation
