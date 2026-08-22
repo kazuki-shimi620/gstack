@@ -1,0 +1,52 @@
+name: users
+description: Quickstart users
+model:
+  displayName: User
+database:
+  primaryKey: id
+  columns:
+    id:
+      type: uuid
+    email:
+      type: string
+      required: true
+      unique: true
+    role:
+      type: enum
+      required: true
+      values:
+        - admin
+        - member
+  indexes:
+    - name: users_email
+      columns:
+        - email
+      unique: true
+api:
+  resource: users
+  create: true
+  update: true
+  delete: true
+ui:
+  list:
+    columns:
+      - email
+      - role
+  form:
+    fields:
+      - email
+      - role
+permissions:
+  read:
+    - admin
+    - member
+  create:
+    - admin
+  update:
+    - admin
+  delete:
+    - admin
+validation:
+  email:
+    minLength: 3
+    maxLength: 254

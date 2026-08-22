@@ -69,6 +69,8 @@ D-104では、build済みMCP entryを実stdio processとして起動し、AI Age
 
 D-105では、全Tarballを隔離Consumerへinstallした後、実際の`gstack-mcp` binへstdio接続してread-only Tool surfaceとProject statusを検証する。
 
+D-106では、credentialなしの`examples/quickstart`をversion管理し、built CLIによるsemantic validation、dry-run、初回Migration、全Generator成果物を通常CIで検証する。
+
 ---
 
 # 4. Version 0.1 - Core Foundation

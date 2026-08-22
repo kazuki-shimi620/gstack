@@ -1,6 +1,20 @@
 # gstack
 
-gstackは、CLI First・AI First・Schema Firstなアプリケーションフレームワークです。宣言的なSchemaをProvider非依存の正規化されたApplication Modelへコンパイルし、将来的なValidation、Migration、コード生成、ドキュメント生成、Provider実行の共通入力として利用します。
+gstackは、CLI First・AI First・Schema Firstなアプリケーションフレームワークです。宣言的なSchemaをProvider非依存の正規化されたApplication Modelへコンパイルし、Validation、Migration、コード生成、ドキュメント生成、Provider実行の共通入力として利用します。
+
+## Quickstart
+
+credentialを含まないversion管理済みsampleを[`examples/quickstart`](examples/quickstart)に用意しています。
+
+```bash
+npm ci
+npm run build
+cd examples/quickstart
+node ../../cli/dist/main.js schema validate
+node ../../cli/dist/main.js generate --dry-run
+```
+
+生成やMigration作成を試す場合は、sampleを別の作業場所へコピーしてください。現時点ではnpm未公開のため、source checkoutのbuild済みCLIを使用します。
 
 ## はじめに読むもの
 
@@ -55,7 +69,7 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 - Application Model／Migration／Provider Contextを含むread-only MCPとhost別setup guide
 - 全Workspace Packageの配布内容／依存closureを検証するRelease Gate
 - 公開Package declarationと全CLI help treeの互換性baseline
-- 全Package tarballの隔離installとCLI起動を行うRelease smoke test
+- 全Package tarballの隔離installとCLI／MCP起動を行うRelease smoke test
 - root versionを基準にPackage／Runtime／Providerを同期するRelease version Gate
 - 全tarballで明示するESM／Node.js 24 Runtime契約
 - npm上で用途とsupport境界を示すPackage別README／Repository metadata
@@ -68,10 +82,10 @@ gstackは、CLI First・AI First・Schema Firstなアプリケーションフレ
 npm run check
 ```
 
-format、lint、TypeScript、unit／integration test、Architecture test、built CLI contract test、全PackageのRelease監査、公開API／CLI互換性baselineをまとめて実行します。
+format、lint、TypeScript、unit／integration test、Architecture test、built CLI／MCP／Quickstart contract test、全PackageのRelease監査、公開API／CLI互換性baselineをまとめて実行します。
 
 Pull Requestと`main`へのpushでは、GitHub ActionsがNode.js 24と`npm ci`を使用して同じ`npm run check`を実行します。CIへGoogle credentialを渡さず、標準testは外部Google APIへ接続しません。
 
-CIは続けて`npm run release:smoke`を実行し、全Workspace Packageのtarballを一時Consumer Projectへinstallしてpackage entryとCLIを検証します。この検証はnpm Registryから通常依存を取得しますが、package公開やGoogle API接続は行いません。
+CIは続けて`npm run release:smoke`を実行し、全Workspace Packageのtarballを一時Consumer Projectへinstallしてpackage entry、CLI、MCP stdio接続を検証します。この検証はnpm Registryから通常依存を取得しますが、package公開やGoogle API接続は行いません。
 
 Release versionを変更する場合は`npm run version:set -- <semver>`を使用します。その後、公開API／CLIのSemVer影響をレビューして`npm run compatibility:update`を実行し、通常checkとRelease smoke testを通してください。

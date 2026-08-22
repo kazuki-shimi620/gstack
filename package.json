@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run test:release && npm run test:cli && npm run test:mcp && node scripts/version-sync.mjs && node scripts/release-audit.mjs --strict && node scripts/compatibility-baseline.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:architecture && npm run test:release && npm run test:cli && npm run test:mcp && npm run test:sample && node scripts/version-sync.mjs && node scripts/release-audit.mjs --strict && node scripts/compatibility-baseline.mjs",
     "compatibility:check": "npm run build && node scripts/compatibility-baseline.mjs",
     "compatibility:print": "npm run build && node scripts/compatibility-baseline.mjs --print",
     "compatibility:update": "npm run build && node scripts/compatibility-baseline.mjs --write",
@@ -31,6 +31,7 @@
     "test:release": "node --test tests/release-readiness.test.mjs",
     "test:cli": "npm run build && node --test tests/cli-contract.test.mjs",
     "test:mcp": "npm run build && node --test tests/mcp-stdio-contract.test.mjs",
+    "test:sample": "npm run build && node --test tests/sample-project.test.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false && tsc -p tsconfig.test.json --noEmit --pretty false",
     "version:check": "npm run build && node scripts/version-sync.mjs",

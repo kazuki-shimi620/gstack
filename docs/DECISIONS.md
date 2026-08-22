@@ -145,6 +145,12 @@ install後はroot `exports`を持つ全配布PackageをConsumer Projectからimp
 
 D-098の一時Consumer Projectへinstallされた`.bin/gstack-mcp`を実行し、temporaryな有効Projectを`GSTACK_PROJECT_ROOT`で指定して公式stdio Clientを接続する。Tool一覧にread-onlyなProject statusが存在し危険な名前のToolがないこと、実Project名を取得できること、正常時stderrが空であることを検証する。source checkoutのMCP entryを直接実行して配布漏れを隠さず、検証後はClientを閉じてD-098のtemporary directoryとともに削除する。
 
+## D-106 Version管理済みQuickstart Project
+
+Definition of Doneのsample確認はtemporary test fixtureだけで完了とせず、`examples/quickstart`へ閲覧・コピー可能なProjectを保持する。sampleはProvider configuration、credential、secret、Migration History、生成済みcodeを含めず、SchemaをSingle Source of Truth、`generated/`をgstack所有領域として明示する。source checkoutのbuild済みCLIでsemantic validationとGeneration dry-runを実行できる手順を案内する。
+
+通常CIはsampleをtemporary directoryへコピーし、semantic validation、Generation dry-runの無変更性、初回Migration File作成、全Generator成果物のwriteをbuilt CLI経由で検証する。実行後はcopyだけを削除し、version管理されたsampleへ生成物やMigrationを残さない。npm公開前は未公開packageのinstall commandを案内しない。
+
 ## D-099 Release Version同期
 
 root `package.json`のversionをRelease versionのSingle Source of Truthとする。全Workspace Package version、Workspace間dependency、`package-lock.json`、Coreが公開する`GSTACK_VERSION`、公式Google Providerのversion／minimum gstack versionは完全一致させる。CLI version、MCP server metadata、Project status、Plugin互換性判定はCoreの同一定数を使用し、個別のversion literalを持たない。具体ProviderからCoreへの依存は禁止されるため、Google Providerはpackage内定数を持ち、同期Gateでrootと照合する。
